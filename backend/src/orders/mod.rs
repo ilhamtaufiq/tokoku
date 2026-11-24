@@ -1,0 +1,675 @@
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    routing::{get, patch, post},
+    Json, Router,
+};
+use chrono::{DateTime, FixedOffset, Utc};
+use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
+use sqlx::{AssertSqlSafe, FromRow, MySql, MySqlPool, QueryBuilder, Transaction};
+
+use crate::{
+    auth::{AdminUser, AuthUser},
+    error::{AppError, AppResult},
+    pricing::{calculate, PricingLine},
+    promo, settings,
+    state::AppState,
+    xendit::{self, CreateInvoice, InvoiceItem},
+};
+
+pub fn customer_router() -> Router<AppState> {
+    Router::new()
+        .route("/", post(checkout).get(list_orders))
+        .route("/{id}", get(get_order))
+        .route("/{id}/pay", post(pay_order))
+}
+
+pub fn admin_router() -> Router<AppState> {
+    Router::new()
+        .route("/orders", get(admin_list_orders))
+        .route("/orders/{id}/status", patch(admin_update_status))
+}
+
+const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS status,
+    CAST(payment_status AS CHAR) AS payment_status, subtotal, discount_total, dpp, ppn_rate,
+    ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code,
+    xendit_invoice_url, created_at,
+    TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), expires_at) AS seconds_left";
+
+#[derive(Debug, FromRow)]
+pub struct OrderRow {
+    pub id: u64,
+    pub user_id: u64,
+    pub invoice_no: String,
+    pub status: String,
+    pub payment_status: String,
+    pub subtotal: Decimal,
+    pub discount_total: Decimal,
+    pub dpp: Decimal,
+    pub ppn_rate: Decimal,
+    pub ppn_total: Decimal,
+    pub shipping_fee: Decimal,
+    pub grand_total: Decimal,
+    pub shipping_address: String,
+    pub buyer_npwp: Option<String>,
+    pub promo_code: Option<String>,
+    pub xendit_invoice_url: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub seconds_left: i64,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct OrderItemView {
+    pub product_id: u64,
+    pub product_name: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub unit_price: Decimal,
+    pub qty: u32,
+    pub is_taxable: bool,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub line_subtotal: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub line_discount: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OrderView {
+    pub id: u64,
+    pub invoice_no: String,
+    pub status: String,
+    pub payment_status: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub subtotal: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub discount_total: Decimal,
+    pub promo_code: Option<String>,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub dpp: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub ppn_rate: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub ppn_total: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub shipping_fee: Decimal,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub grand_total: Decimal,
+    pub shipping_address: String,
+    pub buyer_npwp: Option<String>,
+    pub payment_url: Option<String>,
+    pub expires_in_seconds: i64,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OrderDetail {
+    #[serde(flatten)]
+    pub order: OrderView,
+    pub items: Vec<OrderItemView>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CheckoutResponse {
+    pub order: OrderDetail,
+    /// Null jika pembuatan invoice Xendit gagal; klien bisa mencoba lagi lewat POST /orders/{id}/pay.
+    pub payment_url: Option<String>,
+}
+
+fn to_view(o: OrderRow) -> OrderView {
+    OrderView {
+        id: o.id,
+        invoice_no: o.invoice_no,
+        status: o.status,
+        payment_status: o.payment_status,
+        subtotal: o.subtotal,
+        discount_total: o.discount_total,
+        promo_code: o.promo_code,
+        dpp: o.dpp,
+        ppn_rate: o.ppn_rate,
+        ppn_total: o.ppn_total,
+        shipping_fee: o.shipping_fee,
+        grand_total: o.grand_total,
+        shipping_address: o.shipping_address,
+        buyer_npwp: o.buyer_npwp,
+        payment_url: o.xendit_invoice_url,
+        expires_in_seconds: o.seconds_left.max(0),
+        created_at: o.created_at,
+    }
+}
+
+async fn fetch_order(pool: &MySqlPool, id: u64) -> AppResult<OrderRow> {
+    sqlx::query_as::<_, OrderRow>(AssertSqlSafe(format!("SELECT {ORDER_COLS} FROM orders WHERE id = ?")))
+        .bind(id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound(format!("pesanan {id}")))
+}
+
+async fn fetch_owned_order(pool: &MySqlPool, id: u64, user: &AuthUser) -> AppResult<OrderRow> {
+    let order = fetch_order(pool, id).await?;
+    if order.user_id != user.id && user.role != "admin" {
+        // 404 agar keberadaan pesanan orang lain tidak bocor
+        return Err(AppError::NotFound(format!("pesanan {id}")));
+    }
+    Ok(order)
+}
+
+async fn fetch_items(pool: &MySqlPool, order_id: u64) -> AppResult<Vec<OrderItemView>> {
+    let items = sqlx::query_as::<_, OrderItemView>(
+        "SELECT product_id, product_name, unit_price, qty, is_taxable, line_subtotal, line_discount
+         FROM order_items WHERE order_id = ? ORDER BY id",
+    )
+    .bind(order_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(items)
+}
+
+async fn detail(pool: &MySqlPool, order: OrderRow) -> AppResult<OrderDetail> {
+    let id = order.id;
+    let items = fetch_items(pool, id).await?;
+    Ok(OrderDetail { order: to_view(order), items })
+}
+
+/// Nomor invoice berurutan per bulan (zona WIB), dikunci dalam transaksi.
+pub async fn next_invoice_no(tx: &mut Transaction<'_, MySql>, prefix: &str) -> AppResult<String> {
+    let wib = FixedOffset::east_opt(7 * 3600).expect("offset valid");
+    let period = Utc::now().with_timezone(&wib).format("%Y%m").to_string();
+
+    sqlx::query("INSERT INTO invoice_counters (period, last_seq) VALUES (?, 0) ON DUPLICATE KEY UPDATE period = period")
+        .bind(&period)
+        .execute(&mut **tx)
+        .await?;
+    let (seq,): (u32,) = sqlx::query_as("SELECT last_seq FROM invoice_counters WHERE period = ? FOR UPDATE")
+        .bind(&period)
+        .fetch_one(&mut **tx)
+        .await?;
+    let next = seq + 1;
+    sqlx::query("UPDATE invoice_counters SET last_seq = ? WHERE period = ?")
+        .bind(next)
+        .bind(&period)
+        .execute(&mut **tx)
+        .await?;
+    Ok(format!("{prefix}/{period}/{next:06}"))
+}
+
+#[derive(Debug, FromRow)]
+struct CartLine {
+    product_id: u64,
+    name: String,
+    price: Decimal,
+    is_taxable: bool,
+    is_active: bool,
+    stock: u32,
+    qty: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CheckoutReq {
+    pub shipping_address: String,
+    pub promo_code: Option<String>,
+    pub buyer_npwp: Option<String>,
+}
+
+fn sanitize_npwp(raw: &str) -> AppResult<Option<String>> {
+    let cleaned: String = raw.chars().filter(|c| c.is_ascii_digit()).collect();
+    if cleaned.is_empty() {
+        return Ok(None);
+    }
+    if cleaned.len() != 15 && cleaned.len() != 16 {
+        return Err(AppError::BadRequest("NPWP harus 15 atau 16 digit".into()));
+    }
+    Ok(Some(cleaned))
+}
+
+async fn checkout(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<CheckoutReq>,
+) -> AppResult<(StatusCode, Json<CheckoutResponse>)> {
+    let address = req.shipping_address.trim().to_string();
+    if address.len() < 10 || address.len() > 1000 {
+        return Err(AppError::BadRequest("alamat pengiriman wajib diisi (10–1000 karakter)".into()));
+    }
+    let npwp = match req.buyer_npwp.as_deref() {
+        Some(raw) => sanitize_npwp(raw)?,
+        None => None,
+    };
+
+    // Pengaturan dibaca sebelum transaksi agar kunci baris tidak ditahan lebih lama dari perlu
+    let ppn = settings::ppn_percent(&state.pool).await?;
+    let shipping = settings::shipping_flat_fee(&state.pool).await?;
+    let prefix = settings::invoice_prefix(&state.pool).await?;
+
+    let mut tx = state.pool.begin().await?;
+
+    let cart: Vec<CartLine> = sqlx::query_as(
+        "SELECT p.id AS product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty
+         FROM cart_items c JOIN products p ON p.id = c.product_id
+         WHERE c.user_id = ? FOR UPDATE",
+    )
+    .bind(user.id)
+    .fetch_all(&mut *tx)
+    .await?;
+
+    if cart.is_empty() {
+        return Err(AppError::BadRequest("keranjang kosong".into()));
+    }
+    for line in &cart {
+        if !line.is_active {
+            return Err(AppError::BadRequest(format!("produk '{}' sudah tidak tersedia", line.name)));
+        }
+        if line.stock < line.qty {
+            return Err(AppError::Conflict(format!(
+                "stok '{}' tersisa {}, sementara jumlah di keranjang {}",
+                line.name, line.stock, line.qty
+            )));
+        }
+    }
+
+    let lines: Vec<PricingLine> = cart
+        .iter()
+        .map(|c| PricingLine {
+            product_id: c.product_id,
+            name: c.name.clone(),
+            unit_price: c.price,
+            qty: c.qty,
+            is_taxable: c.is_taxable,
+        })
+        .collect();
+
+    // Diskon promo (dihitung dari subtotal sebelum diskon)
+    let discount = match req.promo_code.as_deref().map(str::trim).filter(|c| !c.is_empty()) {
+        Some(code) => {
+            let base = calculate(&lines, Decimal::ZERO, Decimal::ZERO, ppn)
+                .map_err(|e| AppError::BadRequest(e.to_string()))?;
+            let promo_row = promo::lock(&mut tx, code).await?;
+            let amount = promo::discount_amount(&promo_row, base.subtotal)?;
+            let used = sqlx::query(
+                "UPDATE promo_codes SET used_count = used_count + 1
+                 WHERE id = ? AND (usage_limit IS NULL OR used_count < usage_limit)",
+            )
+            .bind(promo_row.id)
+            .execute(&mut *tx)
+            .await?;
+            if used.rows_affected() == 0 {
+                return Err(AppError::Conflict("kuota promo baru saja habis".into()));
+            }
+            Some((promo_row.code, amount))
+        }
+        None => None,
+    };
+    let (promo_code, discount_amt) = match discount {
+        Some((c, a)) => (Some(c), a),
+        None => (None, Decimal::ZERO),
+    };
+
+    let breakdown = calculate(&lines, discount_amt, shipping, ppn)
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    let invoice_no = next_invoice_no(&mut tx, &prefix).await?;
+
+    let done = sqlx::query(
+        "INSERT INTO orders (user_id, invoice_no, status, payment_status, subtotal, discount_total, dpp,
+            ppn_rate, ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code, expires_at)
+         VALUES (?, ?, 'pending_payment', 'unpaid', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP() + INTERVAL 24 HOUR)",
+    )
+    .bind(user.id)
+    .bind(&invoice_no)
+    .bind(breakdown.subtotal)
+    .bind(breakdown.discount_total)
+    .bind(breakdown.dpp)
+    .bind(breakdown.ppn_rate)
+    .bind(breakdown.ppn)
+    .bind(breakdown.shipping_fee)
+    .bind(breakdown.grand_total)
+    .bind(&address)
+    .bind(npwp.as_deref())
+    .bind(promo_code.as_deref())
+    .execute(&mut *tx)
+    .await?;
+    let order_id = done.last_insert_id();
+
+    for line in &breakdown.lines {
+        sqlx::query(
+            "INSERT INTO order_items (order_id, product_id, product_name, unit_price, is_taxable, qty, line_subtotal, line_discount)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(order_id)
+        .bind(line.product_id)
+        .bind(&line.name)
+        .bind(line.unit_price)
+        .bind(line.is_taxable)
+        .bind(line.qty)
+        .bind(line.line_subtotal)
+        .bind(line.line_discount)
+        .execute(&mut *tx)
+        .await?;
+
+        let stock = sqlx::query("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?")
+            .bind(line.qty)
+            .bind(line.product_id)
+            .bind(line.qty)
+            .execute(&mut *tx)
+            .await?;
+        if stock.rows_affected() == 0 {
+            return Err(AppError::Conflict(format!("stok '{}' baru saja habis", line.name)));
+        }
+        sqlx::query(
+            "INSERT INTO stock_movements (product_id, order_id, change_qty, reason) VALUES (?, ?, ?, 'checkout')",
+        )
+        .bind(line.product_id)
+        .bind(order_id)
+        .bind(-(line.qty as i64))
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    sqlx::query("DELETE FROM cart_items WHERE user_id = ?")
+        .bind(user.id)
+        .execute(&mut *tx)
+        .await?;
+
+    tx.commit().await?;
+
+    let order = fetch_order(&state.pool, order_id).await?;
+    let email = user_email(&state.pool, user.id).await?;
+    let payment_url = match create_invoice_for_order(&state, &order, &email).await {
+        Ok(url) => Some(url),
+        Err(e) => {
+            tracing::error!(order_id, error = %e, "gagal membuat invoice Xendit; klien dapat mencoba lagi");
+            None
+        }
+    };
+    let order = fetch_order(&state.pool, order_id).await?;
+    let detail = detail(&state.pool, order).await?;
+    Ok((StatusCode::CREATED, Json(CheckoutResponse { order: detail, payment_url })))
+}
+
+async fn user_email(pool: &MySqlPool, user_id: u64) -> AppResult<String> {
+    let (email,): (String,) = sqlx::query_as("SELECT email FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_one(pool)
+        .await?;
+    Ok(email)
+}
+
+/// Membuat invoice Xendit untuk pesanan yang belum punya invoice. Mengembalikan URL pembayaran.
+pub async fn create_invoice_for_order(state: &AppState, order: &OrderRow, email: &str) -> AppResult<String> {
+    if let Some(url) = &order.xendit_invoice_url {
+        return Ok(url.clone());
+    }
+    if order.seconds_left <= 0 {
+        return Err(AppError::BadRequest("pesanan sudah kedaluwarsa".into()));
+    }
+
+    let items = sqlx::query_as::<_, (String, Decimal, u32, Decimal)>(
+        "SELECT product_name, line_subtotal - line_discount, qty, line_subtotal FROM order_items WHERE order_id = ? ORDER BY id",
+    )
+    .bind(order.id)
+    .fetch_all(&state.pool)
+    .await?;
+
+    let mut invoice_items: Vec<InvoiceItem> = items
+        .into_iter()
+        .map(|(name, net, qty, _)| InvoiceItem { name: format!("{name} x{qty}"), price: net })
+        .collect();
+    if order.shipping_fee > Decimal::ZERO {
+        invoice_items.push(InvoiceItem { name: "Ongkos kirim".into(), price: order.shipping_fee });
+    }
+
+    let description = format!(
+        "Pesanan {} — DPP Rp{}, PPN {}% Rp{}",
+        order.invoice_no,
+        order.dpp.trunc(),
+        order.ppn_rate.normalize(),
+        order.ppn_total.trunc()
+    );
+
+    let req = CreateInvoice {
+        external_id: order.invoice_no.clone(),
+        amount: order.grand_total,
+        payer_email: email.to_string(),
+        description,
+        duration_secs: order.seconds_left,
+        success_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
+        failure_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
+        items: invoice_items,
+    };
+
+    let invoice = xendit::create_invoice(&state.http, &state.cfg, &req).await?;
+    let url = invoice
+        .invoice_url
+        .clone()
+        .ok_or_else(|| AppError::Gateway("respons xendit tanpa invoice_url".into()))?;
+
+    // Hanya simpan jika belum ada invoice (pencegahan race dua permintaan bersamaan)
+    let saved = sqlx::query(
+        "UPDATE orders SET xendit_invoice_id = ?, xendit_invoice_url = ? WHERE id = ? AND xendit_invoice_id IS NULL",
+    )
+    .bind(&invoice.id)
+    .bind(&url)
+    .bind(order.id)
+    .execute(&state.pool)
+    .await?;
+    if saved.rows_affected() == 0 {
+        let current = fetch_order(&state.pool, order.id).await?;
+        return current
+            .xendit_invoice_url
+            .ok_or_else(|| AppError::Internal("invoice tidak tersimpan".into()));
+    }
+    Ok(url)
+}
+
+async fn list_orders(user: AuthUser, State(state): State<AppState>) -> AppResult<Json<Vec<OrderView>>> {
+    let rows = sqlx::query_as::<_, OrderRow>(AssertSqlSafe(format!(
+        "SELECT {ORDER_COLS} FROM orders WHERE user_id = ? ORDER BY id DESC LIMIT 100"
+    )))
+    .bind(user.id)
+    .fetch_all(&state.pool)
+    .await?;
+    Ok(Json(rows.into_iter().map(to_view).collect()))
+}
+
+async fn get_order(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+) -> AppResult<Json<OrderDetail>> {
+    let order = fetch_owned_order(&state.pool, id, &user).await?;
+    Ok(Json(detail(&state.pool, order).await?))
+}
+
+#[derive(Debug, Serialize)]
+pub struct PayResponse {
+    pub payment_url: String,
+}
+
+async fn pay_order(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+) -> AppResult<Json<PayResponse>> {
+    let order = fetch_owned_order(&state.pool, id, &user).await?;
+    if order.status != "pending_payment" || order.payment_status != "unpaid" {
+        return Err(AppError::BadRequest("pesanan tidak menunggu pembayaran".into()));
+    }
+    let email = user_email(&state.pool, order.user_id).await?;
+    let url = create_invoice_for_order(&state, &order, &email).await?;
+    Ok(Json(PayResponse { payment_url: url }))
+}
+
+/// Membatalkan pesanan yang belum dibayar dan mengembalikan stok. Idempotent: mengembalikan false
+/// jika pesanan sudah tidak lagi berstatus belum dibayar.
+pub async fn cancel_unpaid_tx(tx: &mut Transaction<'_, MySql>, order_id: u64, reason: &str) -> AppResult<bool> {
+    let done = sqlx::query(
+        "UPDATE orders SET payment_status = 'expired', status = 'cancelled'
+         WHERE id = ? AND payment_status = 'unpaid' AND status = 'pending_payment'",
+    )
+    .bind(order_id)
+    .execute(&mut **tx)
+    .await?;
+    if done.rows_affected() == 0 {
+        return Ok(false);
+    }
+
+    let items: Vec<(u64, u32)> = sqlx::query_as("SELECT product_id, qty FROM order_items WHERE order_id = ?")
+        .bind(order_id)
+        .fetch_all(&mut **tx)
+        .await?;
+    for (product_id, qty) in items {
+        sqlx::query("UPDATE products SET stock = stock + ? WHERE id = ?")
+            .bind(qty)
+            .bind(product_id)
+            .execute(&mut **tx)
+            .await?;
+        sqlx::query("INSERT INTO stock_movements (product_id, order_id, change_qty, reason) VALUES (?, ?, ?, ?)")
+            .bind(product_id)
+            .bind(order_id)
+            .bind(qty as i64)
+            .bind(reason)
+            .execute(&mut **tx)
+            .await?;
+    }
+    Ok(true)
+}
+
+// ---------- Admin ----------
+
+#[derive(Debug, Deserialize)]
+pub struct AdminListQuery {
+    pub status: Option<String>,
+    pub page: Option<u32>,
+    pub per_page: Option<u32>,
+}
+
+async fn admin_list_orders(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    Query(q): Query<AdminListQuery>,
+) -> AppResult<Json<Vec<OrderView>>> {
+    let per_page = q.per_page.unwrap_or(50).clamp(1, 200) as i64;
+    let page = q.page.unwrap_or(1).max(1) as i64;
+    let mut builder = QueryBuilder::<MySql>::new(format!("SELECT {ORDER_COLS} FROM orders WHERE 1=1"));
+    if let Some(status) = q.status.as_deref().filter(|s| !s.is_empty()) {
+        builder.push(" AND status = ").push_bind(status.to_string());
+    }
+    builder
+        .push(" ORDER BY id DESC LIMIT ")
+        .push_bind(per_page)
+        .push(" OFFSET ")
+        .push_bind((page - 1) * per_page);
+    let rows: Vec<OrderRow> = builder.build_query_as().fetch_all(&state.pool).await?;
+    Ok(Json(rows.into_iter().map(to_view).collect()))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StatusReq {
+    pub status: String,
+}
+
+/// Alur fulfillment setelah pembayaran: paid → processing → shipped → completed.
+fn allowed_transition(from: &str, to: &str) -> bool {
+    matches!((from, to), ("paid", "processing") | ("processing", "shipped") | ("shipped", "completed"))
+}
+
+async fn admin_update_status(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Json(req): Json<StatusReq>,
+) -> AppResult<Json<OrderView>> {
+    let order = fetch_order(&state.pool, id).await?;
+    if !allowed_transition(&order.status, &req.status) {
+        return Err(AppError::BadRequest(format!(
+            "transisi status tidak diizinkan: {} → {}",
+            order.status, req.status
+        )));
+    }
+    sqlx::query("UPDATE orders SET status = ? WHERE id = ? AND status = ?")
+        .bind(&req.status)
+        .bind(id)
+        .bind(&order.status)
+        .execute(&state.pool)
+        .await?;
+    Ok(Json(to_view(fetch_order(&state.pool, id).await?)))
+}
+
+/// Dipakai oleh webhook & rekonsiliasi: tandai pesanan lunas.
+pub async fn mark_paid_tx(
+    tx: &mut Transaction<'_, MySql>,
+    invoice_no: &str,
+    xendit_invoice_id: &str,
+    paid_amount: Decimal,
+    channel: Option<&str>,
+    raw: &serde_json::Value,
+) -> AppResult<&'static str> {
+    let order: Option<(u64, String, String, Decimal, Option<String>)> = sqlx::query_as(
+        "SELECT id, CAST(status AS CHAR), CAST(payment_status AS CHAR), grand_total, xendit_invoice_id
+         FROM orders WHERE invoice_no = ? FOR UPDATE",
+    )
+    .bind(invoice_no)
+    .fetch_optional(&mut **tx)
+    .await?;
+    let Some((order_id, status, payment_status, grand_total, stored_invoice)) = order else {
+        return Err(AppError::NotFound(format!("pesanan {invoice_no}")));
+    };
+    if stored_invoice.as_deref() != Some(xendit_invoice_id) {
+        tracing::error!(invoice_no, "invoice id tidak cocok dengan pesanan");
+        return Ok("mismatch");
+    }
+    if payment_status == "paid" {
+        return Ok("already_paid");
+    }
+
+    let already_recorded: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM payments WHERE external_ref = ?")
+        .bind(xendit_invoice_id)
+        .fetch_one(&mut **tx)
+        .await?;
+    if already_recorded.0 > 0 {
+        return Ok("already_recorded");
+    }
+
+    if paid_amount != grand_total {
+        tracing::error!(invoice_no, %paid_amount, %grand_total, "nominal pembayaran tidak sama dengan total pesanan");
+        return Ok("amount_mismatch");
+    }
+
+    if payment_status != "unpaid" || status != "pending_payment" {
+        // Pesanan sudah kedaluwarsa/dibatalkan (stok sudah dilepas). Catat, butuh tindak lanjut manual.
+        tracing::error!(invoice_no, "pembayaran diterima untuk pesanan yang sudah dibatalkan; perlu refund manual");
+        insert_payment(tx, order_id, xendit_invoice_id, paid_amount, channel, raw).await?;
+        return Ok("paid_after_cancel");
+    }
+
+    sqlx::query(
+        "UPDATE orders SET payment_status = 'paid', status = 'paid', paid_at = UTC_TIMESTAMP() WHERE id = ?",
+    )
+    .bind(order_id)
+    .execute(&mut **tx)
+    .await?;
+    insert_payment(tx, order_id, xendit_invoice_id, paid_amount, channel, raw).await?;
+    Ok("paid")
+}
+
+async fn insert_payment(
+    tx: &mut Transaction<'_, MySql>,
+    order_id: u64,
+    xendit_invoice_id: &str,
+    amount: Decimal,
+    channel: Option<&str>,
+    raw: &serde_json::Value,
+) -> AppResult<()> {
+    sqlx::query(
+        "INSERT INTO payments (order_id, provider, external_ref, payment_channel, amount, status, raw_payload)
+         VALUES (?, 'xendit', ?, ?, ?, 'settled', ?)",
+    )
+    .bind(order_id)
+    .bind(xendit_invoice_id)
+    .bind(channel)
+    .bind(amount)
+    .bind(raw.to_string())
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}

@@ -1,0 +1,47 @@
+# Produksi (Coolify). Hanya service `frontend` yang di-expose ke internet lewat domain.
+# Variabel wajib diisi di Coolify: JWT_SECRET, DB_PASSWORD, DB_ROOT_PASSWORD, XENDIT_*.
+services:
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: mysql://toko:${DB_PASSWORD:?isi DB_PASSWORD}@db:3306/toko_online
+      BIND_ADDR: 0.0.0.0:8080
+      JWT_SECRET: ${JWT_SECRET:?isi JWT_SECRET (minimal 32 karakter)}
+      CORS_ORIGIN: https://tokoku.cjr.my.id
+      FRONTEND_URL: https://tokoku.cjr.my.id
+      COOKIE_SECURE: "true"
+      XENDIT_SECRET_KEY: ${XENDIT_SECRET_KEY:?isi XENDIT_SECRET_KEY}
+      XENDIT_CALLBACK_TOKEN: ${XENDIT_CALLBACK_TOKEN:?isi XENDIT_CALLBACK_TOKEN}
+      XENDIT_BASE_URL: https://api.xendit.co
+      RUST_LOG: info
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?isi DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: toko_online
+      MARIADB_USER: toko
+      MARIADB_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD}
+      MARIADB_CHARACTER_SET: utf8mb4
+      MARIADB_COLLATION: utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  db_data:

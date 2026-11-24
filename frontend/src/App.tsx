@@ -1,0 +1,45 @@
+import { Route, Routes } from 'react-router';
+import { Layout } from './components/Layout';
+import { RequireAdmin, RequireAuth } from './components/Guards';
+import { AdminLayout } from './components/AdminNav';
+import Catalog from './pages/Catalog';
+import ProductDetail from './pages/ProductDetail';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminPromos from './pages/admin/AdminPromos';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Catalog />} />
+        <Route path="products/:id" element={<ProductDetail />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+
+        <Route element={<RequireAuth />}>
+          <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={<Checkout />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="orders/:id" element={<OrderDetail />} />
+        </Route>
+
+        <Route element={<RequireAdmin />}>
+          <Route path="admin" element={<AdminLayout />}>
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="promos" element={<AdminPromos />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<p className="error">Halaman tidak ditemukan.</p>} />
+      </Route>
+    </Routes>
+  );
+}

@@ -1,0 +1,17 @@
+# Pengembangan lokal:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Membuka port backend dan database ke host. Frontend dev sebaiknya tetap lewat `npm run dev`.
+services:
+  db:
+    ports:
+      - "3306:3306"
+  backend:
+    ports:
+      - "8080:8080"
+    environment:
+      CORS_ORIGIN: http://localhost:5173
+      FRONTEND_URL: http://localhost:5173
+      COOKIE_SECURE: "false"
+      XENDIT_BASE_URL: http://host.docker.internal:3999
+  frontend:
+    ports:
+      - "8081:80"
