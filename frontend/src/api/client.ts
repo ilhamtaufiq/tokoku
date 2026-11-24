@@ -48,14 +48,15 @@ interface RequestOptions {
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, retryOnUnauthorized = true } = opts;
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers['content-type'] = 'application/json';
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['content-type'] = 'application/json';
   if (accessToken) headers['authorization'] = `Bearer ${accessToken}`;
 
   const res = await fetch(`/api${path}`, {
     method,
     headers,
     credentials: 'include',
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
   });
 
   if (res.status === 401 && retryOnUnauthorized && path !== '/auth/refresh') {

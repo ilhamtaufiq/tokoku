@@ -11,6 +11,9 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/target/release/toko_backend /usr/local/bin/toko_backend
-ENV BIND_ADDR=0.0.0.0:8080
+WORKDIR /app
+RUN mkdir -p /app/uploads
+ENV BIND_ADDR=0.0.0.0:8080 \
+    UPLOAD_DIR=/app/uploads
 EXPOSE 8080
 CMD ["toko_backend"]

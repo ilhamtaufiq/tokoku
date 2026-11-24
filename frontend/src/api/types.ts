@@ -26,6 +26,7 @@ export interface Product {
   is_taxable: boolean;
   stock: number;
   is_active: boolean;
+  image_url: string | null;
 }
 
 export interface Page<T> {
@@ -38,6 +39,7 @@ export interface Page<T> {
 export interface CartItem {
   product_id: number;
   name: string;
+  image_url: string | null;
   price: Money;
   is_taxable: boolean;
   is_active: boolean;
@@ -89,6 +91,9 @@ export interface OrderView {
   payment_url: string | null;
   expires_in_seconds: number;
   created_at: string;
+  tracking_number: string | null;
+  refund_note: string | null;
+  buyer_name: string | null;
 }
 
 export interface OrderItem {
@@ -115,4 +120,11 @@ export interface AuthResponse {
   token_type: 'Bearer';
   expires_in: number;
   user: User;
+}
+
+export interface StoreInfo {
+  name: string;
+  npwp: string;
+  address: string;
+  phone: string;
 }

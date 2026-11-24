@@ -31,11 +31,12 @@ pub struct CartItemView {
     pub is_active: bool,
     pub stock: u32,
     pub qty: u32,
+    pub image_url: Option<String>,
 }
 
 async fn get_cart(user: AuthUser, State(state): State<AppState>) -> AppResult<Json<Vec<CartItemView>>> {
     let items = sqlx::query_as::<_, CartItemView>(
-        "SELECT c.product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty
+        "SELECT c.product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty, p.image_url
          FROM cart_items c JOIN products p ON p.id = c.product_id
          WHERE c.user_id = ? ORDER BY c.updated_at",
     )

@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Path, Query, State},
+    extract::{DefaultBodyLimit, Multipart, Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -29,6 +29,7 @@ pub fn admin_router() -> Router<AppState> {
         .route("/categories", post(create_category))
         .route("/products", post(create_product))
         .route("/products/{id}", axum::routing::put(update_product).delete(deactivate_product))
+        .route("/products/{id}/image", post(upload_image).layer(DefaultBodyLimit::max(3 * 1024 * 1024)))
 }
 
 // ---------- Kategori ----------
@@ -87,6 +88,7 @@ struct ProductRow {
     is_taxable: bool,
     stock: u32,
     is_active: bool,
+    image_url: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -107,6 +109,7 @@ pub struct ProductView {
     pub is_taxable: bool,
     pub stock: u32,
     pub is_active: bool,
+    pub image_url: Option<String>,
 }
 
 fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
@@ -124,15 +127,18 @@ fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
         is_taxable: row.is_taxable,
         stock: row.stock,
         is_active: row.is_active,
+        image_url: row.image_url,
     }
 }
 
 const PRODUCT_COLUMNS: &str =
-    "id, category_id, sku, name, description, price, is_taxable, stock, is_active";
+    "id, category_id, sku, name, description, price, is_taxable, stock, is_active, image_url";
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
     pub q: Option<String>,
+    /// newest (default) | price_asc | price_desc | name
+    pub sort: Option<String>,
     pub category_id: Option<u64>,
     pub page: Option<u32>,
     pub per_page: Option<u32>,
@@ -171,7 +177,13 @@ async fn list_products(
     }
 
     let total: i64 = count.build_query_scalar().fetch_one(&state.pool).await?;
-    data.push(" ORDER BY id DESC LIMIT ").push_bind(per_page as i64)
+    let order = match q.sort.as_deref() {
+        Some("price_asc") => " ORDER BY price ASC, id DESC",
+        Some("price_desc") => " ORDER BY price DESC, id DESC",
+        Some("name") => " ORDER BY name ASC, id DESC",
+        _ => " ORDER BY id DESC",
+    };
+    data.push(order).push(" LIMIT ").push_bind(per_page as i64)
         .push(" OFFSET ").push_bind(offset);
     let rows: Vec<ProductRow> = data.build_query_as().fetch_all(&state.pool).await?;
 
@@ -304,4 +316,69 @@ fn map_unique(message: &'static str) -> impl Fn(sqlx::Error) -> AppError {
         sqlx::Error::Database(db) if db.is_unique_violation() => AppError::BadRequest(message.into()),
         _ => AppError::from(e),
     }
+}
+
+const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
+
+fn detect_image_ext(data: &[u8]) -> Option<&'static str> {
+    if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        Some("jpg")
+    } else if data.starts_with(&[0x89, b'P', b'N', b'G']) {
+        Some("png")
+    } else if data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP" {
+        Some("webp")
+    } else {
+        None
+    }
+}
+
+fn random_hex(bytes: usize) -> String {
+    use rand_core::{OsRng, RngCore};
+    let mut buf = vec![0u8; bytes];
+    OsRng.fill_bytes(&mut buf);
+    buf.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Unggah gambar produk (JPEG/PNG/WebP, maks 2 MB). Format dicek dari isi file, bukan dari nama.
+async fn upload_image(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    mut multipart: Multipart,
+) -> AppResult<Json<ProductView>> {
+    fetch_product(&state.pool, id).await?;
+    let field = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::BadRequest(e.to_string()))?
+        .ok_or_else(|| AppError::BadRequest("file wajib dikirim".into()))?;
+    let data = field
+        .bytes()
+        .await
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+
+    if data.len() > MAX_IMAGE_BYTES {
+        return Err(AppError::BadRequest("ukuran gambar maksimal 2 MB".into()));
+    }
+    let ext = detect_image_ext(&data)
+        .ok_or_else(|| AppError::BadRequest("format gambar harus JPEG, PNG, atau WebP".into()))?;
+
+    let file_name = format!("{}.{ext}", random_hex(16));
+    tokio::fs::create_dir_all(&state.cfg.upload_dir)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    tokio::fs::write(std::path::Path::new(&state.cfg.upload_dir).join(&file_name), &data)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let url = format!("/uploads/{file_name}");
+    sqlx::query("UPDATE products SET image_url = ? WHERE id = ?")
+        .bind(&url)
+        .bind(id)
+        .execute(&state.pool)
+        .await?;
+
+    let ppn = settings::ppn_percent(&state.pool).await?;
+    let row = fetch_product(&state.pool, id).await?;
+    Ok(Json(to_view(row, ppn)))
 }

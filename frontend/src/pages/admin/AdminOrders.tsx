@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
@@ -11,10 +11,30 @@ const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
   shipped: 'completed',
 };
 
+type Pending = { id: number; kind: 'ship' | 'refund' } | null;
+
 export default function AdminOrders() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<OrderStatus | ''>('');
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<Pending>(null);
+  const [value, setValue] = useState('');
+
+  const confirm = useMutation({
+    mutationFn: () => {
+      if (!pending) throw new Error('tidak ada aksi');
+      return pending.kind === 'ship'
+        ? api.adminShipOrder(pending.id, value.trim())
+        : api.adminRefundCancel(pending.id, value.trim());
+    },
+    onSuccess: () => {
+      setPending(null);
+      setValue('');
+      setError(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+    },
+    onError: (e) => setError(e instanceof ApiError ? e.message : 'Aksi gagal.'),
+  });
   const orders = useQuery({ queryKey: ['admin-orders', status], queryFn: () => api.adminOrders(status) });
 
   const advance = useMutation({
@@ -44,22 +64,60 @@ export default function AdminOrders() {
           <tbody>
             {orders.data?.map((o) => {
               const next = NEXT[o.status];
+              const canRefund = o.payment_status === 'paid' && (o.status === 'paid' || o.status === 'processing');
+              const isOpen = pending?.id === o.id;
               return (
-                <tr key={o.id}>
+                <Fragment key={o.id}>
+                <tr>
                   <td>{o.invoice_no}</td>
                   <td>{formatDate(o.created_at)}</td>
                   <td>{rp(o.grand_total)}</td>
                   <td>{rp(o.ppn_total)}</td>
-                  <td>{ORDER_STATUS_LABEL[o.status]}</td>
+                  <td>
+                    {ORDER_STATUS_LABEL[o.status]}
+                    {o.tracking_number && <div className="muted small">Resi {o.tracking_number}</div>}
+                  </td>
                   <td>{o.payment_status}</td>
                   <td className="actions">
-                    {next && (
+                    {next === 'shipped' && (
+                      <button className="btn link" onClick={() => { setPending({ id: o.id, kind: 'ship' }); setValue(''); setError(null); }}>
+                        → Dikirim
+                      </button>
+                    )}
+                    {next && next !== 'shipped' && (
                       <button className="btn link" disabled={advance.isPending} onClick={() => advance.mutate({ id: o.id, to: next })}>
                         → {ORDER_STATUS_LABEL[next]}
                       </button>
                     )}
+                    {canRefund && (
+                      <button className="btn link danger" onClick={() => { setPending({ id: o.id, kind: 'refund' }); setValue(''); setError(null); }}>
+                        Batalkan + refund
+                      </button>
+                    )}
                   </td>
                 </tr>
+                {isOpen && pending && (
+                  <tr className="action-row">
+                    <td colSpan={7}>
+                      <form className="inline-action" onSubmit={(e) => { e.preventDefault(); confirm.mutate(); }}>
+                        <label className="grow">
+                          {pending.kind === 'ship'
+                            ? 'Nomor resi pengiriman'
+                            : 'Catatan refund (mis. nomor transfer manual, minimal 5 karakter)'}
+                          <input value={value} onChange={(e) => setValue(e.target.value)} required autoFocus />
+                        </label>
+                        <button className={`btn ${pending.kind === 'refund' ? 'danger-solid' : 'primary'}`} disabled={confirm.isPending}>
+                          {pending.kind === 'ship' ? 'Simpan & tandai dikirim' : 'Konfirmasi pembatalan'}
+                        </button>
+                        <button type="button" className="btn ghost" onClick={() => setPending(null)}>Batal</button>
+                      </form>
+                      {pending.kind === 'refund' && (
+                        <p className="muted small">Uang harus dikembalikan manual lewat dashboard Xendit. Aksi ini hanya mencatat pembatalan dan mengembalikan stok.</p>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               );
             })}
           </tbody>

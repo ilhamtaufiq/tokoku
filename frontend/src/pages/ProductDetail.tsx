@@ -5,6 +5,7 @@ import { api } from '../api';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { rp } from '../lib/money';
+import { ProductImage } from '../components/ProductImage';
 
 const MAX_QTY = 99;
 
@@ -43,26 +44,42 @@ export default function ProductDetail() {
 
   return (
     <section className="detail">
-      <Link to="/" className="muted small">← Kembali ke katalog</Link>
+      <nav className="crumb" aria-label="Breadcrumb">
+        <Link to="/"><span className="material-symbols-outlined" aria-hidden>arrow_back</span>Katalog</Link>
+        <span>/</span>
+        <span className="crumb-current">{p.name}</span>
+      </nav>
+
       <div className="detail-grid">
-        <div className="thumb large" aria-hidden>{p.name.charAt(0).toUpperCase()}</div>
-        <div>
+        <div className="detail-media card">
+          <ProductImage name={p.name} src={p.image_url} large />
+        </div>
+
+        <div className="detail-info">
+          <div className="status-row">
+            {outOfStock
+              ? <span className="tag danger">Habis</span>
+              : <span className="tag ok">Tersedia • {p.stock} unit</span>}
+            <span className="sku">SKU {p.sku}</span>
+          </div>
           <h1>{p.name}</h1>
-          <p className="muted small">SKU {p.sku}</p>
-          <p className="price big">{rp(p.price)}</p>
-          <p className="muted">
+
+          <div className="price-box">
+            <span className="price big">{rp(p.price)}</span>
+            {p.is_taxable && <span className="ppn-chip">Termasuk PPN {Number(p.tax_rate)}%</span>}
+          </div>
+          <p className="ppn-note">
+            <span className="material-symbols-outlined" aria-hidden>receipt_long</span>
             {p.is_taxable
-              ? <>Harga sudah termasuk PPN {Number(p.tax_rate)}% sebesar {rp(p.ppn_included)}.</>
+              ? <>PPN {rp(p.ppn_included)} sudah termasuk dalam harga di atas.</>
               : 'Produk ini tidak kena PPN.'}
           </p>
-          {p.description && <p>{p.description}</p>}
-          <p className="small">
-            {outOfStock ? <span className="tag danger">Stok habis</span> : `Stok tersedia: ${p.stock}`}
-          </p>
+
+          {p.description && <p className="desc">{p.description}</p>}
 
           {!outOfStock && (
             <div className="add-row">
-              <label>
+              <label className="qty-field">
                 Jumlah
                 <input
                   type="number"
@@ -73,7 +90,7 @@ export default function ProductDetail() {
                 />
               </label>
               <button
-                className="btn primary"
+                className="btn primary add-btn"
                 disabled={add.isPending}
                 onClick={() => {
                   if (!user) {
@@ -84,7 +101,8 @@ export default function ProductDetail() {
                   add.mutate();
                 }}
               >
-                {user ? 'Tambah ke keranjang' : 'Masuk untuk belanja'}
+                <span className="material-symbols-outlined" aria-hidden>add_shopping_cart</span>
+                {user ? 'Tambah ke Keranjang' : 'Masuk untuk belanja'}
               </button>
             </div>
           )}
@@ -92,6 +110,12 @@ export default function ProductDetail() {
           {user && cart.data?.some((i) => i.product_id === productId) && (
             <p className="small"><Link to="/cart">Lihat keranjang →</Link></p>
           )}
+
+          <ul className="trust-row">
+            <li><span className="material-symbols-outlined" aria-hidden>verified</span>Harga final termasuk PPN</li>
+            <li><span className="material-symbols-outlined" aria-hidden>receipt_long</span>Invoice dengan rincian pajak</li>
+            <li><span className="material-symbols-outlined" aria-hidden>local_shipping</span>Ongkir tanpa PPN</li>
+          </ul>
         </div>
       </div>
     </section>

@@ -51,11 +51,21 @@ export default function OrderDetail() {
         </span>
       </div>
 
+      <div className="no-print">
+        <Link to={`/orders/${o.id}/invoice`} className="btn ghost small-btn">Lihat & cetak invoice</Link>
+      </div>
+
+      {o.tracking_number && (
+        <p className="callout-info">Nomor resi pengiriman: <strong>{o.tracking_number}</strong></p>
+      )}
+      {o.status === 'cancelled' && o.payment_status === 'refunded' && (
+        <p className="error">Pesanan dibatalkan dan dana dikembalikan{o.refund_note ? `: ${o.refund_note}` : '.'}</p>
+      )}
       {o.payment_status === 'paid' && (
         <p className="success">Pembayaran diterima. Terima kasih, pesananmu sedang kami proses.</p>
       )}
       {o.status === 'cancelled' && (
-        <p className="error">Pesanan dibatalkan karena tidak dibayar tepat waktu. Stok sudah dikembalikan.</p>
+        o.payment_status !== 'refunded' && <p className="error">Pesanan dibatalkan karena tidak dibayar tepat waktu. Stok sudah dikembalikan.</p>
       )}
       {waiting && (
         <div className="card callout">

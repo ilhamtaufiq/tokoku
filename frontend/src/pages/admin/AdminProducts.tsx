@@ -65,7 +65,10 @@ export default function AdminProducts() {
             {products.data?.items.map((p) => (
               <tr key={p.id} className={p.is_active ? '' : 'muted'}>
                 <td>{p.sku}</td>
-                <td>{p.name}</td>
+                <td className="name-cell">
+                  <span className="mini-thumb">{p.image_url ? <img src={p.image_url} alt="" /> : p.name.charAt(0)}</span>
+                  {p.name}
+                </td>
                 <td>{rp(p.price)}</td>
                 <td>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>
                 <td>{p.stock}</td>
@@ -118,6 +121,19 @@ function ProductForm({
   onError: (e: unknown) => void;
 }) {
   const [form, setForm] = useState<ProductInput>(initial);
+  const [file, setFile] = useState<File | null>(null);
+  const [imageMsg, setImageMsg] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const queryClient = useQueryClient();
+  const upload = useMutation({
+    mutationFn: () => api.adminUploadProductImage(productId as number, file as File),
+    onSuccess: () => {
+      setImageMsg({ kind: 'ok', text: 'Gambar diunggah.' });
+      setFile(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (e) => setImageMsg({ kind: 'error', text: e instanceof ApiError ? e.message : 'Gagal mengunggah gambar.' }),
+  });
   const save = useMutation({
     mutationFn: () => (isNew ? api.adminCreateProduct(form) : api.adminUpdateProduct(productId as number, form)),
     onSuccess: onSaved,
@@ -179,6 +195,32 @@ function ProductForm({
         <button className="btn primary" disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</button>
         <button type="button" className="btn ghost" onClick={onCancel}>Batal</button>
       </div>
+
+      {!isNew && (
+        <div className="image-upload">
+          <h2>Gambar produk</h2>
+          <p className="muted small">JPEG, PNG, atau WebP, maksimal 2 MB.</p>
+          <div className="actions">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null);
+                setImageMsg(null);
+              }}
+            />
+            <button
+              type="button"
+              className="btn"
+              disabled={!file || upload.isPending}
+              onClick={() => upload.mutate()}
+            >
+              {upload.isPending ? 'Mengunggah…' : 'Unggah gambar'}
+            </button>
+          </div>
+          {imageMsg && <p className={imageMsg.kind === 'ok' ? 'success' : 'error'}>{imageMsg.text}</p>}
+        </div>
+      )}
     </form>
   );
 }

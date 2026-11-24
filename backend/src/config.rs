@@ -11,6 +11,7 @@ pub struct Config {
     pub xendit_secret_key: String,
     pub xendit_callback_token: String,
     pub xendit_base_url: String,
+    pub upload_dir: String,
 }
 
 impl Config {
@@ -31,6 +32,7 @@ impl Config {
             xendit_callback_token: std::env::var("XENDIT_CALLBACK_TOKEN").unwrap_or_default(),
             xendit_base_url: std::env::var("XENDIT_BASE_URL")
                 .unwrap_or_else(|_| "https://api.xendit.co".into()),
+            upload_dir: std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "uploads".into()),
         })
     }
 }

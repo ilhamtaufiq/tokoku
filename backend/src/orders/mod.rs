@@ -29,12 +29,14 @@ pub fn admin_router() -> Router<AppState> {
     Router::new()
         .route("/orders", get(admin_list_orders))
         .route("/orders/{id}/status", patch(admin_update_status))
+        .route("/orders/{id}/refund-cancel", post(admin_refund_cancel))
 }
 
 const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS status,
     CAST(payment_status AS CHAR) AS payment_status, subtotal, discount_total, dpp, ppn_rate,
     ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code,
-    xendit_invoice_url, created_at,
+    xendit_invoice_url, created_at, tracking_number, refund_note,
+    (SELECT name FROM users WHERE users.id = orders.user_id) AS buyer_name,
     TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), expires_at) AS seconds_left";
 
 #[derive(Debug, FromRow)]
@@ -56,6 +58,9 @@ pub struct OrderRow {
     pub promo_code: Option<String>,
     pub xendit_invoice_url: Option<String>,
     pub created_at: DateTime<Utc>,
+    pub tracking_number: Option<String>,
+    pub refund_note: Option<String>,
+    pub buyer_name: Option<String>,
     pub seconds_left: i64,
 }
 
@@ -99,6 +104,9 @@ pub struct OrderView {
     pub payment_url: Option<String>,
     pub expires_in_seconds: i64,
     pub created_at: DateTime<Utc>,
+    pub tracking_number: Option<String>,
+    pub refund_note: Option<String>,
+    pub buyer_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -134,6 +142,9 @@ fn to_view(o: OrderRow) -> OrderView {
         payment_url: o.xendit_invoice_url,
         expires_in_seconds: o.seconds_left.max(0),
         created_at: o.created_at,
+        tracking_number: o.tracking_number,
+        refund_note: o.refund_note,
+        buyer_name: o.buyer_name,
     }
 }
 
@@ -566,6 +577,7 @@ async fn admin_list_orders(
 #[derive(Debug, Deserialize)]
 pub struct StatusReq {
     pub status: String,
+    pub tracking_number: Option<String>,
 }
 
 /// Alur fulfillment setelah pembayaran: paid → processing → shipped → completed.
@@ -586,12 +598,25 @@ async fn admin_update_status(
             order.status, req.status
         )));
     }
-    sqlx::query("UPDATE orders SET status = ? WHERE id = ? AND status = ?")
-        .bind(&req.status)
-        .bind(id)
-        .bind(&order.status)
-        .execute(&state.pool)
-        .await?;
+    if req.status == "shipped" {
+        let resi = req.tracking_number.as_deref().map(str::trim).unwrap_or("");
+        if resi.is_empty() || resi.len() > 64 {
+            return Err(AppError::BadRequest("nomor resi wajib diisi (maks 64 karakter)".into()));
+        }
+        sqlx::query("UPDATE orders SET status = 'shipped', tracking_number = ?, shipped_at = UTC_TIMESTAMP() WHERE id = ? AND status = ?")
+            .bind(resi)
+            .bind(id)
+            .bind(&order.status)
+            .execute(&state.pool)
+            .await?;
+    } else {
+        sqlx::query("UPDATE orders SET status = ? WHERE id = ? AND status = ?")
+            .bind(&req.status)
+            .bind(id)
+            .bind(&order.status)
+            .execute(&state.pool)
+            .await?;
+    }
     Ok(Json(to_view(fetch_order(&state.pool, id).await?)))
 }
 
@@ -672,4 +697,68 @@ async fn insert_payment(
     .execute(&mut **tx)
     .await?;
     Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RefundReq {
+    pub note: String,
+}
+
+/// Pembatalan pesanan yang sudah lunas tetapi belum dikirim. Uang dikembalikan MANUAL lewat dashboard
+/// Xendit; admin mencatat catatan refund di sini. Stok dikembalikan.
+async fn admin_refund_cancel(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Json(req): Json<RefundReq>,
+) -> AppResult<Json<OrderView>> {
+    let note = req.note.trim().to_string();
+    if note.len() < 5 || note.len() > 500 {
+        return Err(AppError::BadRequest("catatan refund wajib diisi (5–500 karakter), misalnya nomor transfer".into()));
+    }
+    let mut tx = state.pool.begin().await?;
+    let order: Option<(u64, String, String)> = sqlx::query_as(
+        "SELECT id, CAST(status AS CHAR), CAST(payment_status AS CHAR) FROM orders WHERE id = ? FOR UPDATE",
+    )
+    .bind(id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some((order_id, status, payment_status)) = order else {
+        return Err(AppError::NotFound(format!("pesanan {id}")));
+    };
+    if payment_status != "paid" || !matches!(status.as_str(), "paid" | "processing") {
+        return Err(AppError::BadRequest(
+            "hanya pesanan lunas yang belum dikirim yang bisa dibatalkan dengan refund".into(),
+        ));
+    }
+
+    sqlx::query(
+        "UPDATE orders SET status = 'cancelled', payment_status = 'refunded', cancelled_at = UTC_TIMESTAMP(), refund_note = ?
+         WHERE id = ?",
+    )
+    .bind(&note)
+    .bind(order_id)
+    .execute(&mut *tx)
+    .await?;
+
+    let items: Vec<(u64, u32)> = sqlx::query_as("SELECT product_id, qty FROM order_items WHERE order_id = ?")
+        .bind(order_id)
+        .fetch_all(&mut *tx)
+        .await?;
+    for (product_id, qty) in items {
+        sqlx::query("UPDATE products SET stock = stock + ? WHERE id = ?")
+            .bind(qty)
+            .bind(product_id)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("INSERT INTO stock_movements (product_id, order_id, change_qty, reason) VALUES (?, ?, ?, 'refund_cancel')")
+            .bind(product_id)
+            .bind(order_id)
+            .bind(qty as i64)
+            .execute(&mut *tx)
+            .await?;
+    }
+    tx.commit().await?;
+    tracing::info!(order_id, "pesanan dibatalkan dengan refund manual");
+    Ok(Json(to_view(fetch_order(&state.pool, order_id).await?)))
 }

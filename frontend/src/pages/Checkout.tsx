@@ -58,6 +58,7 @@ export default function Checkout() {
   return (
     <section>
       <h1>Checkout</h1>
+      <p className="muted page-sub">Lengkapi alamat, lalu bayar lewat Xendit.</p>
       {!ready && (
         <p className="error">Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
       )}
@@ -129,7 +130,7 @@ export default function Checkout() {
         </form>
 
         <aside className="card summary">
-          <h2>Rincian pembayaran</h2>
+          <h2>Ringkasan pesanan</h2>
           {preview.isPending && <p className="muted">Menghitung…</p>}
           {preview.data && <Breakdown data={preview.data} />}
           <p className="muted small">Harga sudah termasuk PPN. Ongkos kirim tidak dikenai PPN.</p>

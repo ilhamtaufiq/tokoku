@@ -1,12 +1,15 @@
 use axum::{extract::State, http::StatusCode, routing::get, Json, Router};
 use serde_json::{json, Value};
 
-use crate::{auth, cart, catalog, orders, payments, pricing, promo, state::AppState};
+use tower_http::services::ServeDir;
+
+use crate::{auth, cart, catalog, orders, payments, pricing, promo, settings, state::AppState};
 
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
         .nest("/auth", auth::router())
         .merge(catalog::public_router())
+        .route("/store", get(settings::store_info))
         .nest("/cart", cart::router())
         .nest("/orders", orders::customer_router())
         .nest("/pricing", pricing::handler::router())
@@ -15,13 +18,15 @@ pub fn router(state: AppState) -> Router {
             "/admin",
             catalog::admin_router()
                 .merge(promo::admin_router())
-                .merge(orders::admin_router()),
+                .merge(orders::admin_router())
+                .route("/store", axum::routing::put(settings::admin_update_store)),
         );
 
     Router::new()
         .route("/healthz", get(healthz))
         .route("/readyz", get(readyz))
         .nest("/api", api)
+        .nest_service("/uploads", ServeDir::new(state.cfg.upload_dir.clone()))
         .with_state(state)
 }
 

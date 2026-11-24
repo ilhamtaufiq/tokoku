@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': { target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8080', changeOrigin: false },
+      '/uploads': { target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8080', changeOrigin: false },
     },
   },
 });

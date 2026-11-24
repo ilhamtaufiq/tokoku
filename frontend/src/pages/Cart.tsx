@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import { Breakdown } from '../components/Breakdown';
 import { rp } from '../lib/money';
+import { ProductImage } from '../components/ProductImage';
 
 export default function Cart() {
   const queryClient = useQueryClient();
@@ -42,7 +43,8 @@ export default function Cart() {
 
   return (
     <section>
-      <h1>Keranjang</h1>
+      <h1>Keranjang belanja</h1>
+      <p className="muted page-sub">Periksa jumlah barang sebelum lanjut ke pembayaran.</p>
       {issues.length > 0 && (
         <p className="error">
           Ada produk yang tidak tersedia atau stoknya kurang: {issues.map((i) => i.name).join(', ')}. Sesuaikan jumlahnya sebelum checkout.
@@ -54,6 +56,9 @@ export default function Cart() {
             const unavailable = !item.is_active;
             return (
               <li key={item.product_id} className="card cart-item">
+                <div className="cart-thumb">
+                  <ProductImage name={item.name} src={item.image_url} />
+                </div>
                 <div className="grow">
                   <Link to={`/products/${item.product_id}`}><strong>{item.name}</strong></Link>
                   <p className="muted small">
@@ -87,11 +92,11 @@ export default function Cart() {
         </ul>
 
         <aside className="card summary">
-          <h2>Ringkasan</h2>
+          <h2>Ringkasan pesanan</h2>
           {preview.isPending && active.length > 0 && <p className="muted">Menghitung…</p>}
           {preview.isError && <p className="error">{(preview.error as Error).message}</p>}
           {preview.data && <Breakdown data={preview.data} />}
-          <p className="muted small">Ongkos kirim final dihitung saat checkout.</p>
+          <p className="muted small">Ongkos kirim final dihitung saat checkout dan tidak dikenai PPN.</p>
           <Link
             to="/checkout"
             className={`btn primary block ${active.length === 0 || issues.length > 0 ? 'disabled' : ''}`}

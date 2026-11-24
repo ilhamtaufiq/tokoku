@@ -7,6 +7,7 @@ export function AdminLayout() {
         <NavLink to="/admin/products">Produk</NavLink>
         <NavLink to="/admin/orders">Pesanan</NavLink>
         <NavLink to="/admin/promos">Promo</NavLink>
+        <NavLink to="/admin/store">Data toko</NavLink>
       </nav>
       <Outlet />
     </div>

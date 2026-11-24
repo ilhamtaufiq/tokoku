@@ -13,6 +13,9 @@ import Register from './pages/Register';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminPromos from './pages/admin/AdminPromos';
+import AdminStore from './pages/admin/AdminStore';
+import Invoice from './pages/Invoice';
+import { Privacy, Refund, Terms } from './pages/Legal';
 
 export default function App() {
   return (
@@ -22,12 +25,16 @@ export default function App() {
         <Route path="products/:id" element={<ProductDetail />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="syarat" element={<Terms />} />
+        <Route path="privasi" element={<Privacy />} />
+        <Route path="pengembalian" element={<Refund />} />
 
         <Route element={<RequireAuth />}>
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Checkout />} />
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetail />} />
+          <Route path="orders/:id/invoice" element={<Invoice />} />
         </Route>
 
         <Route element={<RequireAdmin />}>
@@ -35,6 +42,7 @@ export default function App() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="promos" element={<AdminPromos />} />
+            <Route path="store" element={<AdminStore />} />
           </Route>
         </Route>
 

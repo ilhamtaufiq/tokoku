@@ -10,6 +10,7 @@ import type {
   OrderView,
   Page,
   Product,
+  StoreInfo,
   User,
 } from './types';
 
@@ -24,7 +25,7 @@ export const api = {
 
   // Katalog
   categories: () => request<Category[]>('/categories'),
-  products: (params: { q?: string; category_id?: number; page?: number; per_page?: number }) => {
+  products: (params: { q?: string; category_id?: number; sort?: string; page?: number; per_page?: number }) => {
     const qs = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== '') qs.set(k, String(v));
@@ -61,6 +62,17 @@ export const api = {
     request<OrderView[]>(`/admin/orders${status ? `?status=${status}` : ''}`),
   adminSetOrderStatus: (id: number, status: OrderStatus) =>
     request<OrderView>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status } }),
+  adminUploadProductImage: (id: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<Product>(`/admin/products/${id}/image`, { method: 'POST', body: form });
+  },
+  adminShipOrder: (id: number, tracking_number: string) =>
+    request<OrderView>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status: 'shipped', tracking_number } }),
+  adminRefundCancel: (id: number, note: string) =>
+    request<OrderView>(`/admin/orders/${id}/refund-cancel`, { method: 'POST', body: { note } }),
+  store: () => request<StoreInfo>('/store'),
+  adminUpdateStore: (body: StoreInfo) => request<StoreInfo>('/admin/store', { method: 'PUT', body }),
   adminCreatePromo: (body: PromoInput) => request<{ id: number; code: string }>('/admin/promos', { method: 'POST', body }),
 };
 
