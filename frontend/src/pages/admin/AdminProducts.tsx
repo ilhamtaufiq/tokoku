@@ -65,9 +65,11 @@ export default function AdminProducts() {
             {products.data?.items.map((p) => (
               <tr key={p.id} className={p.is_active ? '' : 'muted'}>
                 <td>{p.sku}</td>
-                <td className="name-cell">
-                  <span className="mini-thumb">{p.image_url ? <img src={p.image_url} alt="" /> : p.name.charAt(0)}</span>
-                  {p.name}
+                <td>
+                  <div className="name-cell">
+                    <span className="mini-thumb">{p.image_url ? <img src={p.image_url} alt="" /> : p.name.charAt(0)}</span>
+                    {p.name}
+                  </div>
                 </td>
                 <td>{rp(p.price)}</td>
                 <td>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>

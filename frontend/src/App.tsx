@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router';
 import { Layout } from './components/Layout';
 import { RequireAdmin, RequireAuth } from './components/Guards';
 import { AdminLayout } from './components/AdminNav';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import Catalog from './pages/Catalog';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
@@ -37,16 +38,17 @@ export default function App() {
           <Route path="orders/:id/invoice" element={<Invoice />} />
         </Route>
 
-        <Route element={<RequireAdmin />}>
-          <Route path="admin" element={<AdminLayout />}>
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="promos" element={<AdminPromos />} />
-            <Route path="store" element={<AdminStore />} />
-          </Route>
-        </Route>
-
         <Route path="*" element={<p className="error">Halaman tidak ditemukan.</p>} />
+      </Route>
+
+      <Route element={<RequireAdmin />}>
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="promos" element={<AdminPromos />} />
+          <Route path="store" element={<AdminStore />} />
+        </Route>
       </Route>
     </Routes>
   );

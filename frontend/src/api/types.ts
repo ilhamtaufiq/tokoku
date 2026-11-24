@@ -128,3 +128,22 @@ export interface StoreInfo {
   address: string;
   phone: string;
 }
+
+export interface AdminDashboard {
+  revenue_total: Money;
+  orders_to_ship: number;
+  orders_total: number;
+  active_products: number;
+  low_stock_count: number;
+  low_stock: { id: number; sku: string; name: string; stock: number }[];
+  sales_7d: { day: string; total: Money }[];
+  recent_orders: {
+    id: number;
+    invoice_no: string;
+    buyer_name: string | null;
+    status: OrderStatus;
+    payment_status: PaymentStatus;
+    grand_total: Money;
+    created_at: string;
+  }[];
+}

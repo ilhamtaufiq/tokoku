@@ -9,6 +9,7 @@ import type {
   OrderStatus,
   OrderView,
   Page,
+  AdminDashboard,
   Product,
   StoreInfo,
   User,
@@ -73,6 +74,7 @@ export const api = {
     request<OrderView>(`/admin/orders/${id}/refund-cancel`, { method: 'POST', body: { note } }),
   store: () => request<StoreInfo>('/store'),
   adminUpdateStore: (body: StoreInfo) => request<StoreInfo>('/admin/store', { method: 'PUT', body }),
+  adminDashboard: () => request<AdminDashboard>('/admin/dashboard'),
   adminCreatePromo: (body: PromoInput) => request<{ id: number; code: string }>('/admin/promos', { method: 'POST', body }),
 };
 

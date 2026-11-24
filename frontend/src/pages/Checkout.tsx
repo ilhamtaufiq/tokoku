@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import { ApiError } from '../api/client';
 import { Breakdown } from '../components/Breakdown';
+import { rp } from '../lib/money';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -58,82 +59,115 @@ export default function Checkout() {
   return (
     <section>
       <h1>Checkout</h1>
-      <p className="muted page-sub">Lengkapi alamat, lalu bayar lewat Xendit.</p>
+      <p className="muted page-sub">Lengkapi alamat, lalu bayar dengan aman lewat Xendit.</p>
       {!ready && (
         <p className="error">Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
       )}
-      <div className="cart-grid">
+
+      <div className="checkout-grid">
         <form
-          className="card form"
+          className="checkout-main"
           onSubmit={(e) => {
             e.preventDefault();
             setError(null);
             checkout.mutate();
           }}
         >
-          <label>
-            Alamat pengiriman
-            <textarea
-              rows={4}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Nama penerima, alamat lengkap, kota, kode pos, nomor telepon"
-              required
-              minLength={10}
-            />
-          </label>
-
-          <label>
-            NPWP pembeli <span className="muted small">(opsional, untuk faktur pajak)</span>
-            <input value={npwp} onChange={(e) => setNpwp(e.target.value)} placeholder="15 atau 16 digit" />
-          </label>
-
-          <div className="promo">
-            <label className="grow">
-              Kode promo
-              <input
-                value={promoInput}
-                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                placeholder="Masukkan kode promo"
+          <div className="card section-card">
+            <h2><span className="material-symbols-outlined" aria-hidden>location_on</span>Alamat pengiriman</h2>
+            <p className="section-desc">Tulis alamat lengkap termasuk nama penerima dan nomor telepon.</p>
+            <label>
+              Alamat lengkap
+              <textarea
+                rows={4}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Nama penerima, alamat lengkap, kota, kode pos, nomor telepon"
+                required
+                minLength={10}
               />
             </label>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setAppliedPromo(promoInput.trim())}
-              disabled={!promoInput.trim()}
-            >
-              Terapkan
-            </button>
-            {appliedPromo && (
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => {
-                  setAppliedPromo('');
-                  setPromoInput('');
-                }}
-              >
-                Hapus
-              </button>
-            )}
           </div>
-          {preview.isError && <p className="error">{(preview.error as Error).message}</p>}
-          {appliedPromo && preview.data && <p className="success small">Promo {appliedPromo} diterapkan.</p>}
+
+          <div className="card section-card">
+            <h2><span className="material-symbols-outlined" aria-hidden>receipt_long</span>Faktur pajak</h2>
+            <p className="section-desc">Opsional. Isi jika kamu membutuhkan faktur pajak atas nama NPWP.</p>
+            <label>
+              NPWP pembeli
+              <input value={npwp} onChange={(e) => setNpwp(e.target.value)} placeholder="15 atau 16 digit" />
+            </label>
+          </div>
+
+          <div className="card section-card">
+            <h2><span className="material-symbols-outlined" aria-hidden>payments</span>Metode pembayaran</h2>
+            <p className="section-desc">Pilih metode setelah diarahkan ke halaman pembayaran Xendit.</p>
+            <div className="pay-methods">
+              <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>account_balance</span><strong>Virtual Account</strong>Transfer bank</div>
+              <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>qr_code_2</span><strong>QRIS</strong>Scan dari aplikasi apa pun</div>
+              <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>account_balance_wallet</span><strong>E-wallet</strong>Saldo dompet digital</div>
+            </div>
+          </div>
 
           {error && <p className="error">{error}</p>}
-
-          <button className="btn primary block" type="submit" disabled={!canSubmit}>
-            {checkout.isPending ? 'Memproses…' : 'Bayar sekarang'}
-          </button>
-          <p className="muted small">Kamu akan diarahkan ke halaman pembayaran Xendit. Pesanan dibatalkan otomatis jika tidak dibayar dalam 24 jam.</p>
         </form>
 
         <aside className="card summary">
           <h2>Ringkasan pesanan</h2>
-          {preview.isPending && <p className="muted">Menghitung…</p>}
-          {preview.data && <Breakdown data={preview.data} />}
-          <p className="muted small">Harga sudah termasuk PPN. Ongkos kirim tidak dikenai PPN.</p>
+          <ul className="order-lines">
+            {items.map((i) => (
+              <li key={i.product_id}>
+                <div>
+                  <strong>{i.name}</strong>
+                  <div className="muted">{i.qty} × {rp(i.price)}</div>
+                </div>
+                <span>{rp(Number(i.price) * i.qty)}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="promo-row">
+            <input
+              value={promoInput}
+              onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+              placeholder="Kode promo"
+              aria-label="Kode promo"
+            />
+            <button type="button" className="btn" onClick={() => setAppliedPromo(promoInput.trim())} disabled={!promoInput.trim()}>
+              Terapkan
+            </button>
+          </div>
+          {appliedPromo && (
+            <p className="small muted promo-state">
+              {preview.data ? `Promo ${appliedPromo} diterapkan.` : ''}
+              <button type="button" className="btn link small-btn" onClick={() => { setAppliedPromo(''); setPromoInput(''); }}>Hapus</button>
+            </p>
+          )}
+          {preview.isError && <p className="error">{(preview.error as Error).message}</p>}
+
+          <div className="summary-break">
+            {preview.isPending && <p className="muted">Menghitung…</p>}
+            {preview.data && <Breakdown data={preview.data} />}
+          </div>
+
+          <button
+            className="btn primary block checkout-cta"
+            disabled={!canSubmit}
+            onClick={(e) => {
+              e.preventDefault();
+              setError(null);
+              checkout.mutate();
+            }}
+          >
+            {checkout.isPending
+              ? 'Memproses…'
+              : preview.data
+                ? `Bayar ${rp(preview.data.grand_total)}`
+                : 'Bayar sekarang'}
+          </button>
+          <p className="guarantee">
+            <span className="material-symbols-outlined" aria-hidden>verified_user</span>
+            Pembayaran diproses Xendit. Pesanan dibatalkan otomatis jika tidak dibayar dalam 24 jam.
+          </p>
         </aside>
       </div>
     </section>

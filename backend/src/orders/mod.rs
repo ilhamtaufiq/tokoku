@@ -30,6 +30,7 @@ pub fn admin_router() -> Router<AppState> {
         .route("/orders", get(admin_list_orders))
         .route("/orders/{id}/status", patch(admin_update_status))
         .route("/orders/{id}/refund-cancel", post(admin_refund_cancel))
+        .route("/dashboard", get(admin_dashboard))
 }
 
 const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS status,
@@ -761,4 +762,112 @@ async fn admin_refund_cancel(
     tx.commit().await?;
     tracing::info!(order_id, "pesanan dibatalkan dengan refund manual");
     Ok(Json(to_view(fetch_order(&state.pool, order_id).await?)))
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct RecentOrder {
+    pub id: u64,
+    pub invoice_no: String,
+    pub buyer_name: Option<String>,
+    pub status: String,
+    pub payment_status: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub grand_total: Decimal,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct LowStock {
+    pub id: u64,
+    pub sku: String,
+    pub name: String,
+    pub stock: u32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DayTotal {
+    pub day: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total: Decimal,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Dashboard {
+    #[serde(with = "rust_decimal::serde::str")]
+    pub revenue_total: Decimal,
+    pub orders_to_ship: i64,
+    pub orders_total: i64,
+    pub active_products: i64,
+    pub low_stock_count: i64,
+    pub low_stock: Vec<LowStock>,
+    pub sales_7d: Vec<DayTotal>,
+    pub recent_orders: Vec<RecentOrder>,
+}
+
+/// Ringkasan untuk dashboard admin. Pendapatan hanya dari pesanan yang sudah dibayar (tidak termasuk refund).
+async fn admin_dashboard(_admin: AdminUser, State(state): State<AppState>) -> AppResult<Json<Dashboard>> {
+    let pool = &state.pool;
+    let (revenue_total,): (Decimal,) = sqlx::query_as(
+        "SELECT CAST(COALESCE(SUM(grand_total), 0) AS DECIMAL(15,2)) FROM orders WHERE payment_status = 'paid'",
+    )
+    .fetch_one(pool)
+    .await?;
+    let (orders_to_ship,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM orders WHERE status = 'paid'")
+        .fetch_one(pool)
+        .await?;
+    let (orders_total,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM orders WHERE payment_status = 'paid'")
+        .fetch_one(pool)
+        .await?;
+    let (active_products,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM products WHERE is_active = TRUE")
+        .fetch_one(pool)
+        .await?;
+    let (low_stock_count,): (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM products WHERE is_active = TRUE AND stock <= 5",
+    )
+    .fetch_one(pool)
+    .await?;
+    let low_stock: Vec<LowStock> = sqlx::query_as(
+        "SELECT id, sku, name, stock FROM products WHERE is_active = TRUE AND stock <= 5 ORDER BY stock ASC, id DESC LIMIT 5",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let daily: Vec<(String, Decimal)> = sqlx::query_as(
+        "SELECT DATE_FORMAT(paid_at, '%Y-%m-%d'), CAST(SUM(grand_total) AS DECIMAL(15,2))
+         FROM orders WHERE payment_status = 'paid' AND paid_at >= UTC_DATE() - INTERVAL 6 DAY
+         GROUP BY DATE_FORMAT(paid_at, '%Y-%m-%d')",
+    )
+    .fetch_all(pool)
+    .await?;
+    // Isi hari tanpa penjualan dengan 0, urut dari 6 hari lalu sampai hari ini (UTC)
+    let today = Utc::now().date_naive();
+    let sales_7d = (0..7)
+        .rev()
+        .map(|back| {
+            let day = (today - chrono::Duration::days(back)).format("%Y-%m-%d").to_string();
+            let total = daily.iter().find(|(d, _)| *d == day).map(|(_, t)| *t).unwrap_or(Decimal::ZERO);
+            DayTotal { day, total }
+        })
+        .collect();
+
+    let recent_orders: Vec<RecentOrder> = sqlx::query_as(
+        "SELECT id, invoice_no,
+            (SELECT name FROM users WHERE users.id = orders.user_id) AS buyer_name,
+            CAST(status AS CHAR) AS status, CAST(payment_status AS CHAR) AS payment_status,
+            grand_total, created_at
+         FROM orders ORDER BY id DESC LIMIT 6",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(Json(Dashboard {
+        revenue_total,
+        orders_to_ship,
+        orders_total,
+        active_products,
+        low_stock_count,
+        low_stock,
+        sales_7d,
+        recent_orders,
+    }))
 }
