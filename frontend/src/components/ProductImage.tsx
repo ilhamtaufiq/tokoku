@@ -29,7 +29,7 @@ export function ProductImage({
   }
   return (
     <div className={base} aria-hidden>
-      {name.charAt(0).toUpperCase()}
+      <span className="material-symbols-outlined text-[40px] text-outline">inventory_2</span>
     </div>
   );
 }

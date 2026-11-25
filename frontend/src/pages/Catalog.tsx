@@ -70,12 +70,12 @@ export default function Catalog() {
         <div className="animate-fade-up mb-6 flex flex-col items-center gap-5 rounded-banner bg-primary px-6 py-14 text-center text-white max-[760px]:rounded-card max-[760px]:px-5 max-[760px]:py-10">
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-white/15 px-3 py-1 text-xs font-semibold">
             <span className="material-symbols-outlined text-base" aria-hidden>sell</span>
-            Harga jujur, pajak transparan
+            Harga sudah termasuk PPN
           </span>
           <h1 className="m-0 max-w-[720px] font-display text-[40px] font-bold leading-[46px] tracking-tight text-white max-[760px]:text-[28px] max-[760px]:leading-[34px]">
             Perlengkapan sekolah & elektronik, harga sudah termasuk PPN.
           </h1>
-          <p className="m-0 text-[15px] text-white/85 max-[760px]:text-sm">Ongkir tidak dikenai PPN. Invoice lengkap di setiap pesanan.</p>
+          <p className="m-0 text-[15px] text-white/85 max-[760px]:text-sm">Ongkir tidak kena PPN. Invoice keluar untuk setiap pesanan.</p>
           <a href="#katalog" className="mt-1 inline-flex h-12 items-center rounded-pill bg-white px-7 text-sm font-bold text-primary no-underline transition-transform duration-150 hover:-translate-y-0.5">
             Belanja sekarang
           </a>

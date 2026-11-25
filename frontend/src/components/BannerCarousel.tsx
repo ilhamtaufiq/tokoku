@@ -22,7 +22,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
 
   return (
     <div
-      className="relative isolate mb-6 h-[300px] overflow-hidden rounded-banner bg-[linear-gradient(120deg,var(--c-primary)_0%,#3b5bd6_100%)] text-white max-[760px]:h-[230px] max-[760px]:rounded-card"
+      className="relative isolate mb-6 h-[300px] overflow-hidden rounded-banner bg-primary text-white max-[760px]:h-[230px] max-[760px]:rounded-card"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}

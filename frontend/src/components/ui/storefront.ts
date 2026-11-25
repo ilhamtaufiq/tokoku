@@ -12,7 +12,7 @@ export const btnPrimary = 'border border-primary bg-primary text-on-primary shad
 export const btnOutline = 'border-[1.5px] border-primary bg-surface text-primary hover:bg-secondary-container';
 
 /** Kartu permukaan standar. */
-export const card = 'rounded-card border border-outline-soft/70 bg-surface shadow-card';
+export const card = 'rounded-card border border-outline-soft bg-surface';
 
 /** Keadaan kosong (empty state) di dalam kartu. */
 export const emptyNote =
