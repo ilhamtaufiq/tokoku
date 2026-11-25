@@ -12,7 +12,7 @@ const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
   shipped: 'completed',
 };
 
-type Pending = { id: number; kind: 'ship' | 'refund' } | null;
+type Pending = { id: number; kind: 'process' | 'ship' | 'refund' } | null;
 
 const STATUS_CHIPS: { value: OrderStatus | ''; label: string }[] = [
   { value: '', label: 'Semua' },
@@ -35,6 +35,11 @@ export default function AdminOrders() {
   const confirm = useMutation({
     mutationFn: () => {
       if (!pending) throw new Error('tidak ada aksi');
+      if (pending.kind === 'process') {
+        const days = Number(value);
+        if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error('Estimasi harus 1–365 hari.');
+        return api.adminProcessOrder(pending.id, days);
+      }
       return pending.kind === 'ship'
         ? api.adminShipOrder(pending.id, value.trim())
         : api.adminRefundCancel(pending.id, value.trim());
@@ -103,6 +108,7 @@ export default function AdminOrders() {
                   <td>{rp(o.ppn_total)}</td>
                   <td>
                     {ORDER_STATUS_LABEL[o.status]}
+                    {o.estimated_days && <div className="muted small">Estimasi {o.estimated_days} hari</div>}
                     {o.tracking_number && <div className="muted small">Resi {o.tracking_number}</div>}
                   </td>
                   <td>{o.payment_status}</td>
@@ -112,7 +118,12 @@ export default function AdminOrders() {
                         → Dikirim
                       </button>
                     )}
-                    {next && next !== 'shipped' && (
+                    {next === 'processing' && (
+                      <button className="btn link" onClick={() => { setPending({ id: o.id, kind: 'process' }); setValue(''); setError(null); }}>
+                        → Proses
+                      </button>
+                    )}
+                    {next && next !== 'shipped' && next !== 'processing' && (
                       <button className="btn link" disabled={advance.isPending} onClick={() => advance.mutate({ id: o.id, to: next })}>
                         → {ORDER_STATUS_LABEL[next]}
                       </button>
@@ -129,13 +140,23 @@ export default function AdminOrders() {
                     <td colSpan={7}>
                       <form className="inline-action" onSubmit={(e) => { e.preventDefault(); confirm.mutate(); }}>
                         <label className="grow">
-                          {pending.kind === 'ship'
-                            ? 'Nomor resi pengiriman'
-                            : 'Catatan refund (mis. nomor transfer manual, minimal 5 karakter)'}
-                          <input value={value} onChange={(e) => setValue(e.target.value)} required autoFocus />
+                          {pending.kind === 'process' && 'Estimasi pengiriman (hari)'}
+                          {pending.kind === 'ship' && 'Nomor resi pengiriman'}
+                          {pending.kind === 'refund' && 'Catatan refund (mis. nomor transfer manual, minimal 5 karakter)'}
+                          <input
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            required
+                            autoFocus
+                            type={pending.kind === 'process' ? 'number' : 'text'}
+                            min={pending.kind === 'process' ? 1 : undefined}
+                            max={pending.kind === 'process' ? 365 : undefined}
+                          />
                         </label>
                         <button className={`btn ${pending.kind === 'refund' ? 'danger-solid' : 'primary'}`} disabled={confirm.isPending}>
-                          {pending.kind === 'ship' ? 'Simpan & tandai dikirim' : 'Konfirmasi pembatalan'}
+                          {pending.kind === 'process' && 'Simpan & proses pesanan'}
+                          {pending.kind === 'ship' && 'Simpan & tandai dikirim'}
+                          {pending.kind === 'refund' && 'Konfirmasi pembatalan'}
                         </button>
                         <button type="button" className="btn ghost" onClick={() => setPending(null)}>Batal</button>
                       </form>

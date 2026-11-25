@@ -77,6 +77,8 @@ export const api = {
     request<OrderView[]>(`/admin/orders${status ? `?status=${status}` : ''}`),
   adminSetOrderStatus: (id: number, status: OrderStatus) =>
     request<OrderView>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status } }),
+  adminProcessOrder: (id: number, estimated_days: number) =>
+    request<OrderView>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status: 'processing', estimated_days } }),
   adminUploadProductImage: (id: number, file: File) => {
     const form = new FormData();
     form.append('file', file);

@@ -37,7 +37,7 @@ pub fn admin_router() -> Router<AppState> {
 const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS status,
     CAST(payment_status AS CHAR) AS payment_status, subtotal, discount_total, dpp, ppn_rate,
     ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code,
-    payment_url, created_at, tracking_number, refund_note,
+    payment_url, created_at, tracking_number, refund_note, estimated_days,
     (SELECT name FROM users WHERE users.id = orders.user_id) AS buyer_name,
     TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), expires_at) AS seconds_left";
 
@@ -62,6 +62,7 @@ pub struct OrderRow {
     pub created_at: DateTime<Utc>,
     pub tracking_number: Option<String>,
     pub refund_note: Option<String>,
+    pub estimated_days: Option<u16>,
     pub buyer_name: Option<String>,
     pub seconds_left: i64,
 }
@@ -108,6 +109,7 @@ pub struct OrderView {
     pub created_at: DateTime<Utc>,
     pub tracking_number: Option<String>,
     pub refund_note: Option<String>,
+    pub estimated_days: Option<u16>,
     pub buyer_name: Option<String>,
 }
 
@@ -146,6 +148,7 @@ fn to_view(o: OrderRow) -> OrderView {
         created_at: o.created_at,
         tracking_number: o.tracking_number,
         refund_note: o.refund_note,
+        estimated_days: o.estimated_days,
         buyer_name: o.buyer_name,
     }
 }
@@ -600,6 +603,7 @@ async fn admin_list_orders(
 pub struct StatusReq {
     pub status: String,
     pub tracking_number: Option<String>,
+    pub estimated_days: Option<u16>,
 }
 
 /// Alur fulfillment setelah pembayaran: paid → processing → shipped → completed.
@@ -620,7 +624,18 @@ async fn admin_update_status(
             order.status, req.status
         )));
     }
-    if req.status == "shipped" {
+    if req.status == "processing" {
+        let days = req.estimated_days.unwrap_or(0);
+        if !(1..=365).contains(&days) {
+            return Err(AppError::BadRequest("estimasi pengiriman wajib diisi (1–365 hari)".into()));
+        }
+        sqlx::query("UPDATE orders SET status = 'processing', estimated_days = ? WHERE id = ? AND status = ?")
+            .bind(days)
+            .bind(id)
+            .bind(&order.status)
+            .execute(&state.pool)
+            .await?;
+    } else if req.status == "shipped" {
         let resi = req.tracking_number.as_deref().map(str::trim).unwrap_or("");
         if resi.is_empty() || resi.len() > 64 {
             return Err(AppError::BadRequest("nomor resi wajib diisi (maks 64 karakter)".into()));

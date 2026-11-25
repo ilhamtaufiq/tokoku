@@ -107,6 +107,7 @@ export interface OrderView {
   expires_in_seconds: number;
   created_at: string;
   tracking_number: string | null;
+  estimated_days: number | null;
   refund_note: string | null;
   buyer_name: string | null;
 }

@@ -57,6 +57,9 @@ export default function OrderDetail() {
         <Link to={`/orders/${o.id}/invoice`} className="btn ghost small-btn">Lihat & cetak invoice</Link>
       </div>
 
+      {o.estimated_days && (o.status === 'processing' || o.status === 'shipped' || o.status === 'completed') && (
+        <p className="callout-info">Estimasi pengiriman: <strong>{o.estimated_days} hari</strong> sejak pesanan diproses.</p>
+      )}
       {o.tracking_number && (
         <p className="callout-info">Nomor resi pengiriman: <strong>{o.tracking_number}</strong></p>
       )}
