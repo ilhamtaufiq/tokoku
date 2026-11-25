@@ -148,3 +148,23 @@ export interface AdminDashboard {
     created_at: string;
   }[];
 }
+
+export interface Banner {
+  id: number;
+  title: string;
+  subtitle: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface BannerInput {
+  title: string;
+  subtitle?: string | null;
+  cta_label?: string | null;
+  cta_url?: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+}

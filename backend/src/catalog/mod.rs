@@ -318,9 +318,9 @@ fn map_unique(message: &'static str) -> impl Fn(sqlx::Error) -> AppError {
     }
 }
 
-const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
+pub(crate) const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
 
-fn detect_image_ext(data: &[u8]) -> Option<&'static str> {
+pub(crate) fn detect_image_ext(data: &[u8]) -> Option<&'static str> {
     if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
         Some("jpg")
     } else if data.starts_with(&[0x89, b'P', b'N', b'G']) {
@@ -332,7 +332,7 @@ fn detect_image_ext(data: &[u8]) -> Option<&'static str> {
     }
 }
 
-fn random_hex(bytes: usize) -> String {
+pub(crate) fn random_hex(bytes: usize) -> String {
     use rand_core::{OsRng, RngCore};
     let mut buf = vec![0u8; bytes];
     OsRng.fill_bytes(&mut buf);

@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 import { ProductCard } from '../components/ProductCard';
+import { BannerCarousel } from '../components/BannerCarousel';
 import { useSeo } from '../lib/seo';
 
 const PER_PAGE = 12;
@@ -32,6 +33,7 @@ export default function Catalog() {
   const sort = params.get('sort') ?? '';
 
   const categories = useQuery({ queryKey: ['categories'], queryFn: api.categories });
+  const banners = useQuery({ queryKey: ['banners'], queryFn: api.banners });
   const products = useInfiniteQuery({
     queryKey: ['products', { q, category, sort }],
     initialPageParam: 1,
@@ -61,21 +63,25 @@ export default function Catalog() {
 
   return (
     <section>
-      <div className="banner">
-        <div className="banner-copy">
-          <span className="eyebrow">
-            <span className="material-symbols-outlined" aria-hidden>sell</span>
-            Harga jujur, pajak transparan
-          </span>
-          <h1>Perlengkapan sekolah & elektronik, harga sudah termasuk PPN.</h1>
-          <p className="hero-sub">Ongkir tidak dikenai PPN. Invoice lengkap di setiap pesanan.</p>
+      {banners.data && banners.data.length > 0 ? (
+        <BannerCarousel banners={banners.data} />
+      ) : (
+        <div className="banner">
+          <div className="banner-copy">
+            <span className="eyebrow">
+              <span className="material-symbols-outlined" aria-hidden>sell</span>
+              Harga jujur, pajak transparan
+            </span>
+            <h1>Perlengkapan sekolah & elektronik, harga sudah termasuk PPN.</h1>
+            <p className="hero-sub">Ongkir tidak dikenai PPN. Invoice lengkap di setiap pesanan.</p>
+          </div>
+          <div className="banner-trust" aria-label="Keunggulan">
+            <span><span className="material-symbols-outlined" aria-hidden>verified</span>Harga final</span>
+            <span><span className="material-symbols-outlined" aria-hidden>receipt_long</span>Invoice lengkap</span>
+            <span><span className="material-symbols-outlined" aria-hidden>local_shipping</span>Ongkir bebas PPN</span>
+          </div>
         </div>
-        <div className="banner-trust" aria-label="Keunggulan">
-          <span><span className="material-symbols-outlined" aria-hidden>verified</span>Harga final</span>
-          <span><span className="material-symbols-outlined" aria-hidden>receipt_long</span>Invoice lengkap</span>
-          <span><span className="material-symbols-outlined" aria-hidden>local_shipping</span>Ongkir bebas PPN</span>
-        </div>
-      </div>
+      )}
 
       {categories.data && categories.data.length > 0 && (
         <nav className="category-strip" aria-label="Kategori">

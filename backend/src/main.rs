@@ -1,4 +1,5 @@
 mod auth;
+mod banners;
 mod cart;
 mod catalog;
 mod config;

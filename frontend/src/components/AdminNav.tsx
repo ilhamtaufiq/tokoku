@@ -6,6 +6,7 @@ const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
   { to: '/admin', label: 'Ringkasan', icon: 'dashboard', end: true },
   { to: '/admin/orders', label: 'Pesanan', icon: 'receipt_long' },
   { to: '/admin/products', label: 'Produk', icon: 'inventory_2' },
+  { to: '/admin/banners', label: 'Banner', icon: 'view_carousel' },
   { to: '/admin/promos', label: 'Promo', icon: 'sell' },
   { to: '/admin/store', label: 'Data toko', icon: 'store' },
 ];

@@ -15,6 +15,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminPromos from './pages/admin/AdminPromos';
 import AdminStore from './pages/admin/AdminStore';
+import AdminBanners from './pages/admin/AdminBanners';
 import Invoice from './pages/Invoice';
 import { Privacy, Refund, Terms } from './pages/Legal';
 
@@ -46,6 +47,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="banners" element={<AdminBanners />} />
           <Route path="promos" element={<AdminPromos />} />
           <Route path="store" element={<AdminStore />} />
         </Route>

@@ -8,8 +8,10 @@ import type {
   OrderDetail,
   OrderStatus,
   OrderView,
-  Page,
   AdminDashboard,
+  Banner,
+  BannerInput,
+  Page,
   Product,
   StoreInfo,
   User,
@@ -77,6 +79,16 @@ export const api = {
     request<OrderView>(`/admin/orders/${id}/refund-cancel`, { method: 'POST', body: { note } }),
   store: () => request<StoreInfo>('/store'),
   adminUpdateStore: (body: StoreInfo) => request<StoreInfo>('/admin/store', { method: 'PUT', body }),
+  banners: () => request<Banner[]>('/banners'),
+  adminBanners: () => request<Banner[]>('/admin/banners'),
+  adminCreateBanner: (body: BannerInput) => request<Banner>('/admin/banners', { method: 'POST', body }),
+  adminUpdateBanner: (id: number, body: BannerInput) => request<Banner>(`/admin/banners/${id}`, { method: 'PUT', body }),
+  adminDeleteBanner: (id: number) => request<void>(`/admin/banners/${id}`, { method: 'DELETE' }),
+  adminUploadBannerImage: (id: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<Banner>(`/admin/banners/${id}/image`, { method: 'POST', body: form });
+  },
   adminDashboard: () => request<AdminDashboard>('/admin/dashboard'),
   adminCreatePromo: (body: PromoInput) => request<{ id: number; code: string }>('/admin/promos', { method: 'POST', body }),
 };
