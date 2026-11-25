@@ -69,6 +69,18 @@ Job latar belakang:
 - Setiap 60 detik: pesanan yang lewat 24 jam dan belum dibayar dibatalkan, stok dikembalikan.
 - Setiap 5 menit: rekonsiliasi status transaksi yang masih menunggu pembayaran.
 
+## Data dummy produk (demo)
+
+Skrip `backend/seed/dummy_products.sql` menambahkan 3 kategori dan 10 produk contoh. Aman dijalankan berulang.
+
+Di server (Coolify), jalankan di folder compose:
+
+```bash
+docker compose exec -T db sh -c 'mariadb -u root -p"$MARIADB_ROOT_PASSWORD" toko_online' < backend/seed/dummy_products.sql
+```
+
+Produk contoh tidak punya gambar, sehingga tampil dengan placeholder huruf. Gambar bisa diunggah dari panel admin.
+
 ## Struktur
 
 ```
