@@ -103,12 +103,10 @@ export default function Checkout() {
 
           <div className="card section-card">
             <h2><span className="material-symbols-outlined" aria-hidden>payments</span>Metode pembayaran</h2>
-            <p className="section-desc">Pilih metode setelah diarahkan ke halaman pembayaran Midtrans.</p>
-            <div className="pay-methods">
-              <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>account_balance</span><strong>Virtual Account</strong>Transfer bank</div>
-              <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>qr_code_2</span><strong>QRIS</strong>Scan dari aplikasi apa pun</div>
-              <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>account_balance_wallet</span><strong>E-wallet</strong>Saldo dompet digital</div>
-            </div>
+            <p className="snap-note">
+              <span className="material-symbols-outlined" aria-hidden>lock</span>
+              Setelah klik bayar, kamu diarahkan ke halaman pembayaran Midtrans yang aman. Semua metode yang tersedia ditampilkan di sana.
+            </p>
           </div>
 
           {error && <p className="error">{error}</p>}

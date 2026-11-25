@@ -784,3 +784,35 @@ td.actions { white-space: nowrap; }
   .carousel-dots { left: 22px; }
   .carousel-nav { display: none; }
 }
+
+/* Saran pencarian */
+.header-search { position: relative; }
+.suggest { position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 40; background: var(--surface); border: 1px solid var(--outline-soft); border-radius: var(--r-md); box-shadow: 0 18px 40px -18px rgba(15, 20, 36, 0.35); padding: 6px; max-height: 420px; overflow-y: auto; }
+.suggest-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: none; background: none; border-radius: var(--r); cursor: pointer; text-align: left; font: inherit; color: var(--text); }
+.suggest-item.on, .suggest-item:hover { background: var(--surface-low); }
+.suggest-thumb { width: 44px; height: 44px; flex: none; border-radius: var(--r); background: var(--surface-high); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-family: var(--font-display); font-weight: 700; }
+.suggest-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.suggest-text { display: flex; flex-direction: column; min-width: 0; }
+.suggest-text strong { font-family: var(--font-body); font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-all { display: block; width: 100%; margin-top: 4px; padding: 10px; border: none; border-top: 1px solid var(--outline-soft); background: none; color: var(--c-primary); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 0 0 var(--r) var(--r); }
+.suggest-all:hover { text-decoration: underline; }
+.suggest-note { margin: 0; padding: 14px 12px; color: var(--muted); font-size: 14px; }
+
+/* Pilihan metode pembayaran (radio) */
+.pay-methods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.pay-method { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: var(--r); border: 1.5px solid var(--outline); background: var(--surface); cursor: pointer; font-weight: 500; color: var(--text); transition: border-color var(--t-state) ease-out, background-color var(--t-state) ease-out; }
+.pay-method:hover { border-color: var(--c-primary); }
+.pay-method input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.pay-method .material-symbols-outlined { color: var(--c-primary); font-size: 24px; }
+.pay-method strong { font-family: var(--font-display); font-size: 14px; font-weight: 600; }
+.pay-method.on { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-secondary-container) 40%, var(--surface)); box-shadow: inset 0 0 0 1px var(--c-primary); }
+.pay-method input:focus-visible + .material-symbols-outlined { outline: 2px solid var(--c-primary); }
+@media (max-width: 760px) {
+  .pay-methods { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 420px) {
+  .pay-methods { grid-template-columns: 1fr; }
+}
+
+.snap-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 14px; border-radius: var(--r); background: var(--surface-low); font-size: 14px; color: var(--text-2); }
+.snap-note .material-symbols-outlined { color: var(--c-primary); font-size: 20px; margin-top: 1px; }

@@ -14,6 +14,7 @@ import type {
   Page,
   Product,
   StoreInfo,
+  Suggestion,
   User,
 } from './types';
 
@@ -36,6 +37,7 @@ export const api = {
     return request<Page<Product>>(`/products?${qs.toString()}`);
   },
   product: (id: number) => request<Product>(`/products/${id}`),
+  suggest: (q: string) => request<Suggestion[]>(`/products/suggest?q=${encodeURIComponent(q)}`),
 
   // Keranjang
   cart: () => request<CartItem[]>('/cart'),
@@ -51,7 +53,7 @@ export const api = {
     request<Breakdown>('/pricing/preview', { method: 'POST', body: { items, promo_code: promo_code || null } }),
 
   // Pesanan
-  checkout: (body: { shipping_address: string; promo_code?: string; buyer_npwp?: string }) =>
+  checkout: (body: { shipping_address: string; promo_code?: string; buyer_npwp?: string; payment_method?: string }) =>
     request<CheckoutResponse>('/orders', { method: 'POST', body }),
   orders: () => request<OrderView[]>('/orders'),
   order: (id: number) => request<OrderDetail>(`/orders/${id}`),

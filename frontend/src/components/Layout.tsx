@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate, useSearchParams } from 'react-router';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { SearchBox } from './SearchBox';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api';
 
@@ -9,10 +9,8 @@ const YEAR = new Date().getFullYear();
 export function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart, enabled: !!user });
   const cartCount = (cart.data ?? []).reduce((n, i) => n + i.qty, 0);
-  const [search, setSearch] = useState(params.get('q') ?? '');
 
   return (
     <div className="app">
@@ -23,24 +21,7 @@ export function Layout() {
             <span>Tokoku</span>
           </Link>
 
-          <form
-            className="header-search"
-            role="search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const q = search.trim();
-              navigate(q ? `/?q=${encodeURIComponent(q)}#katalog` : '/#katalog');
-            }}
-          >
-            <span className="material-symbols-outlined" aria-hidden>search</span>
-            <input
-              type="search"
-              placeholder="Cari laptop, mouse, tas sekolah, atau buku tulis…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Cari produk"
-            />
-          </form>
+          <SearchBox />
 
           <nav className="nav" aria-label="Navigasi utama">
             <NavLink to="/" end>Katalog</NavLink>

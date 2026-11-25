@@ -168,3 +168,11 @@ export interface BannerInput {
   is_active?: boolean;
   sort_order?: number;
 }
+
+export interface Suggestion {
+  id: number;
+  name: string;
+  sku: string;
+  price: Money;
+  image_url: string | null;
+}

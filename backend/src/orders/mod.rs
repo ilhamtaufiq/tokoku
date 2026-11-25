@@ -222,6 +222,8 @@ pub struct CheckoutReq {
     pub shipping_address: String,
     pub promo_code: Option<String>,
     pub buyer_npwp: Option<String>,
+    /// all | bank_transfer | qris | ewallet
+    pub payment_method: Option<String>,
 }
 
 fn sanitize_npwp(raw: &str) -> AppResult<Option<String>> {
@@ -240,6 +242,7 @@ async fn checkout(
     State(state): State<AppState>,
     Json(req): Json<CheckoutReq>,
 ) -> AppResult<(StatusCode, Json<CheckoutResponse>)> {
+    let method = PaymentMethod::parse(req.payment_method.as_deref())?;
     let address = req.shipping_address.trim().to_string();
     if address.len() < 10 || address.len() > 1000 {
         return Err(AppError::BadRequest("alamat pengiriman wajib diisi (10–1000 karakter)".into()));
@@ -387,7 +390,7 @@ async fn checkout(
 
     let order = fetch_order(&state.pool, order_id).await?;
     let email = user_email(&state.pool, user.id).await?;
-    let payment_url = match create_invoice_for_order(&state, &order, &email).await {
+    let payment_url = match create_invoice_for_order(&state, &order, &email, method).await {
         Ok(url) => Some(url),
         Err(e) => {
             tracing::error!(order_id, error = %e, "gagal membuat transaksi Midtrans; klien dapat mencoba lagi");
@@ -409,7 +412,12 @@ async fn user_email(pool: &MySqlPool, user_id: u64) -> AppResult<String> {
 
 /// Membuat transaksi Midtrans Snap untuk pesanan yang belum punya URL pembayaran.
 /// order_id Midtrans = nomor invoice dengan '/' diganti '-' (Midtrans tidak menerima '/').
-pub async fn create_invoice_for_order(state: &AppState, order: &OrderRow, email: &str) -> AppResult<String> {
+pub async fn create_invoice_for_order(
+    state: &AppState,
+    order: &OrderRow,
+    email: &str,
+    method: PaymentMethod,
+) -> AppResult<String> {
     if let Some(url) = &order.payment_url {
         return Ok(url.clone());
     }
@@ -453,6 +461,7 @@ pub async fn create_invoice_for_order(state: &AppState, order: &OrderRow, email:
         customer_email: email.to_string(),
         finish_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
         expiry_minutes: (order.seconds_left + 59) / 60,
+        enabled_payments: method.enabled_payments(),
     };
 
     let snap = midtrans::create_snap(&state.http, &state.cfg, &req).await?;
@@ -513,7 +522,7 @@ async fn pay_order(
         return Err(AppError::BadRequest("pesanan tidak menunggu pembayaran".into()));
     }
     let email = user_email(&state.pool, order.user_id).await?;
-    let url = create_invoice_for_order(&state, &order, &email).await?;
+    let url = create_invoice_for_order(&state, &order, &email, PaymentMethod::All).await?;
     Ok(Json(PayResponse { payment_url: url }))
 }
 
@@ -876,4 +885,34 @@ async fn admin_dashboard(_admin: AdminUser, State(state): State<AppState>) -> Ap
         sales_7d,
         recent_orders,
     }))
+}
+
+/// Metode pembayaran yang dipilih pembeli di checkout. Dikirim ke Midtrans sebagai enabled_payments.
+#[derive(Debug, Clone, Copy)]
+pub enum PaymentMethod {
+    All,
+    BankTransfer,
+    Qris,
+    Ewallet,
+}
+
+impl PaymentMethod {
+    pub fn parse(value: Option<&str>) -> AppResult<Self> {
+        match value.unwrap_or("all") {
+            "all" => Ok(Self::All),
+            "bank_transfer" => Ok(Self::BankTransfer),
+            "qris" => Ok(Self::Qris),
+            "ewallet" => Ok(Self::Ewallet),
+            _ => Err(AppError::BadRequest("metode pembayaran tidak dikenal".into())),
+        }
+    }
+
+    pub fn enabled_payments(self) -> Option<Vec<String>> {
+        match self {
+            Self::All => None,
+            Self::BankTransfer => Some(vec!["bank_transfer".into()]),
+            Self::Qris => Some(vec!["qris".into()]),
+            Self::Ewallet => Some(vec!["gopay".into(), "shopeepay".into()]),
+        }
+    }
 }

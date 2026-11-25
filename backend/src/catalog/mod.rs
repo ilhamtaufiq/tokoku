@@ -21,6 +21,7 @@ pub fn public_router() -> Router<AppState> {
     Router::new()
         .route("/categories", get(list_categories))
         .route("/products", get(list_products))
+        .route("/products/suggest", get(suggest))
         .route("/products/{id}", get(get_product))
 }
 
@@ -381,4 +382,40 @@ async fn upload_image(
     let ppn = settings::ppn_percent(&state.pool).await?;
     let row = fetch_product(&state.pool, id).await?;
     Ok(Json(to_view(row, ppn)))
+}
+
+#[derive(Debug, Serialize, FromRow)]
+pub struct Suggestion {
+    pub id: u64,
+    pub name: String,
+    pub sku: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub price: Decimal,
+    pub image_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SuggestQuery {
+    pub q: String,
+}
+
+/// Saran cepat untuk kotak pencarian: maksimal 6 produk aktif yang namanya atau SKU-nya cocok.
+async fn suggest(State(state): State<AppState>, Query(params): Query<SuggestQuery>) -> AppResult<Json<Vec<Suggestion>>> {
+    let term = params.q.trim();
+    if term.chars().count() < 2 {
+        return Ok(Json(Vec::new()));
+    }
+    // Escape wildcard LIKE agar input pengguna diperlakukan sebagai teks biasa
+    let escaped = term.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+    let pattern = format!("%{escaped}%");
+    let rows = sqlx::query_as::<_, Suggestion>(
+        "SELECT id, name, sku, price, image_url FROM products
+         WHERE is_active = TRUE AND (name LIKE ? OR sku LIKE ?)
+         ORDER BY name LIMIT 6",
+    )
+    .bind(&pattern)
+    .bind(&pattern)
+    .fetch_all(&state.pool)
+    .await?;
+    Ok(Json(rows))
 }

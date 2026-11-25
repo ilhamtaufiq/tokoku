@@ -27,6 +27,8 @@ pub struct SnapRequest {
     pub customer_email: String,
     pub finish_url: String,
     pub expiry_minutes: i64,
+    /// Daftar metode yang ditampilkan di Snap (mis. ["qris"]). None = semua metode.
+    pub enabled_payments: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -63,13 +65,16 @@ pub async fn create_snap(http: &reqwest::Client, cfg: &Config, req: &SnapRequest
         .iter()
         .map(|i| json!({ "id": i.id, "name": i.name, "price": i.price, "quantity": i.qty }))
         .collect();
-    let body = json!({
+    let mut body = json!({
         "transaction_details": { "order_id": req.order_id, "gross_amount": req.gross_amount },
         "item_details": items,
         "customer_details": { "first_name": req.customer_name, "email": req.customer_email },
         "callbacks": { "finish": req.finish_url },
         "expiry": { "unit": "minutes", "duration": req.expiry_minutes.max(1) },
     });
+    if let Some(methods) = &req.enabled_payments {
+        body["enabled_payments"] = json!(methods);
+    }
 
     let resp = http
         .post(format!("{}/snap/v1/transactions", cfg.midtrans_snap_base))
