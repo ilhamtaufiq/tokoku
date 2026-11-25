@@ -125,7 +125,7 @@ export default function ProductDetail() {
   const buyBtn = `${btnBase} ${btnPrimary} h-12 min-w-[150px] flex-1 text-[15px]`;
 
   return (
-    <section className="flex flex-col">
+    <section className="flex flex-col max-[760px]:pb-32">
       <nav className="mb-6 mt-1 flex flex-wrap items-center gap-2 text-[13px] text-muted" aria-label="Breadcrumb">
         <Link to="/" className="inline-flex items-center gap-1 text-muted no-underline hover:text-primary">
           <span className="material-symbols-outlined text-lg" aria-hidden>arrow_back</span>Katalog
