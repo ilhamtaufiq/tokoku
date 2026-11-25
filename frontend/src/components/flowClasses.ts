@@ -4,7 +4,7 @@
  */
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-field font-body font-semibold whitespace-nowrap no-underline cursor-pointer select-none transition-colors duration-150 active:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none aria-disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none [&_.material-symbols-outlined]:text-[20px]';
+  'inline-flex items-center justify-center gap-2 rounded-field font-body font-semibold whitespace-nowrap no-underline cursor-pointer select-none transition-colors duration-150 active:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none aria-disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none [&_.material-symbols-outlined]:!text-[20px]';
 
 const tones = {
   default: 'border border-outline bg-surface text-ink hover:border-primary',
@@ -29,7 +29,7 @@ export function btn(tone: keyof typeof tones = 'default', size: keyof typeof siz
 
 /** Input, select, dan textarea. */
 export const field =
-  'block w-full min-h-11 rounded-field border border-outline bg-surface px-3.5 py-2.5 font-body text-sm text-ink placeholder:text-muted outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-3 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-surface-high disabled:text-muted';
+  'block w-full min-h-11 rounded-field border border-outline bg-surface px-3.5 py-2.5 text-left font-body text-sm text-ink placeholder:text-muted outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-3 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-surface-high disabled:text-muted';
 
 /** Pembungkus label formulir. */
 export const label = 'flex flex-col gap-1.5 text-[13px] font-semibold tracking-[0.2px] text-ink-2';

@@ -87,7 +87,7 @@ export default function Checkout() {
         >
           <div className={`${card} p-5 md:p-6`}>
             <h2 className={`${sectionTitle} flex items-center gap-2.5 text-lg`}>
-              <span className="material-symbols-outlined text-[22px] text-primary" aria-hidden>location_on</span>Alamat pengiriman
+              <span className="material-symbols-outlined !text-[22px] text-primary" aria-hidden>location_on</span>Alamat pengiriman
             </h2>
             <p className="-mt-1 mb-4 text-[13px] text-muted">Tulis alamat lengkap termasuk nama penerima dan nomor telepon.</p>
             <label className={label}>
@@ -106,7 +106,7 @@ export default function Checkout() {
 
           <div className={`${card} p-5 md:p-6`}>
             <h2 className={`${sectionTitle} flex items-center gap-2.5 text-lg`}>
-              <span className="material-symbols-outlined text-[22px] text-primary" aria-hidden>receipt_long</span>Faktur pajak
+              <span className="material-symbols-outlined !text-[22px] text-primary" aria-hidden>receipt_long</span>Faktur pajak
             </h2>
             <p className="-mt-1 mb-4 text-[13px] text-muted">Opsional. Isi jika kamu membutuhkan faktur pajak atas nama NPWP.</p>
             <label className={label}>
@@ -117,10 +117,10 @@ export default function Checkout() {
 
           <div className={`${card} p-5 md:p-6`}>
             <h2 className={`${sectionTitle} flex items-center gap-2.5 text-lg`}>
-              <span className="material-symbols-outlined text-[22px] text-primary" aria-hidden>payments</span>Metode pembayaran
+              <span className="material-symbols-outlined !text-[22px] text-primary" aria-hidden>payments</span>Metode pembayaran
             </h2>
             <p className="flex items-start gap-2.5 rounded-field bg-surface-low p-3.5 text-sm text-ink-2">
-              <span className="material-symbols-outlined mt-px text-[20px] text-primary" aria-hidden>lock</span>
+              <span className="material-symbols-outlined mt-px !text-[20px] text-primary" aria-hidden>lock</span>
               Setelah klik bayar, kamu diarahkan ke halaman pembayaran Midtrans yang aman. Semua metode yang tersedia ditampilkan di sana.
             </p>
           </div>
@@ -177,7 +177,7 @@ export default function Checkout() {
           {preview.isError && <p className={`${alertError} mt-3`}>{(preview.error as Error).message}</p>}
 
           <div className="mt-4">
-            {preview.isPending && <p className="text-muted">Menghitung…</p>}
+            {ready && preview.isPending && <p className="text-muted">Menghitung…</p>}
             {preview.data && <Breakdown data={preview.data} />}
           </div>
 
@@ -197,7 +197,7 @@ export default function Checkout() {
                 : 'Bayar sekarang'}
           </button>
           <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
-            <span className="material-symbols-outlined text-base text-success" aria-hidden>verified_user</span>
+            <span className="material-symbols-outlined !text-base text-success" aria-hidden>verified_user</span>
             Pembayaran diproses Midtrans. Pesanan dibatalkan otomatis jika tidak dibayar dalam 24 jam.
           </p>
         </aside>

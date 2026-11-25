@@ -61,7 +61,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <section className="px-4 py-16 text-center">
-        <span className="material-symbols-outlined mx-auto mb-3 block text-[56px] text-outline" aria-hidden>shopping_cart</span>
+        <span className="material-symbols-outlined mx-auto mb-3 block !text-[56px] text-outline" aria-hidden>shopping_cart</span>
         <h1 className={pageTitle}>Keranjangmu masih kosong</h1>
         <p className="mb-6 text-muted">Yuk, temukan perlengkapan yang kamu butuhkan.</p>
         <Link to="/" className={btn('primary', 'md')}>Mulai belanja</Link>
