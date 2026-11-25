@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import { alertError, btn, card, field, label, pageTitle } from '../components/flowClasses';
 import { useSeo } from '../lib/seo';
 
 export default function Login() {
@@ -16,10 +17,10 @@ export default function Login() {
   const next = params.get('next') || '/';
 
   return (
-    <section className="narrow">
-      <h1>Masuk</h1>
+    <section className="mx-auto max-w-[440px] py-2 md:py-6">
+      <h1 className={pageTitle}>Masuk</h1>
       <form
-        className="card form"
+        className={`${card} mt-4 flex flex-col gap-4 p-5 md:p-6`}
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -34,18 +35,33 @@ export default function Login() {
           }
         }}
       >
-        <label>
+        <label className={label}>
           Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+          <input
+            type="email"
+            className={field}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
         </label>
-        <label>
+        <label className={label}>
           Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+          <input
+            type="password"
+            className={field}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
         </label>
-        {error && <p className="error">{error}</p>}
-        <button className="btn primary block" disabled={busy}>{busy ? 'Memproses…' : 'Masuk'}</button>
-        <p className="small muted">
-          Belum punya akun? <Link to={`/register?next=${encodeURIComponent(next)}`}>Daftar</Link>
+        {error && <p className={alertError}>{error}</p>}
+        <button className={btn('primary', 'lg', 'w-full')} disabled={busy}>{busy ? 'Memproses…' : 'Masuk'}</button>
+        <p className="text-center text-[13px] text-muted">
+          Belum punya akun?{' '}
+          <Link to={`/register?next=${encodeURIComponent(next)}`} className="font-semibold">Daftar</Link>
         </p>
       </form>
     </section>

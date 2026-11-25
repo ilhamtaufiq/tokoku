@@ -5,7 +5,10 @@ import { api } from '../api';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../components/Toast';
+import { alertError, btn, card, field, label, pageTitle } from '../components/flowClasses';
 import { useSeo } from '../lib/seo';
+
+const heading = 'mt-0 mb-4 font-display text-lg font-semibold leading-7 text-ink';
 
 /** Profil akun: ubah nama dan ganti password. */
 export default function Account() {
@@ -42,24 +45,36 @@ export default function Account() {
 
   if (!user) return null;
   const nameChanged = name.trim() !== user.name;
+  const isAdmin = user.role === 'admin';
 
   return (
-    <section className="account">
-      <header className="page-head">
+    <section className="mx-auto max-w-[1040px]">
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1>Akun saya</h1>
-          <p className="muted small">Kelola data profil dan keamanan akunmu.</p>
+          <h1 className={pageTitle}>Akun saya</h1>
+          <p className="text-xs text-muted">Kelola data profil dan keamanan akunmu.</p>
         </div>
       </header>
 
-      <div className="account-grid">
-        <aside className="card account-card">
-          <span className="avatar large" aria-hidden>{user.name.charAt(0).toUpperCase()}</span>
-          <strong>{user.name}</strong>
-          <span className="muted small">{user.email}</span>
-          <span className={`status-pill ${user.role === 'admin' ? 'info' : ''}`}>{user.role === 'admin' ? 'Admin' : 'Pelanggan'}</span>
+      <div className="grid items-start gap-5 md:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className={`${card} flex flex-col items-center gap-2 p-6 text-center md:sticky md:top-[100px]`}>
+          <span
+            className="grid size-16 shrink-0 place-items-center rounded-pill bg-secondary-container font-display text-2xl font-bold text-on-secondary-container"
+            aria-hidden
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </span>
+          <strong className="font-display text-[17px] font-semibold text-ink">{user.name}</strong>
+          <span className="break-all text-xs text-muted">{user.email}</span>
+          <span
+            className={`inline-flex h-[26px] items-center whitespace-nowrap rounded-pill px-3 text-xs font-semibold ${
+              isAdmin ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-high text-ink-2'
+            }`}
+          >
+            {isAdmin ? 'Admin' : 'Pelanggan'}
+          </span>
           <button
-            className="btn ghost block"
+            className={btn('ghost', 'md', 'mt-2.5 w-full')}
             onClick={async () => {
               await logout();
               navigate('/');
@@ -70,35 +85,35 @@ export default function Account() {
           </button>
         </aside>
 
-        <div className="account-main">
+        <div className="flex min-w-0 flex-col gap-4">
           <form
-            className="card section-card"
+            className={`${card} p-5 md:p-6`}
             onSubmit={(e) => {
               e.preventDefault();
               saveName.mutate();
             }}
           >
-            <h2>Profil</h2>
-            <div className="row">
-              <label>
+            <h2 className={heading}>Profil</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={label}>
                 Nama lengkap
-                <input value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} />
+                <input className={field} value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} />
               </label>
-              <label>
+              <label className={label}>
                 Email
-                <input value={user.email} disabled aria-describedby="email-note" />
+                <input className={field} value={user.email} disabled aria-describedby="email-note" />
               </label>
             </div>
-            <p id="email-note" className="muted small">Email tidak bisa diubah. Hubungi admin jika perlu perubahan.</p>
-            <div className="actions">
-              <button className="btn primary" disabled={!nameChanged || saveName.isPending}>
+            <p id="email-note" className="mt-1.5 text-xs text-muted">Email tidak bisa diubah. Hubungi admin jika perlu perubahan.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button className={btn('primary', 'md')} disabled={!nameChanged || saveName.isPending}>
                 {saveName.isPending ? 'Menyimpan…' : 'Simpan profil'}
               </button>
             </div>
           </form>
 
           <form
-            className="card section-card"
+            className={`${card} p-5 md:p-6`}
             onSubmit={(e) => {
               e.preventDefault();
               setPwError(null);
@@ -107,24 +122,48 @@ export default function Account() {
               savePassword.mutate();
             }}
           >
-            <h2>Ganti password</h2>
-            <label>
-              Password saat ini
-              <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required autoComplete="current-password" />
-            </label>
-            <div className="row">
-              <label>
-                Password baru
-                <input type="password" value={next} onChange={(e) => setNext(e.target.value)} required minLength={8} autoComplete="new-password" />
+            <h2 className={heading}>Ganti password</h2>
+            <div className="flex flex-col gap-4">
+              <label className={label}>
+                Password saat ini
+                <input
+                  type="password"
+                  className={field}
+                  value={current}
+                  onChange={(e) => setCurrent(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
               </label>
-              <label>
-                Ulangi password baru
-                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required autoComplete="new-password" />
-              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className={label}>
+                  Password baru
+                  <input
+                    type="password"
+                    className={field}
+                    value={next}
+                    onChange={(e) => setNext(e.target.value)}
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                  />
+                </label>
+                <label className={label}>
+                  Ulangi password baru
+                  <input
+                    type="password"
+                    className={field}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                  />
+                </label>
+              </div>
             </div>
-            {pwError && <p className="error">{pwError}</p>}
-            <div className="actions">
-              <button className="btn primary" disabled={savePassword.isPending}>
+            {pwError && <p className={`${alertError} mt-4`}>{pwError}</p>}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button className={btn('primary', 'md')} disabled={savePassword.isPending}>
                 {savePassword.isPending ? 'Menyimpan…' : 'Ganti password'}
               </button>
             </div>

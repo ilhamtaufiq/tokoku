@@ -4,6 +4,28 @@ import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import type { Variant, VariantInput } from '../../api/types';
 import { rp } from '../../lib/money';
+import {
+  ACTIONS,
+  CHECKBOX,
+  FORM_CARD,
+  HIDE_SM,
+  HINT,
+  INPUT,
+  LABEL,
+  LABEL_CHECK,
+  Notice,
+  ROW,
+  SKU,
+  StatusBadge,
+  TABLE,
+  TBODY,
+  TD,
+  TD_NUM,
+  TH,
+  TH_NUM,
+  btn,
+  cx,
+} from './adminUi';
 
 const empty: VariantInput = { name: '', sku: '', price: '', stock: 0, is_active: true, sort_order: 0 };
 
@@ -54,36 +76,49 @@ export function VariantsEditor({ productId }: { productId: number }) {
   };
 
   return (
-    <div className="card form variants-editor">
-      <div className="section-head pad">
-        <div>
-          <h2>Varian produk</h2>
-          <p className="muted small">Isi jika produk punya pilihan seperti ukuran atau kapasitas. Setiap varian punya harga dan stok sendiri. Produk tanpa varian cukup diisi harga dan stok di form utama.</p>
+    <div className={cx(FORM_CARD, 'gap-4')}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="m-0 text-lg font-semibold text-ink">Varian produk</h2>
+          <p className={cx(HINT, 'mt-1 max-w-xl text-[13px]')}>
+            Isi jika produk punya pilihan seperti ukuran atau kapasitas. Setiap varian punya harga dan stok sendiri. Produk tanpa varian cukup diisi harga dan stok di form utama.
+          </p>
         </div>
-        <button className="btn" onClick={() => startEdit('new')}>+ Varian</button>
+        <button type="button" className={btn('default', 'sm')} onClick={() => startEdit('new')}>+ Varian</button>
       </div>
 
-      {message && <p className={message.kind === 'ok' ? 'success' : 'error'}>{message.text}</p>}
+      {message && <Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice>}
 
       {variants.data && variants.data.length > 0 && (
-        <div className="table-wrap flat">
-          <table>
+        <div className="overflow-x-auto rounded-field border border-outline-soft">
+          <table className={TABLE}>
             <thead>
-              <tr><th>Varian</th><th>SKU</th><th>Harga</th><th>Stok</th><th>Status</th><th /></tr>
+              <tr>
+                <th className={TH}>Varian</th>
+                <th className={cx(TH, HIDE_SM)}>SKU</th>
+                <th className={TH_NUM}>Harga</th>
+                <th className={TH_NUM}>Stok</th>
+                <th className={TH}>Status</th>
+                <th className={TH} />
+              </tr>
             </thead>
-            <tbody>
+            <tbody className={TBODY}>
               {variants.data.map((v) => (
-                <tr key={v.id} className={v.is_active ? '' : 'muted'}>
-                  <td>{v.name}</td>
-                  <td className="sku">{v.sku}</td>
-                  <td>{rp(v.price)}</td>
-                  <td>{v.stock}</td>
-                  <td>{v.is_active ? 'Aktif' : 'Nonaktif'}</td>
-                  <td className="actions">
-                    <button className="btn link" onClick={() => startEdit(v)}>Ubah</button>
-                    {v.is_active && (
-                      <button className="btn link danger" onClick={() => deactivate.mutate(v.id)}>Nonaktifkan</button>
-                    )}
+                <tr key={v.id} className={v.is_active ? '' : 'bg-surface-low/60 text-muted'}>
+                  <td className={TD}>{v.name}</td>
+                  <td className={cx(TD, HIDE_SM, SKU)}>{v.sku}</td>
+                  <td className={TD_NUM}>{rp(v.price)}</td>
+                  <td className={TD_NUM}>{v.stock}</td>
+                  <td className={TD}>
+                    <StatusBadge tone={v.is_active ? 'ok' : 'neutral'}>{v.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
+                  </td>
+                  <td className={cx(TD, 'whitespace-nowrap')}>
+                    <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
+                      <button type="button" className={btn('link', 'link')} onClick={() => startEdit(v)}>Ubah</button>
+                      {v.is_active && (
+                        <button type="button" className={btn('linkDanger', 'link')} onClick={() => deactivate.mutate(v.id)}>Nonaktifkan</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -91,43 +126,43 @@ export function VariantsEditor({ productId }: { productId: number }) {
           </table>
         </div>
       )}
-      {variants.data && variants.data.length === 0 && <p className="muted small">Belum ada varian.</p>}
+      {variants.data && variants.data.length === 0 && <p className={HINT}>Belum ada varian.</p>}
 
       {editing && (
         <form
-          className="variant-form"
+          className="flex flex-col gap-4 rounded-field bg-surface-low p-3.5 sm:p-4"
           onSubmit={(e) => {
             e.preventDefault();
             save.mutate();
           }}
         >
-          <div className="row">
-            <label>
+          <div className={ROW}>
+            <label className={LABEL}>
               Nama varian
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required maxLength={120} placeholder="Mis. 16GB / 512GB" />
+              <input className={INPUT} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required maxLength={120} placeholder="Mis. 16GB / 512GB" />
             </label>
-            <label>
+            <label className={LABEL}>
               SKU
-              <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} required maxLength={64} />
+              <input className={INPUT} value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} required maxLength={64} />
             </label>
           </div>
-          <div className="row">
-            <label>
+          <div className={ROW}>
+            <label className={LABEL}>
               Harga (rupiah, termasuk PPN)
-              <input inputMode="numeric" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value.replace(/[^0-9]/g, '') })} required />
+              <input className={INPUT} inputMode="numeric" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value.replace(/[^0-9]/g, '') })} required />
             </label>
-            <label>
+            <label className={LABEL}>
               Stok
-              <input type="number" min={0} value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+              <input className={INPUT} type="number" min={0} value={form.stock ?? 0} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
             </label>
-            <label className="check">
-              <input type="checkbox" checked={form.is_active ?? true} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
+            <label className={cx(LABEL_CHECK, 'sm:flex-none sm:self-end sm:pb-2.5')}>
+              <input className={CHECKBOX} type="checkbox" checked={form.is_active ?? true} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
               Aktif
             </label>
           </div>
-          <div className="actions">
-            <button className="btn primary" disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan varian'}</button>
-            <button type="button" className="btn ghost" onClick={() => setEditing(null)}>Batal</button>
+          <div className={ACTIONS}>
+            <button type="submit" className={btn('primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan varian'}</button>
+            <button type="button" className={btn('ghost')} onClick={() => setEditing(null)}>Batal</button>
           </div>
         </form>
       )}

@@ -6,11 +6,45 @@ import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import type { OrderStatus } from '../../api/types';
 import { ORDER_STATUS_LABEL, formatDate, rp, sisaWaktu } from '../../lib/money';
+import {
+  ACTIONS,
+  CHIP_GROUP,
+  EMPTY_ROW,
+  FILTER_BAR,
+  HIDE_LG,
+  HIDE_MD,
+  INPUT,
+  LABEL,
+  MUTED_SMALL,
+  Notice,
+  SEARCH_ICON,
+  SEARCH_WRAP,
+  SKU,
+  StatusBadge,
+  TABLE,
+  TABLE_WRAP,
+  TBODY,
+  TD,
+  TH,
+  btn,
+  chipClass,
+  cx,
+  type Tone,
+} from './adminUi';
 
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
   paid: 'processing',
   processing: 'shipped',
   shipped: 'completed',
+};
+
+const TONE_BY_STATUS: Partial<Record<OrderStatus, Tone>> = {
+  pending_payment: 'neutral',
+  paid: 'warn',
+  processing: 'info',
+  shipped: 'info',
+  completed: 'ok',
+  cancelled: 'danger',
 };
 
 type Pending = { id: number; kind: 'process' | 'ship' | 'refund' } | null;
@@ -70,6 +104,12 @@ export default function AdminOrders() {
     return o.invoice_no.toLowerCase().includes(term) || (o.buyer_name ?? '').toLowerCase().includes(term);
   });
 
+  const openAction = (next: Pending) => {
+    setPending(next);
+    setValue('');
+    setError(null);
+  };
+
   return (
     <section>
       <PageHeader
@@ -77,111 +117,154 @@ export default function AdminOrders() {
         subtitle={orders.data ? `${visible.length} pesanan${search.trim() ? ' cocok dengan pencarian' : ''}` : 'Memuat pesanan…'}
         actions={
           <button
-            className="btn ghost small-btn"
+            type="button"
+            className={btn('ghost', 'sm')}
             onClick={() => api.adminExportOrdersCsv(status).catch((e) => setError(e instanceof ApiError ? e.message : 'Ekspor gagal.'))}
           >
             Ekspor CSV
           </button>
         }
       />
-      <div className="filter-bar card">
-        <div className="search-field">
-          <span className="material-symbols-outlined" aria-hidden>search</span>
-          <input type="search" placeholder="Cari nomor invoice atau nama pembeli…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Cari pesanan" />
+      <div className={FILTER_BAR}>
+        <div className={SEARCH_WRAP}>
+          <span className={SEARCH_ICON} aria-hidden>search</span>
+          <input
+            type="search"
+            className={cx(INPUT, 'pl-10')}
+            placeholder="Cari nomor invoice atau nama pembeli…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Cari pesanan"
+          />
         </div>
-        <div className="chip-group" role="group" aria-label="Filter status">
+        <div className={CHIP_GROUP} role="group" aria-label="Filter status">
           {STATUS_CHIPS.map((c) => (
-            <button key={c.value} className={`chip ${status === c.value ? 'on' : ''}`} aria-pressed={status === c.value} onClick={() => setStatus(c.value)}>
+            <button
+              type="button"
+              key={c.value}
+              className={chipClass(status === c.value)}
+              aria-pressed={status === c.value}
+              onClick={() => setStatus(c.value)}
+            >
               {c.label}
             </button>
           ))}
         </div>
       </div>
-      {error && <p className="error">{error}</p>}
-      <div className="card table-wrap">
-        <table>
+      {error && <div className="mb-4"><Notice kind="error">{error}</Notice></div>}
+      <div className={TABLE_WRAP}>
+        <table className={TABLE}>
           <thead>
-            <tr><th>Invoice</th><th>Tanggal</th><th>Total</th><th>PPN</th><th>Status</th><th>Pembayaran</th><th /></tr>
+            <tr>
+              <th className={TH}>Invoice</th>
+              <th className={cx(TH, HIDE_MD)}>Tanggal</th>
+              <th className={cx(TH, 'text-right')}>Total</th>
+              <th className={cx(TH, HIDE_LG, 'text-right')}>PPN</th>
+              <th className={TH}>Status</th>
+              <th className={cx(TH, HIDE_MD)}>Pembayaran</th>
+              <th className={TH} />
+            </tr>
           </thead>
-          <tbody>
+          <tbody className={TBODY}>
             {visible.map((o) => {
               const next = NEXT[o.status];
               const canRefund = o.payment_status === 'paid' && (o.status === 'paid' || o.status === 'processing');
               const isOpen = pending?.id === o.id;
               return (
                 <Fragment key={o.id}>
-                <tr>
-                  <td><Link to={`/admin/orders/${o.id}`}>{o.invoice_no}</Link></td>
-                  <td>{formatDate(o.created_at)}</td>
-                  <td>{rp(o.grand_total)}</td>
-                  <td>{rp(o.ppn_total)}</td>
-                  <td>
-                    {ORDER_STATUS_LABEL[o.status]}
-                    {o.estimated_days && <div className="muted small">Estimasi {o.estimated_days} hari</div>}
-                    {o.estimated_due_at && <div className="muted small">Tenggat {formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</div>}
-                    {o.tracking_number && <div className="muted small">Resi {o.tracking_number}</div>}
-                  </td>
-                  <td>{o.payment_status}</td>
-                  <td className="actions">
-                    {next === 'shipped' && (
-                      <button className="btn link" onClick={() => { setPending({ id: o.id, kind: 'ship' }); setValue(''); setError(null); }}>
-                        → Dikirim
-                      </button>
-                    )}
-                    {next === 'processing' && (
-                      <button className="btn link" onClick={() => { setPending({ id: o.id, kind: 'process' }); setValue(''); setError(null); }}>
-                        → Proses
-                      </button>
-                    )}
-                    {next && next !== 'shipped' && next !== 'processing' && (
-                      <button className="btn link" disabled={advance.isPending} onClick={() => advance.mutate({ id: o.id, to: next })}>
-                        → {ORDER_STATUS_LABEL[next]}
-                      </button>
-                    )}
-                    {canRefund && (
-                      <button className="btn link danger" onClick={() => { setPending({ id: o.id, kind: 'refund' }); setValue(''); setError(null); }}>
-                        Batalkan + refund
-                      </button>
-                    )}
-                  </td>
-                </tr>
-                {isOpen && pending && (
-                  <tr className="action-row">
-                    <td colSpan={7}>
-                      <form className="inline-action" onSubmit={(e) => { e.preventDefault(); confirm.mutate(); }}>
-                        <label className="grow">
-                          {pending.kind === 'process' && 'Estimasi pengiriman (hari)'}
-                          {pending.kind === 'ship' && 'Nomor resi pengiriman'}
-                          {pending.kind === 'refund' && 'Catatan refund (mis. nomor transfer manual, minimal 5 karakter)'}
-                          <input
-                            value={value}
-                            onChange={(e) => setValue(e.target.value)}
-                            required
-                            autoFocus
-                            type={pending.kind === 'process' ? 'number' : 'text'}
-                            min={pending.kind === 'process' ? 1 : undefined}
-                            max={pending.kind === 'process' ? 365 : undefined}
-                          />
-                        </label>
-                        <button className={`btn ${pending.kind === 'refund' ? 'danger-solid' : 'primary'}`} disabled={confirm.isPending}>
-                          {pending.kind === 'process' && 'Simpan & proses pesanan'}
-                          {pending.kind === 'ship' && 'Simpan & tandai dikirim'}
-                          {pending.kind === 'refund' && 'Konfirmasi pembatalan'}
-                        </button>
-                        <button type="button" className="btn ghost" onClick={() => setPending(null)}>Batal</button>
-                      </form>
-                      {pending.kind === 'refund' && (
-                        <p className="muted small">Uang harus dikembalikan manual lewat dashboard Midtrans. Aksi ini hanya mencatat pembatalan dan mengembalikan stok.</p>
-                      )}
+                  <tr>
+                    <td className={cx(TD, 'min-w-[120px]')}>
+                      <Link to={`/admin/orders/${o.id}`} className="font-semibold text-primary hover:underline">{o.invoice_no}</Link>
+                    </td>
+                    <td className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
+                    <td className={cx(TD, 'whitespace-nowrap text-right tabular-nums')}>{rp(o.grand_total)}</td>
+                    <td className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums text-muted')}>{rp(o.ppn_total)}</td>
+                    <td className={TD}>
+                      <StatusBadge tone={TONE_BY_STATUS[o.status] ?? 'neutral'}>{ORDER_STATUS_LABEL[o.status]}</StatusBadge>
+                      {o.estimated_days && <div className={cx(MUTED_SMALL, 'mt-1.5')}>Estimasi {o.estimated_days} hari</div>}
+                      {o.estimated_due_at && <div className={MUTED_SMALL}>Tenggat {formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</div>}
+                      {o.tracking_number && <div className={cx(SKU, 'mt-0.5')}>Resi {o.tracking_number}</div>}
+                    </td>
+                    <td className={cx(TD, HIDE_MD)}>
+                      <StatusBadge tone={o.payment_status === 'paid' ? 'ok' : o.payment_status === 'refunded' ? 'danger' : 'neutral'}>
+                        {o.payment_status}
+                      </StatusBadge>
+                    </td>
+                    <td className={cx(TD, 'whitespace-nowrap')}>
+                      <div className="flex flex-col items-start gap-1">
+                        {next === 'shipped' && (
+                          <button type="button" className={btn('link', 'link')} onClick={() => openAction({ id: o.id, kind: 'ship' })}>
+                            → Dikirim
+                          </button>
+                        )}
+                        {next === 'processing' && (
+                          <button type="button" className={btn('link', 'link')} onClick={() => openAction({ id: o.id, kind: 'process' })}>
+                            → Proses
+                          </button>
+                        )}
+                        {next && next !== 'shipped' && next !== 'processing' && (
+                          <button type="button" className={btn('link', 'link')} disabled={advance.isPending} onClick={() => advance.mutate({ id: o.id, to: next })}>
+                            → {ORDER_STATUS_LABEL[next]}
+                          </button>
+                        )}
+                        {canRefund && (
+                          <button type="button" className={btn('linkDanger', 'link')} onClick={() => openAction({ id: o.id, kind: 'refund' })}>
+                            Batalkan + refund
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
-                )}
+                  {isOpen && pending && (
+                    <tr className="bg-surface-low">
+                      <td colSpan={7} className="px-3 py-3 sm:px-4">
+                        <form
+                          className={cx(ACTIONS, 'items-end')}
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            confirm.mutate();
+                          }}
+                        >
+                          <label className={cx(LABEL, 'min-w-0 flex-1 basis-64')}>
+                            {pending.kind === 'process' && 'Estimasi pengiriman (hari)'}
+                            {pending.kind === 'ship' && 'Nomor resi pengiriman'}
+                            {pending.kind === 'refund' && 'Catatan refund (mis. nomor transfer manual, minimal 5 karakter)'}
+                            <input
+                              className={INPUT}
+                              value={value}
+                              onChange={(e) => setValue(e.target.value)}
+                              required
+                              autoFocus
+                              type={pending.kind === 'process' ? 'number' : 'text'}
+                              min={pending.kind === 'process' ? 1 : undefined}
+                              max={pending.kind === 'process' ? 365 : undefined}
+                            />
+                          </label>
+                          <button
+                            type="submit"
+                            className={btn(pending.kind === 'refund' ? 'danger' : 'primary')}
+                            disabled={confirm.isPending}
+                          >
+                            {pending.kind === 'process' && 'Simpan & proses pesanan'}
+                            {pending.kind === 'ship' && 'Simpan & tandai dikirim'}
+                            {pending.kind === 'refund' && 'Konfirmasi pembatalan'}
+                          </button>
+                          <button type="button" className={btn('ghost')} onClick={() => setPending(null)}>Batal</button>
+                        </form>
+                        {pending.kind === 'refund' && (
+                          <p className={cx(MUTED_SMALL, 'mt-2')}>
+                            Uang harus dikembalikan manual lewat dashboard Midtrans. Aksi ini hanya mencatat pembatalan dan mengembalikan stok.
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  )}
                 </Fragment>
               );
             })}
           </tbody>
         </table>
-        {orders.data?.length === 0 && <p className="muted center">Belum ada pesanan.</p>}
+        {orders.data?.length === 0 && <p className={EMPTY_ROW}>Belum ada pesanan.</p>}
       </div>
     </section>
   );

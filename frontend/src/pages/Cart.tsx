@@ -4,8 +4,14 @@ import { api } from '../api';
 import { Breakdown } from '../components/Breakdown';
 import { ProductImage } from '../components/ProductImage';
 import { useToast } from '../components/Toast';
+import { CartSkeleton } from '../components/FlowSkeleton';
+import { alertError, btn, card, pageSub, pageTitle, tagDanger } from '../components/flowClasses';
 import { rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
+
+const checkbox = 'm-0 h-[18px] w-[18px] min-h-0 cursor-pointer p-0 accent-primary disabled:cursor-not-allowed disabled:opacity-50';
+const qtyButton =
+  'flex size-8 cursor-pointer items-center justify-center rounded-pill bg-surface text-lg leading-none text-ink hover:text-primary disabled:cursor-not-allowed disabled:opacity-45 disabled:pointer-events-none';
 
 export default function Cart() {
   useSeo({ title: 'Keranjang', noindex: true });
@@ -50,23 +56,15 @@ export default function Cart() {
     onSuccess: refresh,
   });
 
-  if (cart.isPending) {
-    return (
-      <div className="cart-grid" aria-hidden>
-        <div className="cart-list">
-          {Array.from({ length: 2 }).map((_, i) => <div key={i} className="card skeleton cart-skeleton" />)}
-        </div>
-      </div>
-    );
-  }
+  if (cart.isPending) return <CartSkeleton />;
 
   if (items.length === 0) {
     return (
-      <section className="empty">
-        <span className="material-symbols-outlined empty-icon" aria-hidden>shopping_cart</span>
-        <h1>Keranjangmu masih kosong</h1>
-        <p className="muted">Yuk, temukan perlengkapan yang kamu butuhkan.</p>
-        <Link to="/" className="btn primary">Mulai belanja</Link>
+      <section className="px-4 py-16 text-center">
+        <span className="material-symbols-outlined mx-auto mb-3 block text-[56px] text-outline" aria-hidden>shopping_cart</span>
+        <h1 className={pageTitle}>Keranjangmu masih kosong</h1>
+        <p className="mb-6 text-muted">Yuk, temukan perlengkapan yang kamu butuhkan.</p>
+        <Link to="/" className={btn('primary', 'md')}>Mulai belanja</Link>
       </section>
     );
   }
@@ -74,89 +72,117 @@ export default function Cart() {
   const checkoutLabel = selected.length > 0 ? `Checkout (${selectedCount})` : 'Checkout';
 
   return (
-    <section>
-      <h1>Keranjang belanja</h1>
-      <p className="muted page-sub">Centang barang yang ingin dibayar sekarang.</p>
+    <section className="pb-10 lg:pb-0">
+      <h1 className={pageTitle}>Keranjang belanja</h1>
+      <p className={pageSub}>Centang barang yang ingin dibayar sekarang.</p>
 
-      <div className="cart-grid">
-        <div className="cart-main">
-          <div className="card cart-head">
-            <label className="check-row">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="flex min-w-0 flex-col">
+          <div className={`${card} mb-3 flex items-center justify-between gap-3 px-4 py-3`}>
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold text-ink">
               <input
                 type="checkbox"
+                className={checkbox}
                 checked={allSelected}
                 onChange={(e) => toggleAll.mutate(e.target.checked)}
                 disabled={toggleAll.isPending}
               />
               Pilih semua ({items.length})
             </label>
-            <span className="muted small">{selected.length} jenis dipilih</span>
+            <span className="text-xs text-muted">{selected.length} jenis dipilih</span>
           </div>
 
           {issues.length > 0 && (
-            <p className="error">
+            <p className={`${alertError} mb-3`}>
               Ada barang yang tidak tersedia atau stoknya kurang: {issues.map((i) => i.name).join(', ')}. Sesuaikan jumlahnya sebelum checkout.
             </p>
           )}
 
-          <ul className="cart-list">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {items.map((item) => {
               const unavailable = !item.is_active;
               const lowStock = !unavailable && item.stock < item.qty;
               return (
-                <li key={`${item.product_id}-${item.variant_id}`} className={`card cart-item ${item.selected ? '' : 'unchecked'}`}>
-                  <label className="item-check">
-                    <input
-                      type="checkbox"
-                      checked={item.selected}
-                      onChange={(e) => toggleOne.mutate({ productId: item.product_id, variantId: item.variant_id, selected: e.target.checked })}
-                      aria-label={`Pilih ${item.name}`}
-                    />
-                  </label>
-                  <div className="cart-thumb">
-                    <ProductImage name={item.name} src={item.image_url} />
+                <li
+                  key={`${item.product_id}-${item.variant_id}`}
+                  className={`${card} flex flex-col gap-3 p-3 transition-opacity md:flex-row md:items-center md:gap-4 md:p-4 ${item.selected ? '' : 'opacity-60'}`}
+                >
+                  {/* Baris atas di mobile: centang, gambar, info. Di desktop wrapper ini tidak membuat kotak (md:contents). */}
+                  <div className="flex min-w-0 items-center gap-3 md:contents">
+                    <label className="flex shrink-0 cursor-pointer items-center">
+                      <input
+                        type="checkbox"
+                        className={checkbox}
+                        checked={item.selected}
+                        onChange={(e) => toggleOne.mutate({ productId: item.product_id, variantId: item.variant_id, selected: e.target.checked })}
+                        aria-label={`Pilih ${item.name}`}
+                      />
+                    </label>
+                    <div className="size-20 shrink-0 overflow-hidden rounded-field border border-outline-soft md:size-24">
+                      <ProductImage name={item.name} src={item.image_url} className="h-full w-full rounded-none text-[28px]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        to={`/products/${item.product_id}`}
+                        className="font-display text-base font-semibold leading-6 text-ink no-underline hover:text-primary"
+                      >
+                        {item.name}
+                      </Link>
+                      <p className="text-[13px] text-muted">
+                        {rp(item.price)} / buah {item.is_taxable ? '· termasuk PPN' : '· tidak kena PPN'}
+                      </p>
+                      {(unavailable || lowStock) && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {unavailable && <span className={tagDanger}>Tidak tersedia</span>}
+                          {lowStock && <span className={tagDanger}>Stok tersisa {item.stock}</span>}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="grow">
-                    <Link to={`/products/${item.product_id}`} className="item-name">{item.name}</Link>
-                    <p className="muted small">
-                      {rp(item.price)} / buah {item.is_taxable ? '· termasuk PPN' : '· tidak kena PPN'}
-                    </p>
-                    {unavailable && <span className="tag danger">Tidak tersedia</span>}
-                    {lowStock && <span className="tag danger">Stok tersisa {item.stock}</span>}
-                  </div>
-                  <div className="qty">
+
+                  {/* Baris bawah di mobile: jumlah, subtotal, hapus. */}
+                  <div className="flex items-center gap-3 md:contents">
+                    <div className="inline-flex items-center gap-0.5 rounded-pill border border-outline bg-surface-low p-0.5">
+                      <button
+                        className={qtyButton}
+                        disabled={item.qty <= 1 || setQty.isPending}
+                        onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty - 1 })}
+                        aria-label="Kurangi"
+                      >−</button>
+                      <span className="min-w-8 text-center font-mono text-sm tabular-nums">{item.qty}</span>
+                      <button
+                        className={qtyButton}
+                        disabled={item.qty >= Math.min(item.stock, 99) || setQty.isPending}
+                        onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty + 1 })}
+                        aria-label="Tambah"
+                      >+</button>
+                    </div>
+                    <div className="ml-auto min-w-[104px] text-right font-display text-base font-bold tabular-nums text-ink md:min-w-[120px]">
+                      {rp(Number(item.price) * item.qty)}
+                    </div>
                     <button
-                      className="btn"
-                      disabled={item.qty <= 1 || setQty.isPending}
-                      onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty - 1 })}
-                      aria-label="Kurangi"
-                    >−</button>
-                    <span>{item.qty}</span>
-                    <button
-                      className="btn"
-                      disabled={item.qty >= Math.min(item.stock, 99) || setQty.isPending}
-                      onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty + 1 })}
-                      aria-label="Tambah"
-                    >+</button>
+                      className={btn('danger', 'xs')}
+                      onClick={() => remove.mutate({ productId: item.product_id, variantId: item.variant_id })}
+                    >
+                      Hapus
+                    </button>
                   </div>
-                  <div className="line-total">{rp(Number(item.price) * item.qty)}</div>
-                  <button className="btn link danger" onClick={() => remove.mutate({ productId: item.product_id, variantId: item.variant_id })}>Hapus</button>
                 </li>
               );
             })}
           </ul>
         </div>
 
-        <aside className="card summary">
-          <h2>Ringkasan pesanan</h2>
-          {selected.length === 0 && <p className="muted">Belum ada barang yang dipilih.</p>}
-          {preview.isPending && selectable.length > 0 && <p className="muted">Menghitung…</p>}
-          {preview.isError && <p className="error">{(preview.error as Error).message}</p>}
+        <aside className={`${card} self-start p-5 md:p-6 lg:sticky lg:top-[100px]`}>
+          <h2 className="mt-0 mb-4 font-display text-lg font-semibold text-ink">Ringkasan pesanan</h2>
+          {selected.length === 0 && <p className="text-muted">Belum ada barang yang dipilih.</p>}
+          {preview.isPending && selectable.length > 0 && <p className="text-muted">Menghitung…</p>}
+          {preview.isError && <p className={alertError}>{(preview.error as Error).message}</p>}
           {preview.data && selected.length > 0 && <Breakdown data={preview.data} />}
-          <p className="muted small">Ongkos kirim final dihitung saat checkout dan tidak dikenai PPN.</p>
+          <p className="mt-4 text-xs text-muted">Ongkos kirim final dihitung saat checkout dan tidak dikenai PPN.</p>
           <Link
             to="/checkout"
-            className={`btn primary block checkout-cta ${checkoutReady ? '' : 'disabled'}`}
+            className={btn('primary', 'lg', 'mt-5 w-full')}
             aria-disabled={!checkoutReady}
             onClick={(e) => {
               if (!checkoutReady) e.preventDefault();
@@ -167,14 +193,20 @@ export default function Cart() {
         </aside>
       </div>
 
-      <div className="cart-bar mobile-only" role="region" aria-label="Ringkasan belanja">
-        <div className="cart-bar-total">
-          <span className="muted small">Total bayar</span>
-          <strong>{preview.data && selected.length > 0 ? rp(preview.data.grand_total) : '—'}</strong>
+      <div
+        className="fixed inset-x-0 bottom-14 z-[29] flex items-center justify-between gap-3 border-t border-outline-soft bg-surface px-3.5 py-2.5 shadow-[0_-8px_20px_-16px_rgba(0,0,0,0.3)] md:bottom-0 lg:hidden"
+        role="region"
+        aria-label="Ringkasan belanja"
+      >
+        <div className="flex min-w-0 flex-col">
+          <span className="text-xs text-muted">Total bayar</span>
+          <strong className="font-display text-lg font-bold text-primary">
+            {preview.data && selected.length > 0 ? rp(preview.data.grand_total) : '—'}
+          </strong>
         </div>
         <Link
           to="/checkout"
-          className={`btn primary ${checkoutReady ? '' : 'disabled'}`}
+          className={btn('primary', 'lg', 'shrink-0')}
           aria-disabled={!checkoutReady}
           onClick={(e) => {
             if (!checkoutReady) e.preventDefault();

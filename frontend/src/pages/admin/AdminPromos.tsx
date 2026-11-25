@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { api } from '../../api';
 import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
+import { FORM_CARD, INPUT, LABEL, Notice, ROW, btn, cx } from './adminUi';
 
 export default function AdminPromos() {
   const [code, setCode] = useState('');
@@ -32,45 +33,47 @@ export default function AdminPromos() {
   });
 
   return (
-    <section className="narrow">
+    <section className="mx-auto max-w-[480px]">
       <PageHeader title="Kode promo" subtitle="Buat kode diskon persen atau nominal, lengkap dengan minimum belanja dan kuota." />
       <form
-        className="card form"
+        className={FORM_CARD}
         onSubmit={(e) => {
           e.preventDefault();
           setMessage(null);
           create.mutate();
         }}
       >
-        <label>
+        <label className={LABEL}>
           Kode
-          <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required maxLength={40} />
+          <input className={INPUT} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required maxLength={40} />
         </label>
-        <div className="row">
-          <label>
+        <div className={ROW}>
+          <label className={LABEL}>
             Jenis
-            <select value={type} onChange={(e) => setType(e.target.value as 'percent' | 'fixed')}>
+            <select className={INPUT} value={type} onChange={(e) => setType(e.target.value as 'percent' | 'fixed')}>
               <option value="percent">Persen (%)</option>
               <option value="fixed">Nominal (Rp)</option>
             </select>
           </label>
-          <label>
+          <label className={LABEL}>
             Nilai {type === 'percent' ? '(%)' : '(Rp)'}
-            <input inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ''))} required />
+            <input className={INPUT} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ''))} required />
           </label>
         </div>
-        <div className="row">
-          <label>
+        <div className={ROW}>
+          <label className={LABEL}>
             Minimum belanja (Rp)
-            <input inputMode="numeric" value={minSubtotal} onChange={(e) => setMinSubtotal(e.target.value.replace(/[^0-9]/g, ''))} placeholder="0" />
+            <input className={INPUT} inputMode="numeric" value={minSubtotal} onChange={(e) => setMinSubtotal(e.target.value.replace(/[^0-9]/g, ''))} placeholder="0" />
           </label>
-          <label>
+          <label className={LABEL}>
             Kuota pemakaian
-            <input inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Tanpa batas" />
+            <input className={INPUT} inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Tanpa batas" />
           </label>
         </div>
-        {message && <p className={message.kind === 'ok' ? 'success' : 'error'}>{message.text}</p>}
-        <button className="btn primary block" disabled={create.isPending}>Buat promo</button>
+        {message && <Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice>}
+        <button type="submit" className={cx(btn('primary'), 'w-full')} disabled={create.isPending}>
+          Buat promo
+        </button>
       </form>
     </section>
   );

@@ -3,8 +3,19 @@ import { useQuery } from '@tanstack/react-query';
 import { SearchBox } from './SearchBox';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api';
+import { btnBase, btnPrimary } from './ui/storefront';
 
 const YEAR = new Date().getFullYear();
+
+const navItem = ({ isActive }: { isActive: boolean }) =>
+  `rounded-field px-3 py-2 text-sm font-semibold no-underline transition-colors duration-150 hover:bg-surface-low hover:text-ink max-[760px]:px-2 ${
+    isActive ? 'bg-secondary-container/55 text-primary' : 'text-ink-2'
+  }`;
+
+const mobileItem = ({ isActive }: { isActive: boolean }) =>
+  `flex flex-col items-center gap-0.5 py-1 text-[11px] font-semibold no-underline ${isActive ? 'text-primary' : 'text-muted'}`;
+
+const footerLink = 'text-[13px] text-muted no-underline hover:text-primary';
 
 export function Layout() {
   const { user } = useAuth();
@@ -12,90 +23,121 @@ export function Layout() {
   const cartCount = (cart.data ?? []).reduce((n, i) => n + i.qty, 0);
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <div className="container bar">
-          <Link to="/" className="brand" aria-label="Tokoku — beranda">
-            <span className="brand-mark material-symbols-outlined" aria-hidden>storefront</span>
+    <div className="flex min-h-screen flex-col bg-bg text-ink">
+      <header className="sticky top-0 z-20 border-b border-outline bg-surface print:hidden">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 min-[761px]:px-6 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-5 min-[1101px]:py-0">
+          <Link
+            to="/"
+            className="inline-flex flex-none items-center gap-2.5 font-display text-xl font-bold tracking-tight text-ink no-underline hover:no-underline"
+            aria-label="Tokoku — beranda"
+          >
+            <span
+              className="material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field bg-primary text-xl text-on-primary"
+              aria-hidden
+            >
+              storefront
+            </span>
             <span>Tokoku</span>
           </Link>
 
-          <SearchBox />
+          <div className="order-3 flex basis-full justify-center min-[1101px]:order-none min-[1101px]:basis-auto min-[1101px]:flex-1 min-[1101px]:px-2">
+            <SearchBox />
+          </div>
 
-          <nav className="nav" aria-label="Navigasi utama">
-            <NavLink to="/" end>Katalog</NavLink>
-            {user && <NavLink to="/orders">Pesanan</NavLink>}
-            {user?.role === 'admin' && <NavLink to="/admin/products">Admin</NavLink>}
+          <nav className="order-2 flex flex-none items-center gap-1 max-[760px]:hidden min-[1101px]:order-none" aria-label="Navigasi utama">
+            <NavLink to="/" end className={navItem}>Katalog</NavLink>
+            {user && <NavLink to="/orders" className={navItem}>Pesanan</NavLink>}
+            {user?.role === 'admin' && <NavLink to="/admin/products" className={navItem}>Admin</NavLink>}
           </nav>
 
-          <div className="auth">
+          <div className="ml-auto flex flex-none items-center gap-2 min-[1101px]:ml-0">
             {user && (
-              <NavLink to="/cart" className="cart-btn">
-                <span className="material-symbols-outlined" aria-hidden>shopping_cart</span>
-                <span>Keranjang</span>
-                <span className="badge">{cartCount}</span>
+              <NavLink
+                to="/cart"
+                className="inline-flex h-11 items-center gap-2 rounded-field border border-outline bg-surface px-3.5 text-sm font-semibold text-ink no-underline hover:border-primary max-[760px]:px-2.5"
+              >
+                <span className="material-symbols-outlined text-xl" aria-hidden>shopping_cart</span>
+                <span className="max-[760px]:hidden">Keranjang</span>
+                <span className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-pill bg-primary px-1.5 font-mono text-xs font-medium text-on-primary">
+                  {cartCount}
+                </span>
               </NavLink>
             )}
             {user ? (
-              <NavLink to="/account" className="account-link">
-                <span className="avatar small" aria-hidden>{user.name.charAt(0).toUpperCase()}</span>
-                <span className="account-name">{user.name.split(' ')[0]}</span>
+              <NavLink
+                to="/account"
+                className="inline-flex h-11 items-center gap-2 rounded-pill border border-outline py-0 pl-1.5 pr-3 text-sm font-semibold text-ink no-underline hover:border-primary"
+              >
+                <span
+                  className="flex h-7 w-7 flex-none items-center justify-center rounded-pill bg-secondary-container font-display text-xs font-bold text-on-secondary-container"
+                  aria-hidden
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="max-w-[100px] truncate">{user.name.split(' ')[0]}</span>
               </NavLink>
             ) : (
-              <Link to="/login" className="btn primary">Masuk</Link>
+              <Link to="/login" className={`${btnBase} ${btnPrimary} max-[760px]:hidden`}>Masuk</Link>
             )}
           </div>
         </div>
       </header>
 
-      <main className="container main">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 pb-12 pt-8 min-[761px]:px-6 max-[760px]:pb-6">
         <Outlet />
       </main>
 
-      <nav className="mobile-nav" aria-label="Navigasi cepat">
-        <NavLink to="/" end>
-          <span className="material-symbols-outlined" aria-hidden>home</span>
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 hidden grid-cols-4 border-t border-outline-soft bg-surface px-1 pb-[calc(6px+env(safe-area-inset-bottom))] pt-1.5 max-[760px]:grid print:hidden"
+        aria-label="Navigasi cepat"
+      >
+        <NavLink to="/" end className={mobileItem}>
+          <span className="material-symbols-outlined text-2xl" aria-hidden>home</span>
           <span>Beranda</span>
         </NavLink>
         {user ? (
-          <NavLink to="/cart">
-            <span className="mn-icon">
-              <span className="material-symbols-outlined" aria-hidden>shopping_cart</span>
-              {cartCount > 0 && <span className="mn-badge">{cartCount}</span>}
+          <NavLink to="/cart" className={mobileItem}>
+            <span className="relative inline-flex">
+              <span className="material-symbols-outlined text-2xl" aria-hidden>shopping_cart</span>
+              {cartCount > 0 && (
+                <span className="absolute -right-2.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
             </span>
             <span>Keranjang</span>
           </NavLink>
         ) : (
-          <NavLink to="/login">
-            <span className="material-symbols-outlined" aria-hidden>shopping_cart</span>
+          <NavLink to="/login" className={mobileItem}>
+            <span className="material-symbols-outlined text-2xl" aria-hidden>shopping_cart</span>
             <span>Keranjang</span>
           </NavLink>
         )}
-        <NavLink to="/orders">
-          <span className="material-symbols-outlined" aria-hidden>receipt_long</span>
+        <NavLink to="/orders" className={mobileItem}>
+          <span className="material-symbols-outlined text-2xl" aria-hidden>receipt_long</span>
           <span>Pesanan</span>
         </NavLink>
         {user ? (
-          <NavLink to="/account">
-            <span className="material-symbols-outlined" aria-hidden>person</span>
+          <NavLink to="/account" className={mobileItem}>
+            <span className="material-symbols-outlined text-2xl" aria-hidden>person</span>
             <span>Akun</span>
           </NavLink>
         ) : (
-          <NavLink to="/login">
-            <span className="material-symbols-outlined" aria-hidden>person</span>
+          <NavLink to="/login" className={mobileItem}>
+            <span className="material-symbols-outlined text-2xl" aria-hidden>person</span>
             <span>Masuk</span>
           </NavLink>
         )}
       </nav>
 
-      <footer className="footer">
-        <div className="container footer-inner">
-          <span className="muted small">© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
-          <nav className="footer-links" aria-label="Informasi">
-            <Link to="/syarat">Syarat & Ketentuan</Link>
-            <Link to="/privasi">Privasi</Link>
-            <Link to="/pengembalian">Pengembalian Dana</Link>
-            <Link to="/bantuan">Bantuan</Link>
+      <footer className="mt-12 border-t border-outline-soft bg-surface py-6 max-[760px]:pb-20 print:hidden">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 min-[761px]:px-6">
+          <span className="text-xs text-muted">© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
+          <nav className="flex flex-wrap gap-5" aria-label="Informasi">
+            <Link to="/syarat" className={footerLink}>Syarat & Ketentuan</Link>
+            <Link to="/privasi" className={footerLink}>Privasi</Link>
+            <Link to="/pengembalian" className={footerLink}>Pengembalian Dana</Link>
+            <Link to="/bantuan" className={footerLink}>Bantuan</Link>
           </nav>
         </div>
       </footer>

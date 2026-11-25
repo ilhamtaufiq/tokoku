@@ -7,6 +7,9 @@ import { rp } from '../lib/money';
 import type { Product } from '../api/types';
 import { ProductImage } from './ProductImage';
 import { useToast } from './Toast';
+import { btnBase, btnOutline, btnPrimary, card, ppnChip, tagBase, tagDanger, tagWarn } from './ui/storefront';
+
+const ctaBase = `${btnBase} mt-auto w-full text-sm max-[760px]:px-2 max-[760px]:text-xs`;
 
 /** Kartu produk ala marketplace: gambar persegi, nama dua baris, harga, dan aksi cepat. */
 export function ProductCard({ product: p }: { product: Product }) {
@@ -34,28 +37,42 @@ export function ProductCard({ product: p }: { product: Product }) {
   });
 
   return (
-    <article className="product">
-      <Link to={`/products/${p.id}`} className="product-media" aria-label={p.name}>
-        <ProductImage name={p.name} src={p.image_url} />
-        {p.stock === 0 && <span className="tag danger overlay">Habis</span>}
-        {p.stock > 0 && p.stock <= 5 && <span className="tag warn overlay">Sisa {p.stock}</span>}
+    <article
+      className={`${card} group flex flex-col overflow-hidden transition-[border-color,box-shadow] duration-200 ease-out hover:border-primary/45 hover:shadow-[0_6px_20px_-14px_var(--c-primary)]`}
+    >
+      <Link
+        to={`/products/${p.id}`}
+        className="relative block aspect-square bg-surface-low no-underline"
+        aria-label={p.name}
+      >
+        <ProductImage name={p.name} src={p.image_url} className="h-full w-full rounded-none" />
+        {p.stock === 0 && <span className={`${tagBase} ${tagDanger} absolute left-3 top-3 shadow-sm`}>Habis</span>}
+        {p.stock > 0 && p.stock <= 5 && <span className={`${tagBase} ${tagWarn} absolute left-3 top-3 shadow-sm`}>Sisa {p.stock}</span>}
       </Link>
-      <div className="product-body">
-        <Link to={`/products/${p.id}`} className="product-name">{p.name}</Link>
-        <div className="price-row">
-          <span className="price">{hasVariants && <span className="price-from">mulai </span>}{rp(p.price)}</span>
+      <div className="flex flex-1 flex-col gap-1.5 p-4 max-[760px]:p-3">
+        <Link
+          to={`/products/${p.id}`}
+          className="line-clamp-2 min-h-12 font-display text-[17px] font-semibold leading-6 text-ink no-underline hover:text-primary max-[760px]:min-h-10 max-[760px]:text-[15px] max-[760px]:leading-5"
+        >
+          {p.name}
+        </Link>
+        <div className="mt-1">
+          <span className="font-display text-xl font-bold tracking-tight text-primary max-[760px]:text-base">
+            {hasVariants && <span className="text-sm font-normal text-muted">mulai </span>}
+            {rp(p.price)}
+          </span>
         </div>
         {p.is_taxable
-          ? <span className="ppn-chip">Termasuk PPN</span>
-          : <span className="muted small">Tidak kena PPN</span>}
+          ? <span className={ppnChip}>Termasuk PPN</span>
+          : <span className="text-xs text-muted">Tidak kena PPN</span>}
         {hasVariants ? (
-          <Link to={`/products/${p.id}`} className="btn outline block card-cta">
-            <span className="material-symbols-outlined" aria-hidden>tune</span>
+          <Link to={`/products/${p.id}`} className={`${ctaBase} ${btnOutline}`}>
+            <span className="material-symbols-outlined max-[760px]:hidden" aria-hidden>tune</span>
             Pilih varian
           </Link>
         ) : (
           <button
-            className="btn primary block card-cta"
+            className={`${ctaBase} ${btnPrimary}`}
             disabled={outOfStock || add.isPending}
             onClick={() => {
               if (!user) {
@@ -65,7 +82,7 @@ export function ProductCard({ product: p }: { product: Product }) {
               add.mutate();
             }}
           >
-            <span className="material-symbols-outlined" aria-hidden>add_shopping_cart</span>
+            <span className="material-symbols-outlined max-[760px]:hidden" aria-hidden>add_shopping_cart</span>
             {outOfStock ? 'Stok habis' : user ? 'Tambah' : 'Masuk untuk belanja'}
           </button>
         )}

@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import { ApiError } from '../api/client';
 import { Breakdown } from '../components/Breakdown';
+import { CheckoutSkeleton } from '../components/FlowSkeleton';
+import { alertError, btn, card, field, label, pageSub, pageTitle, sectionTitle } from '../components/flowClasses';
 import { rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
@@ -46,13 +48,20 @@ export default function Checkout() {
     onError: (e) => setError(e instanceof ApiError ? e.message : 'Checkout gagal. Coba lagi.'),
   });
 
-  if (cart.isPending) return <p className="muted">Memuat…</p>;
+  if (cart.isPending) {
+    return (
+      <div role="status">
+        <span className="sr-only">Memuat…</span>
+        <CheckoutSkeleton />
+      </div>
+    );
+  }
   if (items.length === 0) {
     return (
-      <section className="empty">
-        <h1>Keranjang kosong</h1>
-        <p className="muted">Belum ada barang yang dipilih di keranjang.</p>
-        <Link to="/cart" className="btn primary">Kembali ke keranjang</Link>
+      <section className="px-4 py-16 text-center">
+        <h1 className={pageTitle}>Keranjang kosong</h1>
+        <p className="mb-6 text-muted">Belum ada barang yang dipilih di keranjang.</p>
+        <Link to="/cart" className={btn('primary', 'md')}>Kembali ke keranjang</Link>
       </section>
     );
   }
@@ -61,28 +70,31 @@ export default function Checkout() {
 
   return (
     <section>
-      <h1>Checkout</h1>
-      <p className="muted page-sub">Lengkapi alamat, lalu bayar dengan aman lewat Midtrans.</p>
+      <h1 className={pageTitle}>Checkout</h1>
+      <p className={pageSub}>Lengkapi alamat, lalu bayar dengan aman lewat Midtrans.</p>
       {!ready && (
-        <p className="error">Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
+        <p className={`${alertError} mb-4`}>Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
       )}
 
-      <div className="checkout-grid">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
         <form
-          className="checkout-main"
+          className="flex min-w-0 flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
             setError(null);
             checkout.mutate();
           }}
         >
-          <div className="card section-card">
-            <h2><span className="material-symbols-outlined" aria-hidden>location_on</span>Alamat pengiriman</h2>
-            <p className="section-desc">Tulis alamat lengkap termasuk nama penerima dan nomor telepon.</p>
-            <label>
+          <div className={`${card} p-5 md:p-6`}>
+            <h2 className={`${sectionTitle} flex items-center gap-2.5 text-lg`}>
+              <span className="material-symbols-outlined text-[22px] text-primary" aria-hidden>location_on</span>Alamat pengiriman
+            </h2>
+            <p className="-mt-1 mb-4 text-[13px] text-muted">Tulis alamat lengkap termasuk nama penerima dan nomor telepon.</p>
+            <label className={label}>
               Alamat lengkap
               <textarea
                 rows={4}
+                className={`${field} resize-y`}
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Nama penerima, alamat lengkap, kota, kode pos, nomor telepon"
@@ -92,66 +104,85 @@ export default function Checkout() {
             </label>
           </div>
 
-          <div className="card section-card">
-            <h2><span className="material-symbols-outlined" aria-hidden>receipt_long</span>Faktur pajak</h2>
-            <p className="section-desc">Opsional. Isi jika kamu membutuhkan faktur pajak atas nama NPWP.</p>
-            <label>
+          <div className={`${card} p-5 md:p-6`}>
+            <h2 className={`${sectionTitle} flex items-center gap-2.5 text-lg`}>
+              <span className="material-symbols-outlined text-[22px] text-primary" aria-hidden>receipt_long</span>Faktur pajak
+            </h2>
+            <p className="-mt-1 mb-4 text-[13px] text-muted">Opsional. Isi jika kamu membutuhkan faktur pajak atas nama NPWP.</p>
+            <label className={label}>
               NPWP pembeli
-              <input value={npwp} onChange={(e) => setNpwp(e.target.value)} placeholder="15 atau 16 digit" />
+              <input className={field} value={npwp} onChange={(e) => setNpwp(e.target.value)} placeholder="15 atau 16 digit" />
             </label>
           </div>
 
-          <div className="card section-card">
-            <h2><span className="material-symbols-outlined" aria-hidden>payments</span>Metode pembayaran</h2>
-            <p className="snap-note">
-              <span className="material-symbols-outlined" aria-hidden>lock</span>
+          <div className={`${card} p-5 md:p-6`}>
+            <h2 className={`${sectionTitle} flex items-center gap-2.5 text-lg`}>
+              <span className="material-symbols-outlined text-[22px] text-primary" aria-hidden>payments</span>Metode pembayaran
+            </h2>
+            <p className="flex items-start gap-2.5 rounded-field bg-surface-low p-3.5 text-sm text-ink-2">
+              <span className="material-symbols-outlined mt-px text-[20px] text-primary" aria-hidden>lock</span>
               Setelah klik bayar, kamu diarahkan ke halaman pembayaran Midtrans yang aman. Semua metode yang tersedia ditampilkan di sana.
             </p>
           </div>
 
-          {error && <p className="error">{error}</p>}
+          {error && <p className={alertError}>{error}</p>}
         </form>
 
-        <aside className="card summary">
-          <h2>Ringkasan pesanan</h2>
-          <ul className="order-lines">
+        <aside className={`${card} self-start p-5 md:p-6 lg:sticky lg:top-[100px]`}>
+          <h2 className="mt-0 mb-4 font-display text-lg font-semibold text-ink">Ringkasan pesanan</h2>
+          <ul className="m-0 mb-4 flex list-none flex-col gap-3 p-0">
             {items.map((i) => (
-              <li key={`${i.product_id}-${i.variant_id}`}>
-                <div>
-                  <strong>{i.name}</strong>
-                  <div className="muted">{i.qty} × {rp(i.price)}</div>
+              <li key={`${i.product_id}-${i.variant_id}`} className="flex justify-between gap-3 text-sm">
+                <div className="min-w-0">
+                  <strong className="font-semibold text-ink">{i.name}</strong>
+                  <div className="text-xs text-muted">{i.qty} × {rp(i.price)}</div>
                 </div>
-                <span>{rp(Number(i.price) * i.qty)}</span>
+                <span className="shrink-0 font-semibold tabular-nums text-ink">{rp(Number(i.price) * i.qty)}</span>
               </li>
             ))}
           </ul>
 
-          <div className="promo-row">
+          <div className="flex items-stretch gap-2">
             <input
+              className={`${field} min-w-0 flex-1 font-mono uppercase`}
               value={promoInput}
               onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
               placeholder="Kode promo"
               aria-label="Kode promo"
             />
-            <button type="button" className="btn" onClick={() => setAppliedPromo(promoInput.trim())} disabled={!promoInput.trim()}>
+            <button
+              type="button"
+              className={btn('default', 'md', 'shrink-0')}
+              onClick={() => setAppliedPromo(promoInput.trim())}
+              disabled={!promoInput.trim()}
+            >
               Terapkan
             </button>
           </div>
           {appliedPromo && (
-            <p className="small muted promo-state">
+            <p className="mt-2 flex items-center justify-between gap-2 text-xs text-muted">
               {preview.data ? `Promo ${appliedPromo} diterapkan.` : ''}
-              <button type="button" className="btn link small-btn" onClick={() => { setAppliedPromo(''); setPromoInput(''); }}>Hapus</button>
+              <button
+                type="button"
+                className={btn('text', 'sm')}
+                onClick={() => {
+                  setAppliedPromo('');
+                  setPromoInput('');
+                }}
+              >
+                Hapus
+              </button>
             </p>
           )}
-          {preview.isError && <p className="error">{(preview.error as Error).message}</p>}
+          {preview.isError && <p className={`${alertError} mt-3`}>{(preview.error as Error).message}</p>}
 
-          <div className="summary-break">
-            {preview.isPending && <p className="muted">Menghitung…</p>}
+          <div className="mt-4">
+            {preview.isPending && <p className="text-muted">Menghitung…</p>}
             {preview.data && <Breakdown data={preview.data} />}
           </div>
 
           <button
-            className="btn primary block checkout-cta"
+            className={btn('primary', 'xl', 'mt-5 w-full')}
             disabled={!canSubmit}
             onClick={(e) => {
               e.preventDefault();
@@ -165,8 +196,8 @@ export default function Checkout() {
                 ? `Bayar ${rp(preview.data.grand_total)}`
                 : 'Bayar sekarang'}
           </button>
-          <p className="guarantee">
-            <span className="material-symbols-outlined" aria-hidden>verified_user</span>
+          <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
+            <span className="material-symbols-outlined text-base text-success" aria-hidden>verified_user</span>
             Pembayaran diproses Midtrans. Pesanan dibatalkan otomatis jika tidak dibayar dalam 24 jam.
           </p>
         </aside>

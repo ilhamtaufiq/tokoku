@@ -4,11 +4,20 @@ import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp, sisaWaktu } from '../../lib/money';
 import { useSeo } from '../../lib/seo';
+import { CARD, MUTED_SMALL, Notice, StatusBadge, TABLE, TABLE_WRAP, TBODY, TD, TD_NUM, TH, TH_NUM, cx } from './adminUi';
 
 const ACTION_LABEL: Record<string, string> = {
   'order.status': 'Ubah status',
   'order.refund_cancel': 'Batalkan + catat refund',
 };
+
+const BACK_LINK = 'inline-flex items-center gap-1 text-sm font-semibold text-muted no-underline hover:text-primary';
+const CARD_TITLE = 'm-0 mb-1 text-base font-semibold text-ink';
+/** Baris ringkasan: label di kiri, nilai di kanan. */
+const KV = 'm-0 grid gap-2';
+const KV_ROW = 'flex justify-between gap-3 text-sm';
+const KV_KEY = 'text-muted';
+const KV_VAL = 'm-0 text-right text-ink';
 
 /** Detail satu pesanan untuk admin: ringkasan biaya, pembeli, pengiriman, barang, dan riwayat aktivitas. */
 export default function AdminOrderDetail() {
@@ -18,12 +27,12 @@ export default function AdminOrderDetail() {
   const order = useQuery({ queryKey: ['admin-order', orderId], queryFn: () => api.adminOrder(orderId) });
   const activity = useQuery({ queryKey: ['admin-order-activity', orderId], queryFn: () => api.adminOrderActivity(orderId) });
 
-  if (order.isPending) return <p className="muted">Memuat pesanan…</p>;
+  if (order.isPending) return <p className="text-muted">Memuat pesanan…</p>;
   if (order.isError || !order.data) {
     return (
       <section>
-        <Link to="/admin/orders" className="muted small">← Semua pesanan</Link>
-        <p className="error">Pesanan tidak ditemukan.</p>
+        <Link to="/admin/orders" className={BACK_LINK}>← Semua pesanan</Link>
+        <div className="mt-3"><Notice kind="error">Pesanan tidak ditemukan.</Notice></div>
       </section>
     );
   }
@@ -33,86 +42,97 @@ export default function AdminOrderDetail() {
   const hasDpp = Number(o.dpp) > 0;
 
   return (
-    <section>
-      <Link to="/admin/orders" className="muted small">← Semua pesanan</Link>
+    <section className="flex flex-col gap-4">
+      <Link to="/admin/orders" className={BACK_LINK}>← Semua pesanan</Link>
       <PageHeader
         title={o.invoice_no}
         subtitle={`Dibuat ${formatDate(o.created_at)}`}
-        actions={<span className={`tag big ${o.status === 'cancelled' ? 'danger' : ''}`}>{ORDER_STATUS_LABEL[o.status] ?? o.status}</span>}
+        actions={
+          <StatusBadge tone={o.status === 'cancelled' ? 'danger' : 'neutral'} className="h-8 px-3.5 text-sm">
+            {ORDER_STATUS_LABEL[o.status] ?? o.status}
+          </StatusBadge>
+        }
       />
 
-      <div className="detail-cards">
-        <div className="card detail-card">
-          <h2>Ringkasan biaya</h2>
-          <dl className="kv">
-            <div><dt>Subtotal</dt><dd>{rp(o.subtotal)}</dd></div>
-            {discount && <div><dt>Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt><dd>−{rp(o.discount_total)}</dd></div>}
-            {hasDpp && <div><dt>DPP</dt><dd>{rp(o.dpp)}</dd></div>}
-            {hasDpp && <div><dt>PPN {percent(o.ppn_rate)}</dt><dd>{rp(o.ppn_total)}</dd></div>}
-            <div><dt>Ongkos kirim (tanpa PPN)</dt><dd>{rp(o.shipping_fee)}</dd></div>
-            <div className="grand"><dt>Total</dt><dd>{rp(o.grand_total)}</dd></div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className={cx(CARD, 'grid content-start gap-2.5 p-4 sm:p-5')}>
+          <h2 className={CARD_TITLE}>Ringkasan biaya</h2>
+          <dl className={KV}>
+            <div className={KV_ROW}><dt className={KV_KEY}>Subtotal</dt><dd className={KV_VAL}>{rp(o.subtotal)}</dd></div>
+            {discount && <div className={KV_ROW}><dt className={KV_KEY}>Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt><dd className={KV_VAL}>−{rp(o.discount_total)}</dd></div>}
+            {hasDpp && <div className={KV_ROW}><dt className={KV_KEY}>DPP</dt><dd className={KV_VAL}>{rp(o.dpp)}</dd></div>}
+            {hasDpp && <div className={KV_ROW}><dt className={KV_KEY}>PPN {percent(o.ppn_rate)}</dt><dd className={KV_VAL}>{rp(o.ppn_total)}</dd></div>}
+            <div className={KV_ROW}><dt className={KV_KEY}>Ongkos kirim (tanpa PPN)</dt><dd className={KV_VAL}>{rp(o.shipping_fee)}</dd></div>
+            <div className={cx(KV_ROW, 'border-t border-outline-soft pt-2 font-bold')}><dt>Total</dt><dd className={KV_VAL}>{rp(o.grand_total)}</dd></div>
           </dl>
         </div>
 
-        <div className="card detail-card">
-          <h2>Pembayaran dan pembeli</h2>
-          <dl className="kv">
-            <div><dt>Status pembayaran</dt><dd>{o.payment_status}</dd></div>
-            <div><dt>Pembeli</dt><dd>{o.buyer_name ?? '-'}</dd></div>
-            <div><dt>NPWP pembeli</dt><dd>{o.buyer_npwp ?? '-'}</dd></div>
-            <div><dt>Alamat</dt><dd className="pre">{o.shipping_address}</dd></div>
+        <div className={cx(CARD, 'grid content-start gap-2.5 p-4 sm:p-5')}>
+          <h2 className={CARD_TITLE}>Pembayaran dan pembeli</h2>
+          <dl className={KV}>
+            <div className={KV_ROW}><dt className={KV_KEY}>Status pembayaran</dt><dd className={KV_VAL}>{o.payment_status}</dd></div>
+            <div className={KV_ROW}><dt className={KV_KEY}>Pembeli</dt><dd className={KV_VAL}>{o.buyer_name ?? '-'}</dd></div>
+            <div className={KV_ROW}><dt className={KV_KEY}>NPWP pembeli</dt><dd className={KV_VAL}>{o.buyer_npwp ?? '-'}</dd></div>
+            <div className={KV_ROW}><dt className={KV_KEY}>Alamat</dt><dd className={cx(KV_VAL, 'whitespace-pre-wrap')}>{o.shipping_address}</dd></div>
           </dl>
         </div>
 
-        <div className="card detail-card">
-          <h2>Pengiriman</h2>
-          <dl className="kv">
-            <div><dt>Nomor resi</dt><dd>{o.tracking_number ?? 'Belum diisi'}</dd></div>
-            <div><dt>Estimasi</dt><dd>{o.estimated_days ? `${o.estimated_days} hari` : 'Belum diisi'}</dd></div>
+        <div className={cx(CARD, 'grid content-start gap-2.5 p-4 sm:p-5')}>
+          <h2 className={CARD_TITLE}>Pengiriman</h2>
+          <dl className={KV}>
+            <div className={KV_ROW}><dt className={KV_KEY}>Nomor resi</dt><dd className={KV_VAL}>{o.tracking_number ?? 'Belum diisi'}</dd></div>
+            <div className={KV_ROW}><dt className={KV_KEY}>Estimasi</dt><dd className={KV_VAL}>{o.estimated_days ? `${o.estimated_days} hari` : 'Belum diisi'}</dd></div>
             {o.estimated_due_at && (
-              <div><dt>Tenggat</dt><dd>{formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</dd></div>
+              <div className={KV_ROW}><dt className={KV_KEY}>Tenggat</dt><dd className={KV_VAL}>{formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</dd></div>
             )}
           </dl>
-          {o.refund_note && <p className="callout-info">Catatan refund: {o.refund_note}</p>}
+          {o.refund_note && (
+            <p className="rounded-field bg-secondary-container px-3 py-2.5 text-sm text-on-secondary-container">Catatan refund: {o.refund_note}</p>
+          )}
         </div>
       </div>
 
-      <div className="card table-wrap detail-items">
-        <h2>Barang</h2>
-        <table>
+      <div className={cx(TABLE_WRAP, 'overflow-x-auto')}>
+        <h2 className="px-4 pb-2 pt-4 text-base font-semibold text-ink sm:px-5">Barang</h2>
+        <table className={TABLE}>
           <thead>
-            <tr><th>Produk</th><th className="num">Qty</th><th className="num">Harga (termasuk PPN)</th><th className="num">Jumlah</th></tr>
+            <tr>
+              <th className={TH}>Produk</th>
+              <th className={TH_NUM}>Qty</th>
+              <th className={TH_NUM}>Harga (termasuk PPN)</th>
+              <th className={TH_NUM}>Jumlah</th>
+            </tr>
           </thead>
-          <tbody>
+          <tbody className={TBODY}>
             {o.items.map((i) => (
               <tr key={`${i.product_id}-${i.product_name}`}>
-                <td>
+                <td className={TD}>
                   {i.product_name}
-                  {!i.is_taxable && <span className="muted small"> (tanpa PPN)</span>}
+                  {!i.is_taxable && <span className={cx(MUTED_SMALL, 'ml-1')}>(tanpa PPN)</span>}
                 </td>
-                <td className="num">{i.qty}</td>
-                <td className="num">{rp(i.unit_price)}</td>
-                <td className="num">{rp(i.line_subtotal)}</td>
+                <td className={TD_NUM}>{i.qty}</td>
+                <td className={TD_NUM}>{rp(i.unit_price)}</td>
+                <td className={TD_NUM}>{rp(i.line_subtotal)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="card detail-card">
-        <h2>Riwayat aktivitas</h2>
+      <div className={cx(CARD, 'grid content-start gap-2.5 p-4 sm:p-5')}>
+        <h2 className={CARD_TITLE}>Riwayat aktivitas</h2>
         {activity.data && activity.data.length > 0 ? (
-          <ul className="timeline">
+          <ul className="m-0 grid list-none gap-3 p-0">
             {activity.data.map((e) => (
-              <li key={e.id}>
-                <strong>{ACTION_LABEL[e.action] ?? e.action}</strong>
-                <span className="muted small"> · {e.actor_name ?? 'Sistem'} · {formatDate(e.created_at)}</span>
-                <div className="small">{e.detail}</div>
+              <li key={e.id} className="border-l-2 border-outline pl-3">
+                <strong className="font-semibold text-ink">{ACTION_LABEL[e.action] ?? e.action}</strong>
+                <span className={MUTED_SMALL}> · {e.actor_name ?? 'Sistem'} · {formatDate(e.created_at)}</span>
+                <div className="text-sm text-ink-2">{e.detail}</div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="muted small">Belum ada aktivitas tercatat.</p>
+          <p className={MUTED_SMALL}>Belum ada aktivitas tercatat.</p>
         )}
       </div>
     </section>

@@ -4,8 +4,37 @@ import { api } from '../../api';
 import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 import type { Banner, BannerInput } from '../../api/types';
+import {
+  ACTIONS,
+  CHECKBOX,
+  EMPTY_ROW,
+  FORM_CARD,
+  HIDE_MD,
+  HIDE_SM,
+  HINT,
+  INPUT,
+  LABEL,
+  LABEL_CHECK,
+  MUTED_SMALL,
+  Notice,
+  ROW,
+  SKU,
+  StatusBadge,
+  TABLE,
+  TABLE_WRAP,
+  TBODY,
+  TD,
+  TH,
+  btn,
+  cx,
+} from './adminUi';
 
 const empty: BannerInput = { title: '', subtitle: '', cta_label: '', cta_url: '', is_active: true, sort_order: 0 };
+
+const FORM_TITLE = 'm-0 text-lg font-semibold text-ink';
+const SECTION_RULE = 'mt-2 flex flex-col gap-3 border-t border-outline-soft pt-5';
+const FILE_INPUT =
+  'text-sm text-ink file:mr-3 file:cursor-pointer file:rounded-field file:border-0 file:bg-secondary-container file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-secondary-container';
 
 export default function AdminBanners() {
   const queryClient = useQueryClient();
@@ -33,56 +62,73 @@ export default function AdminBanners() {
       <PageHeader
         title="Banner promo"
         subtitle="Banner aktif tampil berurutan di katalog. Urutan kecil tampil lebih dulu. Gambar ideal 1600×600 px."
-        actions={<button className="btn primary" onClick={() => setEditing('new')}>+ Banner baru</button>}
+        actions={<button type="button" className={btn('primary')} onClick={() => setEditing('new')}>+ Banner baru</button>}
       />
-      <p className="muted small">Banner aktif tampil berurutan di katalog (urutan kecil tampil lebih dulu). Gambar ideal 1600×600 px.</p>
-      {message && <p className={message.kind === 'ok' ? 'success' : 'error'}>{message.text}</p>}
+      <p className={cx(MUTED_SMALL, 'mb-4')}>Banner aktif tampil berurutan di katalog (urutan kecil tampil lebih dulu). Gambar ideal 1600×600 px.</p>
+      {message && <div className="mb-4"><Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice></div>}
 
       {editing && (
-        <BannerForm
-          key={editing === 'new' ? 'new' : editing.id}
-          initial={editing === 'new' ? empty : toInput(editing)}
-          banner={editing === 'new' ? null : editing}
-          onClose={() => setEditing(null)}
-          onSaved={(text) => {
-            setMessage({ kind: 'ok', text });
-            refresh();
-          }}
-          onError={fail}
-        />
+        <div className="mb-4">
+          <BannerForm
+            key={editing === 'new' ? 'new' : editing.id}
+            initial={editing === 'new' ? empty : toInput(editing)}
+            banner={editing === 'new' ? null : editing}
+            onClose={() => setEditing(null)}
+            onSaved={(text) => {
+              setMessage({ kind: 'ok', text });
+              refresh();
+            }}
+            onError={fail}
+          />
+        </div>
       )}
 
-      <div className="card table-wrap">
-        <table>
+      <div className={TABLE_WRAP}>
+        <table className={TABLE}>
           <thead>
-            <tr><th>Gambar</th><th>Judul</th><th>Tautan</th><th>Urutan</th><th>Status</th><th /></tr>
+            <tr>
+              <th className={TH}>Gambar</th>
+              <th className={TH}>Judul</th>
+              <th className={cx(TH, HIDE_MD)}>Tautan</th>
+              <th className={cx(TH, HIDE_SM)}>Urutan</th>
+              <th className={TH}>Status</th>
+              <th className={TH} />
+            </tr>
           </thead>
-          <tbody>
+          <tbody className={TBODY}>
             {banners.data?.map((b) => (
-              <tr key={b.id} className={b.is_active ? '' : 'muted'}>
-                <td>
-                  <span className="banner-thumb">
-                    {b.image_url ? <img src={b.image_url} alt="" /> : <span className="material-symbols-outlined" aria-hidden>image</span>}
+              <tr key={b.id} className={b.is_active ? '' : 'bg-surface-low/60 text-muted'}>
+                <td className={TD}>
+                  <span className="grid h-[45px] w-20 place-items-center overflow-hidden rounded-field bg-surface-high text-muted sm:h-[54px] sm:w-24">
+                    {b.image_url ? <img src={b.image_url} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined" aria-hidden>image</span>}
                   </span>
                 </td>
-                <td><strong>{b.title}</strong>{b.subtitle && <div className="muted small">{b.subtitle}</div>}</td>
-                <td className="sku">{b.cta_url ?? '—'}</td>
-                <td>{b.sort_order}</td>
-                <td>{b.is_active ? 'Aktif' : 'Nonaktif'}</td>
-                <td className="actions">
-                  <button className="btn link" onClick={() => setEditing(b)}>Ubah</button>
-                  <button
-                    className="btn link danger"
-                    onClick={() => {
-                      if (window.confirm(`Hapus banner "${b.title}"?`)) remove.mutate(b.id);
-                    }}
-                  >Hapus</button>
+                <td className={TD}>
+                  <strong className="font-semibold">{b.title}</strong>
+                  {b.subtitle && <div className={MUTED_SMALL}>{b.subtitle}</div>}
+                </td>
+                <td className={cx(TD, HIDE_MD, SKU)}>{b.cta_url ?? '—'}</td>
+                <td className={cx(TD, HIDE_SM, 'tabular-nums')}>{b.sort_order}</td>
+                <td className={TD}>
+                  <StatusBadge tone={b.is_active ? 'ok' : 'neutral'}>{b.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
+                </td>
+                <td className={cx(TD, 'whitespace-nowrap')}>
+                  <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
+                    <button type="button" className={btn('link', 'link')} onClick={() => setEditing(b)}>Ubah</button>
+                    <button
+                      type="button"
+                      className={btn('linkDanger', 'link')}
+                      onClick={() => {
+                        if (window.confirm(`Hapus banner "${b.title}"?`)) remove.mutate(b.id);
+                      }}
+                    >Hapus</button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {banners.data?.length === 0 && <p className="muted center">Belum ada banner. Katalog akan menampilkan banner bawaan.</p>}
+        {banners.data?.length === 0 && <p className={EMPTY_ROW}>Belum ada banner. Katalog akan menampilkan banner bawaan.</p>}
       </div>
     </section>
   );
@@ -138,53 +184,53 @@ function BannerForm({
 
   return (
     <form
-      className="card form"
+      className={FORM_CARD}
       onSubmit={(e) => {
         e.preventDefault();
         save.mutate();
       }}
     >
-      <h2>{banner ? 'Ubah banner' : 'Banner baru'}</h2>
-      <label>
+      <h2 className={FORM_TITLE}>{banner ? 'Ubah banner' : 'Banner baru'}</h2>
+      <label className={LABEL}>
         Judul
-        <input value={form.title} onChange={(e) => set('title', e.target.value)} required maxLength={120} />
+        <input className={INPUT} value={form.title} onChange={(e) => set('title', e.target.value)} required maxLength={120} />
       </label>
-      <label>
+      <label className={LABEL}>
         Subjudul
-        <input value={form.subtitle ?? ''} onChange={(e) => set('subtitle', e.target.value)} maxLength={255} />
+        <input className={INPUT} value={form.subtitle ?? ''} onChange={(e) => set('subtitle', e.target.value)} maxLength={255} />
       </label>
-      <div className="row">
-        <label>
+      <div className={ROW}>
+        <label className={LABEL}>
           Teks tombol
-          <input value={form.cta_label ?? ''} onChange={(e) => set('cta_label', e.target.value)} maxLength={60} placeholder="Belanja sekarang" />
+          <input className={INPUT} value={form.cta_label ?? ''} onChange={(e) => set('cta_label', e.target.value)} maxLength={60} placeholder="Belanja sekarang" />
         </label>
-        <label>
+        <label className={LABEL}>
           Tautan
-          <input value={form.cta_url ?? ''} onChange={(e) => set('cta_url', e.target.value)} maxLength={255} placeholder="/ atau https://…" />
+          <input className={INPUT} value={form.cta_url ?? ''} onChange={(e) => set('cta_url', e.target.value)} maxLength={255} placeholder="/ atau https://…" />
         </label>
       </div>
-      <div className="row">
-        <label>
+      <div className={ROW}>
+        <label className={LABEL}>
           Urutan tampil
-          <input type="number" value={form.sort_order ?? 0} onChange={(e) => set('sort_order', Number(e.target.value))} />
+          <input className={INPUT} type="number" value={form.sort_order ?? 0} onChange={(e) => set('sort_order', Number(e.target.value))} />
         </label>
-        <label className="check">
-          <input type="checkbox" checked={form.is_active ?? true} onChange={(e) => set('is_active', e.target.checked)} />
+        <label className={cx(LABEL_CHECK, 'sm:flex-none sm:self-end sm:pb-2.5')}>
+          <input className={CHECKBOX} type="checkbox" checked={form.is_active ?? true} onChange={(e) => set('is_active', e.target.checked)} />
           Tampilkan di katalog
         </label>
       </div>
-      <div className="actions">
-        <button className="btn primary" disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</button>
-        <button type="button" className="btn ghost" onClick={onClose}>Tutup</button>
+      <div className={ACTIONS}>
+        <button type="submit" className={btn('primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</button>
+        <button type="button" className={btn('ghost')} onClick={onClose}>Tutup</button>
       </div>
 
       {banner && (
-        <div className="image-upload">
-          <h2>Gambar banner</h2>
-          <p className="muted small">JPEG, PNG, atau WebP, maksimal 2 MB. Tanpa gambar, banner memakai latar warna.</p>
-          <div className="actions">
-            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-            <button type="button" className="btn" disabled={!file || upload.isPending} onClick={() => upload.mutate()}>
+        <div className={SECTION_RULE}>
+          <h2 className={FORM_TITLE}>Gambar banner</h2>
+          <p className={HINT}>JPEG, PNG, atau WebP, maksimal 2 MB. Tanpa gambar, banner memakai latar warna.</p>
+          <div className={ACTIONS}>
+            <input type="file" className={FILE_INPUT} accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <button type="button" className={btn('default')} disabled={!file || upload.isPending} onClick={() => upload.mutate()}>
               {upload.isPending ? 'Mengunggah…' : 'Unggah gambar'}
             </button>
           </div>

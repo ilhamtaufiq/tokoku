@@ -5,6 +5,7 @@ import { Stars } from '../../components/Reviews';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import { formatDate } from '../../lib/money';
+import { CHIP_GROUP, EMPTY_ROW, FILTER_BAR, HIDE_LG, MUTED_SMALL, Notice, StatusBadge, TABLE, TABLE_WRAP, TBODY, TD, TH, btn, chipClass, cx } from './adminUi';
 
 /** Moderasi ulasan: sembunyikan ulasan yang melanggar, tampilkan kembali jika perlu. */
 export default function AdminReviews() {
@@ -31,29 +32,46 @@ export default function AdminReviews() {
         title="Ulasan"
         subtitle={reviews.data ? `${reviews.data.length} ulasan ditampilkan` : 'Memuat ulasan…'}
       />
-      <div className="filter-bar card">
-        <div className="chip-group" role="group" aria-label="Filter ulasan">
-          <button className={`chip ${!hiddenOnly ? 'on' : ''}`} aria-pressed={!hiddenOnly} onClick={() => setHiddenOnly(false)}>Semua</button>
-          <button className={`chip ${hiddenOnly ? 'on' : ''}`} aria-pressed={hiddenOnly} onClick={() => setHiddenOnly(true)}>Disembunyikan</button>
+      <div className={FILTER_BAR}>
+        <div className={CHIP_GROUP} role="group" aria-label="Filter ulasan">
+          <button type="button" className={chipClass(!hiddenOnly)} aria-pressed={!hiddenOnly} onClick={() => setHiddenOnly(false)}>Semua</button>
+          <button type="button" className={chipClass(hiddenOnly)} aria-pressed={hiddenOnly} onClick={() => setHiddenOnly(true)}>Disembunyikan</button>
         </div>
       </div>
-      {error && <p className="error">{error}</p>}
-      <div className="card table-wrap">
-        <table>
+      {error && <div className="mb-4"><Notice kind="error">{error}</Notice></div>}
+      <div className={TABLE_WRAP}>
+        <table className={TABLE}>
           <thead>
-            <tr><th>Produk</th><th>Pembeli</th><th>Rating</th><th>Ulasan</th><th>Tanggal</th><th>Status</th><th /></tr>
+            <tr>
+              <th className={TH}>Produk</th>
+              <th className={TH}>Rating</th>
+              <th className={TH}>Ulasan</th>
+              <th className={TH}>Pembeli</th>
+              <th className={cx(TH, HIDE_LG)}>Tanggal</th>
+              <th className={TH}>Status</th>
+              <th className={TH} />
+            </tr>
           </thead>
-          <tbody>
+          <tbody className={TBODY}>
             {(reviews.data ?? []).map((r) => (
               <tr key={r.id}>
-                <td>{r.product_name}</td>
-                <td>{r.buyer_name}</td>
-                <td><Stars value={r.rating} /></td>
-                <td className="review-cell">{r.comment || <span className="muted small">(tanpa komentar)</span>}</td>
-                <td>{formatDate(r.created_at)}</td>
-                <td>{r.is_visible ? 'Tampil' : 'Disembunyikan'}</td>
-                <td className="actions">
-                  <button className="btn link" disabled={toggle.isPending} onClick={() => toggle.mutate({ id: r.id, visible: !r.is_visible })}>
+                <td className={cx(TD, 'font-medium')}>{r.product_name}</td>
+                <td className={TD}><Stars value={r.rating} /></td>
+                <td className={cx(TD, 'max-w-[320px] whitespace-normal break-words')}>
+                  {r.comment || <span className={MUTED_SMALL}>(tanpa komentar)</span>}
+                </td>
+                <td className={TD}>{r.buyer_name}</td>
+                <td className={cx(TD, HIDE_LG, MUTED_SMALL)}>{formatDate(r.created_at)}</td>
+                <td className={TD}>
+                  <StatusBadge tone={r.is_visible ? 'ok' : 'neutral'}>{r.is_visible ? 'Tampil' : 'Disembunyikan'}</StatusBadge>
+                </td>
+                <td className={cx(TD, 'whitespace-nowrap')}>
+                  <button
+                    type="button"
+                    className={btn('link', 'link')}
+                    disabled={toggle.isPending}
+                    onClick={() => toggle.mutate({ id: r.id, visible: !r.is_visible })}
+                  >
                     {r.is_visible ? 'Sembunyikan' : 'Tampilkan'}
                   </button>
                 </td>
@@ -61,7 +79,7 @@ export default function AdminReviews() {
             ))}
           </tbody>
         </table>
-        {reviews.data?.length === 0 && <p className="muted center">Belum ada ulasan.</p>}
+        {reviews.data?.length === 0 && <p className={EMPTY_ROW}>Belum ada ulasan.</p>}
       </div>
     </section>
   );

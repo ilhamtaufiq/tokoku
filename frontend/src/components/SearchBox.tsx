@@ -55,14 +55,19 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <form
       ref={wrapRef}
-      className="header-search"
+      className="relative flex w-full max-w-[560px] items-center"
       role="search"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
-      <span className="material-symbols-outlined" aria-hidden>search</span>
+      <span
+        className="material-symbols-outlined pointer-events-none absolute left-3 z-10 text-xl text-muted"
+        aria-hidden
+      >
+        search
+      </span>
       <input
         type="search"
         placeholder="Cari laptop, mouse, tas sekolah, atau buku tulis…"
@@ -92,13 +97,19 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         aria-label="Cari produk"
+        className="h-11 w-full rounded-field border border-outline-soft bg-surface-low pl-10 pr-3 text-sm text-ink outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 max-[760px]:h-10"
       />
 
       {showList && (
-        <div className="suggest" id={listId} role="listbox" aria-label="Saran produk">
-          {suggestions.isPending && <p className="suggest-note">Mencari…</p>}
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-[70vh] overflow-y-auto rounded-card border border-outline-soft bg-surface p-1.5 shadow-xl"
+          id={listId}
+          role="listbox"
+          aria-label="Saran produk"
+        >
+          {suggestions.isPending && <p className="m-0 px-3 py-3.5 text-sm text-muted">Mencari…</p>}
           {!suggestions.isPending && items.length === 0 && (
-            <p className="suggest-note">Tidak ada produk yang cocok dengan “{debounced}”.</p>
+            <p className="m-0 px-3 py-3.5 text-sm text-muted">Tidak ada produk yang cocok dengan “{debounced}”.</p>
           )}
           {items.map((s, i) => (
             <button
@@ -107,23 +118,25 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
               role="option"
               aria-selected={i === active}
               type="button"
-              className={`suggest-item ${i === active ? 'on' : ''}`}
+              className={`flex w-full cursor-pointer items-center gap-3 rounded-field px-2.5 py-2 text-left text-ink transition-colors duration-100 hover:bg-surface-low ${
+                i === active ? 'bg-surface-low' : ''
+              }`}
               onMouseEnter={() => setActive(i)}
               onClick={() => go(`/products/${s.id}`)}
             >
-              <span className="suggest-thumb">
-                {s.image_url ? <img src={s.image_url} alt="" /> : s.name.charAt(0).toUpperCase()}
+              <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-field bg-surface-high font-display font-bold text-muted">
+                {s.image_url ? <img src={s.image_url} alt="" className="h-full w-full object-cover" /> : s.name.charAt(0).toUpperCase()}
               </span>
-              <span className="suggest-text">
-                <strong>{s.name}</strong>
-                <span className="muted small">{s.sku} · {rp(s.price)}</span>
+              <span className="flex min-w-0 flex-col">
+                <strong className="truncate text-sm font-semibold">{s.name}</strong>
+                <span className="text-xs text-muted">{s.sku} · {rp(s.price)}</span>
               </span>
             </button>
           ))}
           {items.length > 0 && (
             <button
               type="button"
-              className="suggest-all"
+              className="mt-1 block w-full cursor-pointer rounded-none border-0 border-t border-outline-soft bg-transparent px-2.5 py-2.5 text-left text-[13px] font-semibold text-primary hover:underline"
               onClick={() => go(`/?q=${encodeURIComponent(debounced)}#katalog`)}
             >
               Lihat semua hasil untuk “{debounced}”
