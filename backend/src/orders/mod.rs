@@ -259,14 +259,14 @@ async fn checkout(
     let cart: Vec<CartLine> = sqlx::query_as(
         "SELECT p.id AS product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty
          FROM cart_items c JOIN products p ON p.id = c.product_id
-         WHERE c.user_id = ? FOR UPDATE",
+         WHERE c.user_id = ? AND c.selected = TRUE FOR UPDATE",
     )
     .bind(user.id)
     .fetch_all(&mut *tx)
     .await?;
 
     if cart.is_empty() {
-        return Err(AppError::BadRequest("keranjang kosong".into()));
+        return Err(AppError::BadRequest("pilih minimal satu barang di keranjang".into()));
     }
     for line in &cart {
         if !line.is_active {
@@ -378,7 +378,7 @@ async fn checkout(
         .await?;
     }
 
-    sqlx::query("DELETE FROM cart_items WHERE user_id = ?")
+    sqlx::query("DELETE FROM cart_items WHERE user_id = ? AND selected = TRUE")
         .bind(user.id)
         .execute(&mut *tx)
         .await?;

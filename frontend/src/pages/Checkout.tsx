@@ -18,7 +18,7 @@ export default function Checkout() {
   const [appliedPromo, setAppliedPromo] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const items = cart.data ?? [];
+  const items = (cart.data ?? []).filter((i) => i.selected);
   const ready = items.length > 0 && items.every((i) => i.is_active && i.stock >= i.qty);
 
   const preview = useQuery({
@@ -51,7 +51,8 @@ export default function Checkout() {
     return (
       <section className="empty">
         <h1>Keranjang kosong</h1>
-        <Link to="/" className="btn primary">Lihat katalog</Link>
+        <p className="muted">Belum ada barang yang dipilih di keranjang.</p>
+        <Link to="/cart" className="btn primary">Kembali ke keranjang</Link>
       </section>
     );
   }

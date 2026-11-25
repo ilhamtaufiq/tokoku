@@ -739,3 +739,16 @@ td.actions { white-space: nowrap; }
 @media (max-width: 620px) {
   .pay-methods { grid-template-columns: 1fr; }
 }
+
+/* Pilih barang di keranjang */
+.cart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; margin-bottom: 12px; }
+.check-row { display: flex; align-items: center; gap: 10px; flex-direction: row; font-weight: 600; color: var(--text); cursor: pointer; }
+.check-row input, .item-check input { width: 18px; height: 18px; min-height: 0; accent-color: var(--c-primary); cursor: pointer; }
+.item-check { display: flex; align-items: center; padding-right: 2px; cursor: pointer; }
+.cart-item.unchecked { opacity: 0.6; }
+.cart-item .item-name { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--text); }
+.cart-item .item-name:hover { color: var(--c-primary); text-decoration: none; }
+.cart-main { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.cart-skeleton { height: 120px; margin-bottom: 12px; }
+.empty-icon { font-size: 56px; color: var(--outline); }
+.cart-bar .btn.disabled { opacity: 0.45; pointer-events: none; }

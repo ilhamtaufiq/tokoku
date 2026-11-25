@@ -40,6 +40,9 @@ export const api = {
   setCartItem: (product_id: number, qty: number) =>
     request<void>('/cart/items', { method: 'PUT', body: { product_id, qty } }),
   removeCartItem: (product_id: number) => request<void>(`/cart/items/${product_id}`, { method: 'DELETE' }),
+  setCartSelected: (product_id: number, selected: boolean) =>
+    request<void>(`/cart/items/${product_id}/select`, { method: 'PUT', body: { selected } }),
+  setAllCartSelected: (selected: boolean) => request<void>('/cart/select-all', { method: 'PUT', body: { selected } }),
 
   // Pratinjau harga
   preview: (items: { product_id: number; qty: number }[], promo_code?: string) =>

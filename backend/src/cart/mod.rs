@@ -19,6 +19,8 @@ pub fn router() -> Router<AppState> {
         .route("/", get(get_cart).delete(clear_cart))
         .route("/items", put(upsert_item))
         .route("/items/{product_id}", delete(remove_item))
+        .route("/items/{product_id}/select", put(set_selected))
+        .route("/select-all", put(set_all_selected))
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -32,11 +34,12 @@ pub struct CartItemView {
     pub stock: u32,
     pub qty: u32,
     pub image_url: Option<String>,
+    pub selected: bool,
 }
 
 async fn get_cart(user: AuthUser, State(state): State<AppState>) -> AppResult<Json<Vec<CartItemView>>> {
     let items = sqlx::query_as::<_, CartItemView>(
-        "SELECT c.product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty, p.image_url
+        "SELECT c.product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty, p.image_url, c.selected
          FROM cart_items c JOIN products p ON p.id = c.product_id
          WHERE c.user_id = ? ORDER BY c.updated_at",
     )
@@ -108,6 +111,39 @@ async fn remove_item_inner(state: &AppState, user_id: u64, product_id: u64) -> A
 
 async fn clear_cart(user: AuthUser, State(state): State<AppState>) -> AppResult<StatusCode> {
     sqlx::query("DELETE FROM cart_items WHERE user_id = ?")
+        .bind(user.id)
+        .execute(&state.pool)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SelectReq {
+    pub selected: bool,
+}
+
+async fn set_selected(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Path(product_id): Path<u64>,
+    Json(req): Json<SelectReq>,
+) -> AppResult<StatusCode> {
+    sqlx::query("UPDATE cart_items SET selected = ? WHERE user_id = ? AND product_id = ?")
+        .bind(req.selected)
+        .bind(user.id)
+        .bind(product_id)
+        .execute(&state.pool)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+async fn set_all_selected(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<SelectReq>,
+) -> AppResult<StatusCode> {
+    sqlx::query("UPDATE cart_items SET selected = ? WHERE user_id = ?")
+        .bind(req.selected)
         .bind(user.id)
         .execute(&state.pool)
         .await?;

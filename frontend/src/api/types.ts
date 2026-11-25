@@ -45,6 +45,7 @@ export interface CartItem {
   is_active: boolean;
   stock: number;
   qty: number;
+  selected: boolean;
 }
 
 export interface BreakdownLine {
