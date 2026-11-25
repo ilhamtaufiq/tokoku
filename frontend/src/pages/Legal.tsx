@@ -1,9 +1,11 @@
+import { useSeo } from '../lib/seo';
 /** Halaman legal. Teks di bawah adalah KERANGKA. Isi bagian bertanda [..] dengan data usaha yang sebenarnya dan tinjau bersama penasihat hukum. */
 const Draft = () => (
   <p className="draft-note">Draf awal. Belum ditinjau oleh penasihat hukum. Ganti bagian dalam kurung siku sebelum publikasi.</p>
 );
 
 export function Terms() {
+  useSeo({ title: 'Syarat dan Ketentuan', description: 'Syarat dan ketentuan penggunaan dan pembelian di Tokoku.', canonicalPath: '/syarat' });
   return (
     <article className="legal">
       <h1>Syarat dan Ketentuan</h1>
@@ -23,6 +25,7 @@ export function Terms() {
 }
 
 export function Privacy() {
+  useSeo({ title: 'Kebijakan Privasi', description: 'Bagaimana Tokoku mengumpulkan, menggunakan, dan melindungi data pribadi Anda.', canonicalPath: '/privasi' });
   return (
     <article className="legal">
       <h1>Kebijakan Privasi</h1>
@@ -42,6 +45,7 @@ export function Privacy() {
 }
 
 export function Refund() {
+  useSeo({ title: 'Kebijakan Pengembalian Dana', description: 'Ketentuan pembatalan dan pengembalian dana pesanan di Tokoku.', canonicalPath: '/pengembalian' });
   return (
     <article className="legal">
       <h1>Kebijakan Pengembalian Dana</h1>

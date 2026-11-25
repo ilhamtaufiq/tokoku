@@ -5,8 +5,10 @@ import { api } from '../api';
 import { ApiError } from '../api/client';
 import { Breakdown } from '../components/Breakdown';
 import { rp } from '../lib/money';
+import { useSeo } from '../lib/seo';
 
 export default function Checkout() {
+  useSeo({ title: 'Checkout', noindex: true });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart });

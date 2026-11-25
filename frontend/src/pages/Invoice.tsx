@@ -2,9 +2,11 @@ import { Link, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp } from '../lib/money';
+import { useSeo } from '../lib/seo';
 
 /** Invoice yang bisa dicetak atau disimpan sebagai PDF lewat dialog cetak browser. */
 export default function Invoice() {
+  useSeo({ title: 'Invoice', noindex: true });
   const { id } = useParams();
   const orderId = Number(id);
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => api.order(orderId) });

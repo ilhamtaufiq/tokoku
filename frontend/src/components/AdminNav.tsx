@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { useSeo } from '../lib/seo';
 
 const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
   { to: '/admin', label: 'Ringkasan', icon: 'dashboard', end: true },
@@ -11,6 +12,7 @@ const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
 
 /** Shell panel admin: sidebar kiri seperti dashboard penjual pada referensi. */
 export function AdminLayout() {
+  useSeo({ title: 'Admin', noindex: true });
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   return (

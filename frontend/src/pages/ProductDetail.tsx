@@ -6,6 +6,7 @@ import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { rp } from '../lib/money';
 import { ProductImage } from '../components/ProductImage';
+import { useSeo } from '../lib/seo';
 
 const MAX_QTY = 99;
 
@@ -36,6 +37,35 @@ export default function ProductDetail() {
     },
     onError: (e) => setMessage({ kind: 'error', text: e instanceof ApiError ? e.message : 'Gagal menambahkan.' }),
   });
+
+  const seoProduct = product.data;
+  useSeo(
+    seoProduct
+      ? {
+          title: seoProduct.name,
+          description: seoProduct.description ?? `${seoProduct.name} — ${rp(seoProduct.price)}, sudah termasuk PPN.`,
+          canonicalPath: `/products/${seoProduct.id}`,
+          image: seoProduct.image_url ? new URL(seoProduct.image_url, window.location.origin).href : null,
+          jsonLd: {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: seoProduct.name,
+            sku: seoProduct.sku,
+            description: seoProduct.description ?? seoProduct.name,
+            ...(seoProduct.image_url ? { image: new URL(seoProduct.image_url, window.location.origin).href } : {}),
+            offers: {
+              '@type': 'Offer',
+              priceCurrency: 'IDR',
+              price: Number(seoProduct.price),
+              availability: seoProduct.stock > 0 && seoProduct.is_active
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+              url: `${window.location.origin}/products/${seoProduct.id}`,
+            },
+          },
+        }
+      : {},
+  );
 
   if (product.isPending) return <p className="muted">Memuat…</p>;
   if (product.isError || !product.data) return <p className="error">Produk tidak ditemukan.</p>;

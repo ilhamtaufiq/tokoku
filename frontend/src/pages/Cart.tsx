@@ -4,8 +4,10 @@ import { api } from '../api';
 import { Breakdown } from '../components/Breakdown';
 import { rp } from '../lib/money';
 import { ProductImage } from '../components/ProductImage';
+import { useSeo } from '../lib/seo';
 
 export default function Cart() {
+  useSeo({ title: 'Keranjang', noindex: true });
   const queryClient = useQueryClient();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart });
   const items = cart.data ?? [];

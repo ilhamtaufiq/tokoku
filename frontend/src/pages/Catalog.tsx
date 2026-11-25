@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 import { ProductCard } from '../components/ProductCard';
+import { useSeo } from '../lib/seo';
 
 const PER_PAGE = 12;
 
@@ -16,6 +17,10 @@ const SORTS: { value: string; label: string }[] = [
 const CATEGORY_ICON = ['apps', 'laptop_mac', 'mouse', 'school', 'category', 'sell'];
 
 export default function Catalog() {
+  useSeo({
+    description: 'Belanja laptop, mouse, tas sekolah, dan perlengkapan belajar. Harga sudah termasuk PPN dengan rincian pajak yang transparan.',
+    canonicalPath: '/',
+  });
   const [params, setParams] = useSearchParams();
   const q = params.get('q') ?? '';
   const category = params.get('category') ?? '';

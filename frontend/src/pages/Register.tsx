@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import { useSeo } from '../lib/seo';
 
 export default function Register() {
+  useSeo({ title: 'Daftar', noindex: true });
   const { register } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();

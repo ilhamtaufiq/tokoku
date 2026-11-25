@@ -2,8 +2,10 @@ import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 import { ORDER_STATUS_LABEL, formatDate, rp } from '../lib/money';
+import { useSeo } from '../lib/seo';
 
 export default function Orders() {
+  useSeo({ title: 'Pesanan saya', noindex: true });
   const orders = useQuery({ queryKey: ['orders'], queryFn: api.orders });
 
   if (orders.isPending) return <p className="muted">Memuat pesanan…</p>;

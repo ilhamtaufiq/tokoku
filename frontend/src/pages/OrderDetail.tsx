@@ -6,8 +6,10 @@ import { ApiError } from '../api/client';
 import { Breakdown } from '../components/Breakdown';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp } from '../lib/money';
 import type { OrderDetail as OrderDetailType } from '../api/types';
+import { useSeo } from '../lib/seo';
 
 export default function OrderDetail() {
+  useSeo({ title: 'Detail pesanan', noindex: true });
   const { id } = useParams();
   const orderId = Number(id);
   const location = useLocation();
