@@ -110,6 +110,22 @@ export default function Cart() {
             Lanjut ke checkout
           </Link>
         </aside>
+      <div className="cart-bar mobile-only" role="region" aria-label="Ringkasan belanja">
+        <div className="cart-bar-total">
+          <span className="muted small">Total bayar</span>
+          <strong>{preview.data ? rp(preview.data.grand_total) : '—'}</strong>
+        </div>
+        <Link
+          to="/checkout"
+          className={`btn primary ${active.length === 0 || issues.length > 0 ? 'disabled' : ''}`}
+          aria-disabled={active.length === 0 || issues.length > 0}
+          onClick={(e) => {
+            if (active.length === 0 || issues.length > 0) e.preventDefault();
+          }}
+        >
+          Checkout ({items.reduce((n, i) => n + i.qty, 0)})
+        </Link>
+      </div>
       </div>
     </section>
   );

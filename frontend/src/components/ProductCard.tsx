@@ -6,13 +6,15 @@ import { useAuth } from '../auth/AuthContext';
 import { rp } from '../lib/money';
 import type { Product } from '../api/types';
 import { ProductImage } from './ProductImage';
+import { useToast } from './Toast';
 
-/** Kartu produk: gambar, nama, harga termasuk PPN, dan tombol tambah ke keranjang. */
-export function ProductCard({ product: p, onMessage }: { product: Product; onMessage: (text: string, ok: boolean) => void }) {
+/** Kartu produk ala marketplace: gambar persegi, nama dua baris, harga, dan aksi cepat. */
+export function ProductCard({ product: p }: { product: Product }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart, enabled: !!user });
   const outOfStock = p.stock === 0 || !p.is_active;
 
@@ -23,11 +25,11 @@ export function ProductCard({ product: p, onMessage }: { product: Product; onMes
       await api.setCartItem(p.id, total);
       return total;
     },
-    onSuccess: (total) => {
-      onMessage(`${p.name} ditambahkan. Jumlah di keranjang: ${total}.`, true);
+    onSuccess: () => {
+      toast.show(`${p.name} ditambahkan ke keranjang`);
       queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
-    onError: (e) => onMessage(e instanceof ApiError ? e.message : 'Gagal menambahkan ke keranjang.', false),
+    onError: (e) => toast.show(e instanceof ApiError ? e.message : 'Gagal menambahkan ke keranjang.', 'error'),
   });
 
   return (
@@ -35,18 +37,16 @@ export function ProductCard({ product: p, onMessage }: { product: Product; onMes
       <Link to={`/products/${p.id}`} className="product-media" aria-label={p.name}>
         <ProductImage name={p.name} src={p.image_url} />
         {p.stock === 0 && <span className="tag danger overlay">Habis</span>}
-        {p.stock > 0 && p.stock <= 5 && <span className="tag warn overlay">Stok {p.stock}</span>}
+        {p.stock > 0 && p.stock <= 5 && <span className="tag warn overlay">Sisa {p.stock}</span>}
       </Link>
       <div className="product-body">
-        <span className="sku">{p.sku}</span>
         <Link to={`/products/${p.id}`} className="product-name">{p.name}</Link>
         <div className="price-row">
           <span className="price">{rp(p.price)}</span>
-          {p.is_taxable && <span className="ppn-chip">Termasuk PPN</span>}
         </div>
-        <p className="muted small">
-          {p.is_taxable ? `PPN ${rp(p.ppn_included)}` : 'Tidak kena PPN'}
-        </p>
+        {p.is_taxable
+          ? <span className="ppn-chip">Termasuk PPN</span>
+          : <span className="muted small">Tidak kena PPN</span>}
         <button
           className="btn primary block card-cta"
           disabled={outOfStock || add.isPending}
@@ -59,7 +59,7 @@ export function ProductCard({ product: p, onMessage }: { product: Product; onMes
           }}
         >
           <span className="material-symbols-outlined" aria-hidden>add_shopping_cart</span>
-          {outOfStock ? 'Stok habis' : user ? 'Tambah ke Keranjang' : 'Masuk untuk belanja'}
+          {outOfStock ? 'Stok habis' : user ? 'Tambah' : 'Masuk untuk belanja'}
         </button>
       </div>
     </article>

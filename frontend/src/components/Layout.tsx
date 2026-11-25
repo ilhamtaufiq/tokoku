@@ -77,6 +77,42 @@ export function Layout() {
         <Outlet />
       </main>
 
+      <nav className="mobile-nav" aria-label="Navigasi cepat">
+        <NavLink to="/" end>
+          <span className="material-symbols-outlined" aria-hidden>home</span>
+          <span>Beranda</span>
+        </NavLink>
+        {user ? (
+          <NavLink to="/cart">
+            <span className="mn-icon">
+              <span className="material-symbols-outlined" aria-hidden>shopping_cart</span>
+              {cartCount > 0 && <span className="mn-badge">{cartCount}</span>}
+            </span>
+            <span>Keranjang</span>
+          </NavLink>
+        ) : (
+          <NavLink to="/login">
+            <span className="material-symbols-outlined" aria-hidden>shopping_cart</span>
+            <span>Keranjang</span>
+          </NavLink>
+        )}
+        <NavLink to="/orders">
+          <span className="material-symbols-outlined" aria-hidden>receipt_long</span>
+          <span>Pesanan</span>
+        </NavLink>
+        {user ? (
+          <button className="mn-btn" onClick={async () => { await logout(); navigate('/'); }}>
+            <span className="material-symbols-outlined" aria-hidden>logout</span>
+            <span>Keluar</span>
+          </button>
+        ) : (
+          <NavLink to="/login">
+            <span className="material-symbols-outlined" aria-hidden>person</span>
+            <span>Masuk</span>
+          </NavLink>
+        )}
+      </nav>
+
       <footer className="footer">
         <div className="container footer-inner">
           <span className="muted small">© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
