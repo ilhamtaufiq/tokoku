@@ -37,7 +37,9 @@ pub async fn record(
 }
 
 pub fn admin_router() -> Router<AppState> {
-    Router::new().route("/audit", get(list_audit))
+    Router::new()
+        .route("/audit", get(list_audit))
+        .route("/orders/{id}/activity", get(order_activity))
 }
 
 #[derive(Debug, Deserialize)]
@@ -68,6 +70,24 @@ async fn list_audit(
          ORDER BY a.id DESC LIMIT ?",
     )
     .bind(limit)
+    .fetch_all(&state.pool)
+    .await?;
+    Ok(Json(rows))
+}
+
+/// Riwayat aktivitas satu pesanan (urut dari yang terbaru).
+async fn order_activity(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    axum::extract::Path(id): axum::extract::Path<u64>,
+) -> AppResult<Json<Vec<AuditEntry>>> {
+    let rows = sqlx::query_as::<_, AuditEntry>(
+        "SELECT a.id, u.name AS actor_name, a.action, a.entity, a.entity_id, a.detail, a.created_at
+         FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id
+         WHERE a.entity = 'order' AND a.entity_id = ?
+         ORDER BY a.id DESC LIMIT 200",
+    )
+    .bind(id)
     .fetch_all(&state.pool)
     .await?;
     Ok(Json(rows))

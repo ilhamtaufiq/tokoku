@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
@@ -110,7 +111,7 @@ export default function AdminOrders() {
               return (
                 <Fragment key={o.id}>
                 <tr>
-                  <td>{o.invoice_no}</td>
+                  <td><Link to={`/admin/orders/${o.id}`}>{o.invoice_no}</Link></td>
                   <td>{formatDate(o.created_at)}</td>
                   <td>{rp(o.grand_total)}</td>
                   <td>{rp(o.ppn_total)}</td>

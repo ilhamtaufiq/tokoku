@@ -33,6 +33,7 @@ pub fn admin_router() -> Router<AppState> {
         .route("/orders/{id}/status", patch(admin_update_status))
         .route("/orders/{id}/refund-cancel", post(admin_refund_cancel))
         .route("/orders/export", get(admin_export_orders))
+        .route("/orders/{id}", get(admin_get_order))
         .route("/dashboard", get(admin_dashboard))
 }
 
@@ -615,6 +616,16 @@ pub struct StatusReq {
 /// Alur fulfillment setelah pembayaran: paid → processing → shipped → completed.
 fn allowed_transition(from: &str, to: &str) -> bool {
     matches!((from, to), ("paid", "processing") | ("processing", "shipped") | ("shipped", "completed"))
+}
+
+/// Detail pesanan untuk admin: sama dengan tampilan pembeli, tanpa pemeriksaan kepemilikan.
+async fn admin_get_order(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+) -> AppResult<Json<OrderDetail>> {
+    let order = fetch_order(&state.pool, id).await?;
+    Ok(Json(detail(&state.pool, order).await?))
 }
 
 async fn admin_update_status(

@@ -22,6 +22,7 @@ import Invoice from './pages/Invoice';
 import Help from './pages/Help';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminAudit from './pages/admin/AdminAudit';
+import AdminOrderDetail from './pages/admin/AdminOrderDetail';
 import { Privacy, Refund, Terms } from './pages/Legal';
 
 export default function App() {
@@ -55,6 +56,7 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
+          <Route path="orders/:id" element={<AdminOrderDetail />} />
           <Route path="banners" element={<AdminBanners />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="promos" element={<AdminPromos />} />

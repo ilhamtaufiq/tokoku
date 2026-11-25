@@ -78,6 +78,8 @@ export const api = {
   adminUpdateProduct: (id: number, body: ProductInput) =>
     request<Product>(`/admin/products/${id}`, { method: 'PUT', body }),
   adminDeactivateProduct: (id: number) => request<void>(`/admin/products/${id}`, { method: 'DELETE' }),
+  adminOrder: (id: number) => request<OrderDetail>(`/admin/orders/${id}`),
+  adminOrderActivity: (id: number) => request<AuditEntry[]>(`/admin/orders/${id}/activity`),
   adminOrders: (status?: OrderStatus | '') =>
     request<OrderView[]>(`/admin/orders${status ? `?status=${status}` : ''}`),
   adminSetOrderStatus: (id: number, status: OrderStatus) =>
