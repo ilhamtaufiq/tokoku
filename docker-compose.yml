@@ -1,6 +1,5 @@
 # Produksi (Coolify). Hanya service `frontend` yang di-expose ke internet lewat domain.
-# Variabel wajib diisi di Coolify: JWT_SECRET, DB_PASSWORD, DB_ROOT_PASSWORD, MIDTRANS_SERVER_KEY,
-# CLOUDFLARE_TUNNEL_TOKEN.
+# Variabel wajib diisi di Coolify: JWT_SECRET, DB_PASSWORD, DB_ROOT_PASSWORD, MIDTRANS_SERVER_KEY.
 services:
   frontend:
     build: ./frontend
@@ -33,16 +32,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
-
-  # Cloudflare Tunnel: menghubungkan domain ke service frontend tanpa membuka port publik.
-  # Di dashboard Cloudflare (Zero Trust > Networks > Tunnels), tambahkan Public Hostname:
-  # tokoku.cjr.my.id -> HTTP -> frontend:80
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?isi CLOUDFLARE_TUNNEL_TOKEN}
-    depends_on:
-      - frontend
     restart: unless-stopped
 
   db:
