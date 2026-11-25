@@ -117,7 +117,7 @@ export default function AdminUsers() {
                 <tr key={u.id} className={u.is_active ? '' : 'bg-surface-low/60 text-muted'}>
                   <td className={TD}>
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-pill bg-secondary-container font-display text-sm font-bold text-on-secondary-container" aria-hidden>
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-secondary-container font-display text-sm font-bold text-on-secondary-container" aria-hidden>
                         {u.name.charAt(0).toUpperCase()}
                       </span>
                       <div className="min-w-0">

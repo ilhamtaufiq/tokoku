@@ -70,7 +70,7 @@ export function AdminLayout() {
         )}
       >
         <div className="flex items-center gap-3 px-2">
-          <span className="material-symbols-outlined grid h-9 w-9 shrink-0 place-items-center rounded-field bg-primary text-[20px] text-on-primary" aria-hidden>
+          <span className="material-symbols-outlined flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-primary text-[20px] text-on-primary" aria-hidden>
             storefront
           </span>
           <div className="min-w-0">

@@ -76,7 +76,7 @@ export default function Checkout() {
         <p className={`${alertError} mb-4`}>Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
         <form
           className="flex min-w-0 flex-col gap-4"
           onSubmit={(e) => {

@@ -14,7 +14,7 @@ const ACTION_LABEL: Record<string, string> = {
 const BACK_LINK = 'inline-flex items-center gap-1 text-sm font-semibold text-muted no-underline hover:text-primary';
 const CARD_TITLE = 'm-0 mb-1 text-base font-semibold text-ink';
 /** Baris ringkasan: label di kiri, nilai di kanan. */
-const KV = 'm-0 grid min-w-0 gap-2';
+const KV = 'm-0 flex min-w-0 flex-col gap-2';
 const KV_ROW = 'flex min-w-0 justify-between gap-3 text-sm';
 const KV_KEY = 'text-muted';
 const KV_VAL = 'm-0 min-w-0 break-words text-right text-ink';
@@ -55,7 +55,7 @@ export default function AdminOrderDetail() {
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div className={cx(CARD, 'grid min-w-0 content-start gap-2.5 p-4 sm:p-5')}>
+        <div className={cx(CARD, 'flex min-w-0 flex-col gap-2.5 p-4 sm:p-5')}>
           <h2 className={CARD_TITLE}>Ringkasan biaya</h2>
           <dl className={KV}>
             <div className={KV_ROW}><dt className={KV_KEY}>Subtotal</dt><dd className={KV_VAL}>{rp(o.subtotal)}</dd></div>
@@ -67,7 +67,7 @@ export default function AdminOrderDetail() {
           </dl>
         </div>
 
-        <div className={cx(CARD, 'grid min-w-0 content-start gap-2.5 p-4 sm:p-5')}>
+        <div className={cx(CARD, 'flex min-w-0 flex-col gap-2.5 p-4 sm:p-5')}>
           <h2 className={CARD_TITLE}>Pembayaran dan pembeli</h2>
           <dl className={KV}>
             <div className={KV_ROW}><dt className={KV_KEY}>Status pembayaran</dt><dd className={KV_VAL}>{o.payment_status}</dd></div>
@@ -77,7 +77,7 @@ export default function AdminOrderDetail() {
           </dl>
         </div>
 
-        <div className={cx(CARD, 'grid min-w-0 content-start gap-2.5 p-4 sm:p-5')}>
+        <div className={cx(CARD, 'flex min-w-0 flex-col gap-2.5 p-4 sm:p-5')}>
           <h2 className={CARD_TITLE}>Pengiriman</h2>
           <dl className={KV}>
             <div className={KV_ROW}><dt className={KV_KEY}>Nomor resi</dt><dd className={KV_VAL}>{o.tracking_number ?? 'Belum diisi'}</dd></div>
@@ -119,10 +119,10 @@ export default function AdminOrderDetail() {
         </table>
       </div>
 
-      <div className={cx(CARD, 'grid min-w-0 content-start gap-2.5 p-4 sm:p-5')}>
+      <div className={cx(CARD, 'flex min-w-0 flex-col gap-2.5 p-4 sm:p-5')}>
         <h2 className={CARD_TITLE}>Riwayat aktivitas</h2>
         {activity.data && activity.data.length > 0 ? (
-          <ul className="m-0 grid list-none gap-3 p-0">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {activity.data.map((e) => (
               <li key={e.id} className="border-l-2 border-outline pl-3">
                 <strong className="font-semibold text-ink">{ACTION_LABEL[e.action] ?? e.action}</strong>

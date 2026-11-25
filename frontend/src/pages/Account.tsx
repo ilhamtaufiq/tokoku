@@ -56,10 +56,10 @@ export default function Account() {
         </div>
       </header>
 
-      <div className="grid items-start gap-5 md:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[280px_minmax(0,1fr)]">
         <aside className={`${card} flex flex-col items-center gap-2 p-6 text-center md:sticky md:top-[100px]`}>
           <span
-            className="grid size-16 shrink-0 place-items-center rounded-pill bg-secondary-container font-display text-2xl font-bold text-on-secondary-container"
+            className="grid grid-cols-1 size-16 shrink-0 place-items-center rounded-pill bg-secondary-container font-display text-2xl font-bold text-on-secondary-container"
             aria-hidden
           >
             {user.name.charAt(0).toUpperCase()}
@@ -94,7 +94,7 @@ export default function Account() {
             }}
           >
             <h2 className={heading}>Profil</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className={label}>
                 Nama lengkap
                 <input className={field} value={name} onChange={(e) => setName(e.target.value)} required maxLength={120} />
@@ -135,7 +135,7 @@ export default function Account() {
                   autoComplete="current-password"
                 />
               </label>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className={label}>
                   Password baru
                   <input

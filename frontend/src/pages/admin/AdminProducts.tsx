@@ -123,7 +123,7 @@ export default function AdminProducts() {
               <tr key={p.id} className={p.is_active ? '' : 'bg-surface-low/60 text-muted'}>
                 <td className={TD}>
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-field bg-surface-high font-display text-sm font-bold text-muted">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-field bg-surface-high font-display text-sm font-bold text-muted">
                       {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover" /> : p.name.charAt(0)}
                     </span>
                     <span className="min-w-0 font-medium">{p.name}</span>

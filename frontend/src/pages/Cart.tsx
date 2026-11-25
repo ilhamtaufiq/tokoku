@@ -11,7 +11,7 @@ import { useSeo } from '../lib/seo';
 
 const checkbox = 'm-0 h-[18px] w-[18px] min-h-0 cursor-pointer p-0 accent-primary disabled:cursor-not-allowed disabled:opacity-50';
 const qtyButton =
-  'flex size-8 cursor-pointer items-center justify-center rounded-pill bg-surface text-lg leading-none text-ink hover:text-primary disabled:cursor-not-allowed disabled:opacity-45 disabled:pointer-events-none';
+  'flex size-8 cursor-pointer items-center justify-center rounded-pill border-0 bg-surface text-lg leading-none text-ink hover:text-primary disabled:cursor-not-allowed disabled:opacity-45 disabled:pointer-events-none';
 
 export default function Cart() {
   useSeo({ title: 'Keranjang', noindex: true });
@@ -76,10 +76,10 @@ export default function Cart() {
       <h1 className={pageTitle}>Keranjang belanja</h1>
       <p className={pageSub}>Centang barang yang ingin dibayar sekarang.</p>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex min-w-0 flex-col">
           <div className={`${card} mb-3 flex items-center justify-between gap-3 px-4 py-3`}>
-            <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold text-ink">
+            <label className="flex cursor-pointer flex-row items-center gap-2.5 text-sm font-semibold text-ink">
               <input
                 type="checkbox"
                 className={checkbox}
