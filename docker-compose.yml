@@ -1,5 +1,5 @@
 # Produksi (Coolify). Hanya service `frontend` yang di-expose ke internet lewat domain.
-# Variabel wajib diisi di Coolify: JWT_SECRET, DB_PASSWORD, DB_ROOT_PASSWORD, XENDIT_*.
+# Variabel wajib diisi di Coolify: JWT_SECRET, DB_PASSWORD, DB_ROOT_PASSWORD, MIDTRANS_SERVER_KEY.
 services:
   frontend:
     build: ./frontend
@@ -17,9 +17,8 @@ services:
       CORS_ORIGIN: https://tokoku.cjr.my.id
       FRONTEND_URL: https://tokoku.cjr.my.id
       COOKIE_SECURE: "true"
-      XENDIT_SECRET_KEY: ${XENDIT_SECRET_KEY:?isi XENDIT_SECRET_KEY}
-      XENDIT_CALLBACK_TOKEN: ${XENDIT_CALLBACK_TOKEN:?isi XENDIT_CALLBACK_TOKEN}
-      XENDIT_BASE_URL: https://api.xendit.co
+      MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:?isi MIDTRANS_SERVER_KEY}
+      MIDTRANS_ENV: ${MIDTRANS_ENV:-sandbox}
       RUST_LOG: info
       UPLOAD_DIR: /app/uploads
     volumes:

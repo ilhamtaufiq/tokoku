@@ -13,7 +13,7 @@ export function Terms() {
       <h2>2. Harga dan pajak</h2>
       <p>Harga yang tercantum sudah termasuk Pajak Pertambahan Nilai (PPN) sesuai ketentuan yang berlaku. Rincian DPP dan PPN ditampilkan pada keranjang, checkout, dan invoice. Ongkos kirim tidak dikenai PPN.</p>
       <h2>3. Pemesanan dan pembayaran</h2>
-      <p>Pesanan dianggap sah setelah pembayaran diterima melalui Xendit. Pesanan yang tidak dibayar dalam 24 jam dibatalkan otomatis dan stok dikembalikan. [Metode pembayaran yang tersedia].</p>
+      <p>Pesanan dianggap sah setelah pembayaran diterima melalui Midtrans. Pesanan yang tidak dibayar dalam 24 jam dibatalkan otomatis dan stok dikembalikan. [Metode pembayaran yang tersedia].</p>
       <h2>4. Pengiriman</h2>
       <p>Pengiriman dilakukan ke alamat yang diisi pembeli. [Estimasi waktu pengiriman, ekspedisi yang digunakan, dan tanggung jawab risiko].</p>
       <h2>5. Akun</h2>
@@ -28,11 +28,11 @@ export function Privacy() {
       <h1>Kebijakan Privasi</h1>
       <Draft />
       <h2>1. Data yang kami kumpulkan</h2>
-      <p>Nama, alamat email, alamat pengiriman, nomor telepon, NPWP (jika diisi), dan riwayat pesanan. Data pembayaran diproses oleh Xendit dan tidak disimpan di server kami.</p>
+      <p>Nama, alamat email, alamat pengiriman, nomor telepon, NPWP (jika diisi), dan riwayat pesanan. Data pembayaran diproses oleh Midtrans dan tidak disimpan di server kami.</p>
       <h2>2. Tujuan penggunaan</h2>
       <p>Memproses pesanan, pengiriman, pembuatan invoice dan dokumen pajak, layanan pelanggan, dan kepatuhan terhadap kewajiban hukum.</p>
       <h2>3. Pihak ketiga</h2>
-      <p>Data dibagikan kepada Xendit (pembayaran) dan ekspedisi (pengiriman) sebatas yang diperlukan untuk layanan tersebut.</p>
+      <p>Data dibagikan kepada Midtrans (pembayaran) dan ekspedisi (pengiriman) sebatas yang diperlukan untuk layanan tersebut.</p>
       <h2>4. Hak Anda</h2>
       <p>Anda berhak meminta akses, koreksi, atau penghapusan data pribadi Anda sesuai Undang-Undang Pelindungan Data Pribadi. Hubungi [email kontak].</p>
       <h2>5. Keamanan</h2>

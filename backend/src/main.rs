@@ -11,7 +11,7 @@ mod promo;
 mod routes;
 mod settings;
 mod state;
-mod xendit;
+mod midtrans;
 
 use std::sync::Arc;
 

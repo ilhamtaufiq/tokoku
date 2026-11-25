@@ -112,7 +112,7 @@ export default function AdminOrders() {
                         <button type="button" className="btn ghost" onClick={() => setPending(null)}>Batal</button>
                       </form>
                       {pending.kind === 'refund' && (
-                        <p className="muted small">Uang harus dikembalikan manual lewat dashboard Xendit. Aksi ini hanya mencatat pembatalan dan mengembalikan stok.</p>
+                        <p className="muted small">Uang harus dikembalikan manual lewat dashboard Midtrans. Aksi ini hanya mencatat pembatalan dan mengembalikan stok.</p>
                       )}
                     </td>
                   </tr>

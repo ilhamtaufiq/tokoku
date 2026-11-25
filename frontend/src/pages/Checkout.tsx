@@ -59,7 +59,7 @@ export default function Checkout() {
   return (
     <section>
       <h1>Checkout</h1>
-      <p className="muted page-sub">Lengkapi alamat, lalu bayar dengan aman lewat Xendit.</p>
+      <p className="muted page-sub">Lengkapi alamat, lalu bayar dengan aman lewat Midtrans.</p>
       {!ready && (
         <p className="error">Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
       )}
@@ -100,7 +100,7 @@ export default function Checkout() {
 
           <div className="card section-card">
             <h2><span className="material-symbols-outlined" aria-hidden>payments</span>Metode pembayaran</h2>
-            <p className="section-desc">Pilih metode setelah diarahkan ke halaman pembayaran Xendit.</p>
+            <p className="section-desc">Pilih metode setelah diarahkan ke halaman pembayaran Midtrans.</p>
             <div className="pay-methods">
               <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>account_balance</span><strong>Virtual Account</strong>Transfer bank</div>
               <div className="pay-method"><span className="material-symbols-outlined" aria-hidden>qr_code_2</span><strong>QRIS</strong>Scan dari aplikasi apa pun</div>
@@ -166,7 +166,7 @@ export default function Checkout() {
           </button>
           <p className="guarantee">
             <span className="material-symbols-outlined" aria-hidden>verified_user</span>
-            Pembayaran diproses Xendit. Pesanan dibatalkan otomatis jika tidak dibayar dalam 24 jam.
+            Pembayaran diproses Midtrans. Pesanan dibatalkan otomatis jika tidak dibayar dalam 24 jam.
           </p>
         </aside>
       </div>

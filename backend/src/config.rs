@@ -8,9 +8,9 @@ pub struct Config {
     pub frontend_url: String,
     pub jwt_secret: String,
     pub cookie_secure: bool,
-    pub xendit_secret_key: String,
-    pub xendit_callback_token: String,
-    pub xendit_base_url: String,
+    pub midtrans_server_key: String,
+    pub midtrans_snap_base: String,
+    pub midtrans_api_base: String,
     pub upload_dir: String,
 }
 
@@ -20,6 +20,7 @@ impl Config {
         if jwt_secret.len() < 32 {
             bail!("JWT_SECRET minimal 32 karakter");
         }
+        let midtrans_env = std::env::var("MIDTRANS_ENV").unwrap_or_else(|_| "sandbox".into());
         let cors_origin = std::env::var("CORS_ORIGIN").unwrap_or_else(|_| "http://localhost:5173".into());
         Ok(Self {
             database_url: std::env::var("DATABASE_URL").context("DATABASE_URL belum diset")?,
@@ -28,10 +29,13 @@ impl Config {
             cors_origin,
             jwt_secret,
             cookie_secure: std::env::var("COOKIE_SECURE").map(|v| v == "true").unwrap_or(false),
-            xendit_secret_key: std::env::var("XENDIT_SECRET_KEY").unwrap_or_default(),
-            xendit_callback_token: std::env::var("XENDIT_CALLBACK_TOKEN").unwrap_or_default(),
-            xendit_base_url: std::env::var("XENDIT_BASE_URL")
-                .unwrap_or_else(|_| "https://api.xendit.co".into()),
+            midtrans_server_key: std::env::var("MIDTRANS_SERVER_KEY").unwrap_or_default(),
+            midtrans_snap_base: std::env::var("MIDTRANS_SNAP_BASE").unwrap_or_else(|_| {
+                if midtrans_env == "production" { "https://app.midtrans.com".into() } else { "https://app.sandbox.midtrans.com".into() }
+            }),
+            midtrans_api_base: std::env::var("MIDTRANS_API_BASE").unwrap_or_else(|_| {
+                if midtrans_env == "production" { "https://api.midtrans.com".into() } else { "https://api.sandbox.midtrans.com".into() }
+            }),
             upload_dir: std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "uploads".into()),
         })
     }

@@ -1,100 +1,117 @@
-//! Integrasi pembayaran Xendit: webhook, sinkronisasi status, dan job latar belakang.
+//! Integrasi pembayaran Midtrans: webhook, sinkronisasi status, dan job latar belakang.
 //!
-//! Prinsip: webhook hanya PEMICU. Status yang dipakai selalu diambil ulang dari API Xendit
-//! (`GET /v2/invoices/{id}`), lalu diterapkan secara idempotent.
+//! Prinsip: notifikasi hanya PEMICU. Signature SHA512 diverifikasi dulu, lalu status
+//! selalu diambil ulang dari Core API Midtrans sebelum diterapkan ke pesanan.
 
 use std::time::Duration;
 
-use axum::{
-    extract::State,
-    http::{HeaderMap, StatusCode},
-    routing::post,
-    Json, Router,
-};
+use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+use rust_decimal::Decimal;
 use serde_json::Value;
-use subtle::ConstantTimeEq;
 
 use crate::{
     error::{AppError, AppResult},
+    midtrans::{self, TxStatus},
     orders,
     state::AppState,
-    xendit,
 };
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/xendit", post(xendit_webhook))
+    Router::new().route("/midtrans", post(midtrans_webhook))
 }
 
-fn token_matches(expected: &str, provided: &str) -> bool {
-    !expected.is_empty() && expected.as_bytes().ct_eq(provided.as_bytes()).into()
+fn str_field<'a>(body: &'a Value, key: &str) -> AppResult<&'a str> {
+    body.get(key)
+        .and_then(Value::as_str)
+        .ok_or_else(|| AppError::BadRequest(format!("field {key} tidak ada di notifikasi")))
 }
 
-async fn xendit_webhook(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Json(body): Json<Value>,
-) -> AppResult<StatusCode> {
-    let provided = headers
-        .get("x-callback-token")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    if !token_matches(&state.cfg.xendit_callback_token, provided) {
+async fn midtrans_webhook(State(state): State<AppState>, Json(body): Json<Value>) -> AppResult<StatusCode> {
+    let order_id = str_field(&body, "order_id")?;
+    let status_code = str_field(&body, "status_code")?;
+    let gross_amount = str_field(&body, "gross_amount")?;
+    let signature = str_field(&body, "signature_key")?;
+    let transaction_status = body.get("transaction_status").and_then(Value::as_str).unwrap_or("unknown");
+
+    if !midtrans::verify_signature(&state.cfg.midtrans_server_key, order_id, status_code, gross_amount, signature) {
+        tracing::warn!(order_id, "notifikasi Midtrans dengan signature tidak valid ditolak");
         return Err(AppError::Unauthorized);
     }
 
-    let invoice_id = body.get("id").and_then(Value::as_str).ok_or_else(|| {
-        AppError::BadRequest("field id tidak ada di webhook".into())
-    })?;
-    let status = body.get("status").and_then(Value::as_str).unwrap_or("UNKNOWN");
-
-    // Catat event untuk audit. Duplikat dibiarkan; sinkronisasi di bawah tetap idempotent.
+    // Catat notifikasi untuk audit. Duplikat dibiarkan; sinkronisasi tetap idempotent.
+    let event_id = format!("{order_id}:{transaction_status}:{status_code}");
     sqlx::query(
-        "INSERT IGNORE INTO webhook_events (provider, event_id, event_type, payload) VALUES ('xendit', ?, ?, ?)",
+        "INSERT IGNORE INTO webhook_events (provider, event_id, event_type, payload) VALUES ('midtrans', ?, ?, ?)",
     )
-    .bind(format!("{invoice_id}:{status}"))
-    .bind(format!("invoice.{}", status.to_lowercase()))
+    .bind(&event_id)
+    .bind(format!("transaction.{transaction_status}"))
     .bind(body.to_string())
     .execute(&state.pool)
     .await?;
 
-    sync_invoice(&state, invoice_id).await?;
+    sync_transaction(&state, order_id).await?;
 
-    sqlx::query("UPDATE webhook_events SET processed_at = UTC_TIMESTAMP() WHERE provider = 'xendit' AND event_id = ?")
-        .bind(format!("{invoice_id}:{status}"))
+    sqlx::query("UPDATE webhook_events SET processed_at = UTC_TIMESTAMP() WHERE provider = 'midtrans' AND event_id = ?")
+        .bind(&event_id)
         .execute(&state.pool)
         .await?;
 
     Ok(StatusCode::OK)
 }
 
-/// Ambil status invoice dari Xendit lalu terapkan ke pesanan.
-pub async fn sync_invoice(state: &AppState, invoice_id: &str) -> AppResult<&'static str> {
-    let invoice = xendit::get_invoice(&state.http, &state.cfg, invoice_id).await?;
-    let raw = serde_json::to_value(&invoice).unwrap_or(Value::Null);
+#[derive(Debug, PartialEq, Eq)]
+enum Outcome {
+    Paid,
+    Expired,
+    Pending,
+}
 
-    match invoice.status.as_str() {
-        "PAID" | "SETTLED" => {
-            let amount = invoice
-                .amount_decimal()
-                .ok_or_else(|| AppError::Internal("nominal invoice tidak terbaca".into()))?;
+/// Menerjemahkan transaction_status Midtrans menjadi keputusan internal.
+/// Kartu kredit `capture` hanya dianggap lunas jika fraud_status = accept.
+fn classify(status: &TxStatus) -> Outcome {
+    match status.transaction_status.as_str() {
+        "settlement" => Outcome::Paid,
+        "capture" if status.fraud_status.as_deref() == Some("accept") => Outcome::Paid,
+        "deny" | "cancel" | "expire" | "failure" => Outcome::Expired,
+        _ => Outcome::Pending,
+    }
+}
+
+/// Ambil status transaksi dari Core API lalu terapkan ke pesanan.
+pub async fn sync_transaction(state: &AppState, order_id: &str) -> AppResult<&'static str> {
+    let Some(status) = midtrans::get_status(&state.http, &state.cfg, order_id).await? else {
+        return Ok("not_opened");
+    };
+    let raw = serde_json::to_value(&status).unwrap_or(Value::Null);
+
+    match classify(&status) {
+        Outcome::Paid => {
+            let amount: Decimal = status
+                .gross_amount
+                .parse()
+                .map_err(|_| AppError::Internal("nominal transaksi tidak terbaca".into()))?;
+            let transaction_id = status
+                .transaction_id
+                .clone()
+                .ok_or_else(|| AppError::Internal("transaction_id tidak ada".into()))?;
             let mut tx = state.pool.begin().await?;
             let outcome = orders::mark_paid_tx(
                 &mut tx,
-                &invoice.external_id,
-                &invoice.id,
+                &status.order_id,
+                &transaction_id,
                 amount,
-                invoice.payment_channel.as_deref(),
+                status.payment_type.as_deref(),
                 &raw,
             )
             .await?;
             tx.commit().await?;
-            tracing::info!(invoice = %invoice.external_id, outcome, "invoice PAID diproses");
+            tracing::info!(order_ref = %status.order_id, outcome, "transaksi Midtrans lunas diproses");
             Ok(outcome)
         }
-        "EXPIRED" => {
+        Outcome::Expired => {
             let mut tx = state.pool.begin().await?;
-            let order: Option<(u64,)> = sqlx::query_as("SELECT id FROM orders WHERE invoice_no = ? FOR UPDATE")
-                .bind(&invoice.external_id)
+            let order: Option<(u64,)> = sqlx::query_as("SELECT id FROM orders WHERE payment_ref = ? FOR UPDATE")
+                .bind(&status.order_id)
                 .fetch_optional(&mut *tx)
                 .await?;
             let outcome = match order {
@@ -108,14 +125,14 @@ pub async fn sync_invoice(state: &AppState, invoice_id: &str) -> AppResult<&'sta
                 None => "not_found",
             };
             tx.commit().await?;
-            tracing::info!(invoice = %invoice.external_id, outcome, "invoice EXPIRED diproses");
+            tracing::info!(order_ref = %status.order_id, outcome, "transaksi Midtrans gagal/kedaluwarsa diproses");
             Ok(outcome)
         }
-        _ => Ok("pending"),
+        Outcome::Pending => Ok("pending"),
     }
 }
 
-/// Job latar belakang: pembatalan pesanan kedaluwarsa dan rekonsiliasi status Xendit.
+/// Job latar belakang: pembatalan pesanan kedaluwarsa dan rekonsiliasi status Midtrans.
 pub fn spawn_jobs(state: AppState) {
     let expiry_state = state.clone();
     tokio::spawn(async move {
@@ -128,8 +145,8 @@ pub fn spawn_jobs(state: AppState) {
         }
     });
 
-    if state.cfg.xendit_secret_key.is_empty() {
-        tracing::warn!("XENDIT_SECRET_KEY kosong: rekonsiliasi pembayaran dinonaktifkan");
+    if state.cfg.midtrans_server_key.is_empty() {
+        tracing::warn!("MIDTRANS_SERVER_KEY kosong: rekonsiliasi pembayaran dinonaktifkan");
         return;
     }
     tokio::spawn(async move {
@@ -162,17 +179,59 @@ async fn expire_overdue_orders(state: &AppState) -> AppResult<()> {
 }
 
 async fn reconcile_pending(state: &AppState) -> AppResult<()> {
-    let ids: Vec<(String,)> = sqlx::query_as(
-        "SELECT xendit_invoice_id FROM orders
-         WHERE payment_status = 'unpaid' AND status = 'pending_payment' AND xendit_invoice_id IS NOT NULL
+    let refs: Vec<(String,)> = sqlx::query_as(
+        "SELECT payment_ref FROM orders
+         WHERE payment_status = 'unpaid' AND status = 'pending_payment' AND payment_ref IS NOT NULL
          LIMIT 100",
     )
     .fetch_all(&state.pool)
     .await?;
-    for (invoice_id,) in ids {
-        if let Err(e) = sync_invoice(state, &invoice_id).await {
-            tracing::warn!(invoice_id, error = %e, "rekonsiliasi satu invoice gagal");
+    for (order_ref,) in refs {
+        if let Err(e) = sync_transaction(state, &order_ref).await {
+            tracing::warn!(order_ref, error = %e, "rekonsiliasi satu transaksi gagal");
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn st(ts: &str, fraud: Option<&str>) -> TxStatus {
+        TxStatus {
+            order_id: "INV-202611-000001".into(),
+            status_code: "200".into(),
+            gross_amount: "170000.00".into(),
+            transaction_status: ts.into(),
+            transaction_id: Some("t-1".into()),
+            payment_type: Some("bank_transfer".into()),
+            fraud_status: fraud.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn klasifikasi_status() {
+        assert_eq!(classify(&st("settlement", None)), Outcome::Paid);
+        assert_eq!(classify(&st("capture", Some("accept"))), Outcome::Paid);
+        assert_eq!(classify(&st("capture", Some("challenge"))), Outcome::Pending);
+        assert_eq!(classify(&st("pending", None)), Outcome::Pending);
+        assert_eq!(classify(&st("expire", None)), Outcome::Expired);
+        assert_eq!(classify(&st("deny", None)), Outcome::Expired);
+    }
+
+    #[test]
+    fn signature_sha512_benar_dan_salah() {
+        // SHA512("INV-1" + "200" + "170000.00" + "KEY")
+        let key = "KEY";
+        let good = {
+            use sha2::{Digest, Sha512};
+            let mut h = Sha512::new();
+            h.update(b"INV-1200170000.00KEY");
+            h.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()
+        };
+        assert!(midtrans::verify_signature(key, "INV-1", "200", "170000.00", &good));
+        assert!(!midtrans::verify_signature(key, "INV-1", "200", "170000.01", &good));
+        assert!(!midtrans::verify_signature("", "INV-1", "200", "170000.00", &good));
+    }
 }

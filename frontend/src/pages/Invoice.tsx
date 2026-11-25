@@ -97,7 +97,7 @@ export default function Invoice() {
         </div>
 
         <footer className="invoice-foot">
-          {o.payment_status === 'paid' && <p className="small"><strong>LUNAS</strong> · dibayar melalui Xendit</p>}
+          {o.payment_status === 'paid' && <p className="small"><strong>LUNAS</strong> · dibayar melalui Midtrans</p>}
           {unpaid && <p className="small">Belum dibayar. Batas pembayaran sesuai halaman pesanan.</p>}
           {o.payment_status === 'refunded' && <p className="small">Pesanan dibatalkan. Dana dikembalikan kepada pembeli.</p>}
           <p className="muted small">Harga sudah termasuk PPN. Dokumen ini dibuat secara elektronik.</p>

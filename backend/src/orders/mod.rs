@@ -5,6 +5,7 @@ use axum::{
     Json, Router,
 };
 use chrono::{DateTime, FixedOffset, Utc};
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::{AssertSqlSafe, FromRow, MySql, MySqlPool, QueryBuilder, Transaction};
@@ -15,7 +16,7 @@ use crate::{
     pricing::{calculate, PricingLine},
     promo, settings,
     state::AppState,
-    xendit::{self, CreateInvoice, InvoiceItem},
+    midtrans::{self, SnapItem, SnapRequest},
 };
 
 pub fn customer_router() -> Router<AppState> {
@@ -36,7 +37,7 @@ pub fn admin_router() -> Router<AppState> {
 const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS status,
     CAST(payment_status AS CHAR) AS payment_status, subtotal, discount_total, dpp, ppn_rate,
     ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code,
-    xendit_invoice_url, created_at, tracking_number, refund_note,
+    payment_url, created_at, tracking_number, refund_note,
     (SELECT name FROM users WHERE users.id = orders.user_id) AS buyer_name,
     TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), expires_at) AS seconds_left";
 
@@ -57,7 +58,7 @@ pub struct OrderRow {
     pub shipping_address: String,
     pub buyer_npwp: Option<String>,
     pub promo_code: Option<String>,
-    pub xendit_invoice_url: Option<String>,
+    pub payment_url: Option<String>,
     pub created_at: DateTime<Utc>,
     pub tracking_number: Option<String>,
     pub refund_note: Option<String>,
@@ -120,7 +121,7 @@ pub struct OrderDetail {
 #[derive(Debug, Serialize)]
 pub struct CheckoutResponse {
     pub order: OrderDetail,
-    /// Null jika pembuatan invoice Xendit gagal; klien bisa mencoba lagi lewat POST /orders/{id}/pay.
+    /// Null jika pembuatan transaksi pembayaran gagal; klien bisa mencoba lagi lewat POST /orders/{id}/pay.
     pub payment_url: Option<String>,
 }
 
@@ -140,7 +141,7 @@ fn to_view(o: OrderRow) -> OrderView {
         grand_total: o.grand_total,
         shipping_address: o.shipping_address,
         buyer_npwp: o.buyer_npwp,
-        payment_url: o.xendit_invoice_url,
+        payment_url: o.payment_url,
         expires_in_seconds: o.seconds_left.max(0),
         created_at: o.created_at,
         tracking_number: o.tracking_number,
@@ -389,7 +390,7 @@ async fn checkout(
     let payment_url = match create_invoice_for_order(&state, &order, &email).await {
         Ok(url) => Some(url),
         Err(e) => {
-            tracing::error!(order_id, error = %e, "gagal membuat invoice Xendit; klien dapat mencoba lagi");
+            tracing::error!(order_id, error = %e, "gagal membuat transaksi Midtrans; klien dapat mencoba lagi");
             None
         }
     };
@@ -406,71 +407,76 @@ async fn user_email(pool: &MySqlPool, user_id: u64) -> AppResult<String> {
     Ok(email)
 }
 
-/// Membuat invoice Xendit untuk pesanan yang belum punya invoice. Mengembalikan URL pembayaran.
+/// Membuat transaksi Midtrans Snap untuk pesanan yang belum punya URL pembayaran.
+/// order_id Midtrans = nomor invoice dengan '/' diganti '-' (Midtrans tidak menerima '/').
 pub async fn create_invoice_for_order(state: &AppState, order: &OrderRow, email: &str) -> AppResult<String> {
-    if let Some(url) = &order.xendit_invoice_url {
+    if let Some(url) = &order.payment_url {
         return Ok(url.clone());
     }
     if order.seconds_left <= 0 {
         return Err(AppError::BadRequest("pesanan sudah kedaluwarsa".into()));
     }
 
-    let items = sqlx::query_as::<_, (String, Decimal, u32, Decimal)>(
-        "SELECT product_name, line_subtotal - line_discount, qty, line_subtotal FROM order_items WHERE order_id = ? ORDER BY id",
+    let rows = sqlx::query_as::<_, (String, Decimal, u32)>(
+        "SELECT product_name, line_subtotal - line_discount, qty FROM order_items WHERE order_id = ? ORDER BY id",
     )
     .bind(order.id)
     .fetch_all(&state.pool)
     .await?;
 
-    let mut invoice_items: Vec<InvoiceItem> = items
+    // Harga item harus bilangan bulat dan jumlahnya sama dengan gross_amount.
+    let mut items: Vec<SnapItem> = rows
         .into_iter()
-        .map(|(name, net, qty, _)| InvoiceItem { name: format!("{name} x{qty}"), price: net })
+        .enumerate()
+        .map(|(i, (name, net, qty))| SnapItem {
+            id: format!("ITEM-{}", i + 1),
+            name: truncate(&format!("{name} x{qty}"), 50),
+            price: net.trunc().to_i64().unwrap_or(0),
+            qty: 1,
+        })
         .collect();
     if order.shipping_fee > Decimal::ZERO {
-        invoice_items.push(InvoiceItem { name: "Ongkos kirim".into(), price: order.shipping_fee });
+        items.push(SnapItem {
+            id: "SHIPPING".into(),
+            name: "Ongkos kirim".into(),
+            price: order.shipping_fee.trunc().to_i64().unwrap_or(0),
+            qty: 1,
+        });
     }
 
-    let description = format!(
-        "Pesanan {} — DPP Rp{}, PPN {}% Rp{}",
-        order.invoice_no,
-        order.dpp.trunc(),
-        order.ppn_rate.normalize(),
-        order.ppn_total.trunc()
-    );
-
-    let req = CreateInvoice {
-        external_id: order.invoice_no.clone(),
-        amount: order.grand_total,
-        payer_email: email.to_string(),
-        description,
-        duration_secs: order.seconds_left,
-        success_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
-        failure_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
-        items: invoice_items,
+    let order_id = order.invoice_no.replace('/', "-");
+    let req = SnapRequest {
+        order_id: order_id.clone(),
+        gross_amount: order.grand_total.trunc().to_i64().unwrap_or(0),
+        items,
+        customer_name: truncate(&order.buyer_name.clone().unwrap_or_else(|| "Pelanggan".into()), 50),
+        customer_email: email.to_string(),
+        finish_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
+        expiry_minutes: (order.seconds_left + 59) / 60,
     };
 
-    let invoice = xendit::create_invoice(&state.http, &state.cfg, &req).await?;
-    let url = invoice
-        .invoice_url
-        .clone()
-        .ok_or_else(|| AppError::Gateway("respons xendit tanpa invoice_url".into()))?;
+    let snap = midtrans::create_snap(&state.http, &state.cfg, &req).await?;
 
-    // Hanya simpan jika belum ada invoice (pencegahan race dua permintaan bersamaan)
+    // Hanya simpan jika belum ada (pencegahan race dua permintaan bersamaan)
     let saved = sqlx::query(
-        "UPDATE orders SET xendit_invoice_id = ?, xendit_invoice_url = ? WHERE id = ? AND xendit_invoice_id IS NULL",
+        "UPDATE orders SET payment_ref = ?, payment_url = ? WHERE id = ? AND payment_ref IS NULL",
     )
-    .bind(&invoice.id)
-    .bind(&url)
+    .bind(&order_id)
+    .bind(&snap.redirect_url)
     .bind(order.id)
     .execute(&state.pool)
     .await?;
     if saved.rows_affected() == 0 {
         let current = fetch_order(&state.pool, order.id).await?;
         return current
-            .xendit_invoice_url
-            .ok_or_else(|| AppError::Internal("invoice tidak tersimpan".into()));
+            .payment_url
+            .ok_or_else(|| AppError::Internal("URL pembayaran tidak tersimpan".into()));
     }
-    Ok(url)
+    Ok(snap.redirect_url)
+}
+
+fn truncate(text: &str, max: usize) -> String {
+    text.chars().take(max).collect()
 }
 
 async fn list_orders(user: AuthUser, State(state): State<AppState>) -> AppResult<Json<Vec<OrderView>>> {
@@ -622,26 +628,27 @@ async fn admin_update_status(
 }
 
 /// Dipakai oleh webhook & rekonsiliasi: tandai pesanan lunas.
+/// `order_ref` = payment_ref (order_id Midtrans), `transaction_id` = id transaksi Midtrans.
 pub async fn mark_paid_tx(
     tx: &mut Transaction<'_, MySql>,
-    invoice_no: &str,
-    xendit_invoice_id: &str,
+    order_ref: &str,
+    transaction_id: &str,
     paid_amount: Decimal,
     channel: Option<&str>,
     raw: &serde_json::Value,
 ) -> AppResult<&'static str> {
     let order: Option<(u64, String, String, Decimal, Option<String>)> = sqlx::query_as(
-        "SELECT id, CAST(status AS CHAR), CAST(payment_status AS CHAR), grand_total, xendit_invoice_id
-         FROM orders WHERE invoice_no = ? FOR UPDATE",
+        "SELECT id, CAST(status AS CHAR), CAST(payment_status AS CHAR), grand_total, payment_ref
+         FROM orders WHERE payment_ref = ? FOR UPDATE",
     )
-    .bind(invoice_no)
+    .bind(order_ref)
     .fetch_optional(&mut **tx)
     .await?;
-    let Some((order_id, status, payment_status, grand_total, stored_invoice)) = order else {
-        return Err(AppError::NotFound(format!("pesanan {invoice_no}")));
+    let Some((order_id, status, payment_status, grand_total, stored_ref)) = order else {
+        return Err(AppError::NotFound(format!("pesanan {order_ref}")));
     };
-    if stored_invoice.as_deref() != Some(xendit_invoice_id) {
-        tracing::error!(invoice_no, "invoice id tidak cocok dengan pesanan");
+    if stored_ref.as_deref() != Some(order_ref) {
+        tracing::error!(order_ref, "referensi pembayaran tidak cocok dengan pesanan");
         return Ok("mismatch");
     }
     if payment_status == "paid" {
@@ -649,7 +656,7 @@ pub async fn mark_paid_tx(
     }
 
     let already_recorded: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM payments WHERE external_ref = ?")
-        .bind(xendit_invoice_id)
+        .bind(transaction_id)
         .fetch_one(&mut **tx)
         .await?;
     if already_recorded.0 > 0 {
@@ -657,14 +664,13 @@ pub async fn mark_paid_tx(
     }
 
     if paid_amount != grand_total {
-        tracing::error!(invoice_no, %paid_amount, %grand_total, "nominal pembayaran tidak sama dengan total pesanan");
+        tracing::error!(order_ref, %paid_amount, %grand_total, "nominal pembayaran tidak sama dengan total pesanan");
         return Ok("amount_mismatch");
     }
 
     if payment_status != "unpaid" || status != "pending_payment" {
-        // Pesanan sudah kedaluwarsa/dibatalkan (stok sudah dilepas). Catat, butuh tindak lanjut manual.
-        tracing::error!(invoice_no, "pembayaran diterima untuk pesanan yang sudah dibatalkan; perlu refund manual");
-        insert_payment(tx, order_id, xendit_invoice_id, paid_amount, channel, raw).await?;
+        tracing::error!(order_ref, "pembayaran diterima untuk pesanan yang sudah dibatalkan; perlu refund manual");
+        insert_payment(tx, order_id, transaction_id, paid_amount, channel, raw).await?;
         return Ok("paid_after_cancel");
     }
 
@@ -674,24 +680,24 @@ pub async fn mark_paid_tx(
     .bind(order_id)
     .execute(&mut **tx)
     .await?;
-    insert_payment(tx, order_id, xendit_invoice_id, paid_amount, channel, raw).await?;
+    insert_payment(tx, order_id, transaction_id, paid_amount, channel, raw).await?;
     Ok("paid")
 }
 
 async fn insert_payment(
     tx: &mut Transaction<'_, MySql>,
     order_id: u64,
-    xendit_invoice_id: &str,
+    transaction_id: &str,
     amount: Decimal,
     channel: Option<&str>,
     raw: &serde_json::Value,
 ) -> AppResult<()> {
     sqlx::query(
         "INSERT INTO payments (order_id, provider, external_ref, payment_channel, amount, status, raw_payload)
-         VALUES (?, 'xendit', ?, ?, ?, 'settled', ?)",
+         VALUES (?, 'midtrans', ?, ?, ?, 'settled', ?)",
     )
     .bind(order_id)
-    .bind(xendit_invoice_id)
+    .bind(transaction_id)
     .bind(channel)
     .bind(amount)
     .bind(raw.to_string())
@@ -706,7 +712,7 @@ pub struct RefundReq {
 }
 
 /// Pembatalan pesanan yang sudah lunas tetapi belum dikirim. Uang dikembalikan MANUAL lewat dashboard
-/// Xendit; admin mencatat catatan refund di sini. Stok dikembalikan.
+/// Midtrans; admin mencatat catatan refund di sini. Stok dikembalikan.
 async fn admin_refund_cancel(
     _admin: AdminUser,
     State(state): State<AppState>,
