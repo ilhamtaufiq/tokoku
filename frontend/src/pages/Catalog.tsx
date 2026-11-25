@@ -67,7 +67,7 @@ export default function Catalog() {
       {banners.data && banners.data.length > 0 ? (
         <BannerCarousel banners={banners.data} />
       ) : (
-        <div className="mb-6 flex flex-col items-center gap-5 rounded-banner bg-primary px-6 py-14 text-center text-white max-[760px]:rounded-card max-[760px]:px-5 max-[760px]:py-10">
+        <div className="animate-fade-up mb-6 flex flex-col items-center gap-5 rounded-banner bg-primary px-6 py-14 text-center text-white max-[760px]:rounded-card max-[760px]:px-5 max-[760px]:py-10">
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-white/15 px-3 py-1 text-xs font-semibold">
             <span className="material-symbols-outlined text-base" aria-hidden>sell</span>
             Harga jujur, pajak transparan
@@ -103,7 +103,7 @@ export default function Catalog() {
             className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[74px] max-[760px]:flex-none ${category === '' ? 'text-primary' : 'text-ink-2'}`}
             onClick={() => update({ category: '' })}
           >
-            <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-colors max-[760px]:h-[60px] max-[760px]:w-[60px] ${category === '' ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
+            <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 ease-out group-hover:scale-105 group-active:scale-95 max-[760px]:h-[60px] max-[760px]:w-[60px] ${category === '' ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
               <span className="material-symbols-outlined text-[26px]" aria-hidden>apps</span>
             </span>
             <span className="max-w-full truncate">Semua</span>
@@ -116,7 +116,7 @@ export default function Catalog() {
                 className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[74px] max-[760px]:flex-none ${on ? 'text-primary' : 'text-ink-2'}`}
                 onClick={() => update({ category: String(c.id) })}
               >
-                <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-colors max-[760px]:h-[60px] max-[760px]:w-[60px] ${on ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
+                <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 ease-out group-hover:scale-105 group-active:scale-95 max-[760px]:h-[60px] max-[760px]:w-[60px] ${on ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
                   <span className="material-symbols-outlined text-[26px]" aria-hidden>{CATEGORY_ICON[c.slug] ?? 'category'}</span>
                 </span>
                 <span className="max-w-full truncate">{c.name}</span>

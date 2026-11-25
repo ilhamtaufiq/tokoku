@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { useSeo } from '../lib/seo';
 import { btn, cx } from '../pages/admin/adminUi';
@@ -21,6 +21,7 @@ const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
  * Di layar kecil, sidebar menjadi drawer yang dibuka dari bar atas.
  */
 export function AdminLayout() {
+  const location = useLocation();
   useSeo({ title: 'Admin', noindex: true });
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -124,7 +125,9 @@ export function AdminLayout() {
 
       <div className="min-w-0 px-4 pb-14 pt-6 sm:px-6 lg:px-10 lg:pt-8">
         <div className="mx-auto max-w-[1180px]">
-          <Outlet />
+          <div key={location.pathname} className="animate-fade-up">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

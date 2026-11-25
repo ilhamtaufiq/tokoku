@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { SearchBox } from './SearchBox';
 import { useAuth } from '../auth/AuthContext';
@@ -18,6 +18,7 @@ const mobileItem = ({ isActive }: { isActive: boolean }) =>
 const footerLink = 'text-[13px] text-muted no-underline hover:text-primary';
 
 export function Layout() {
+  const location = useLocation();
   const { user } = useAuth();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart, enabled: !!user });
   const cartCount = (cart.data ?? []).reduce((n, i) => n + i.qty, 0);
@@ -86,7 +87,7 @@ export function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 pb-12 pt-8 min-[761px]:px-6 max-[760px]:pb-6">
+      <main key={location.pathname} className="animate-fade-up mx-auto w-full max-w-[1280px] flex-1 px-4 pb-12 pt-8 min-[761px]:px-6 max-[760px]:pb-6">
         <Outlet />
       </main>
 

@@ -38,7 +38,7 @@ export function ProductCard({ product: p }: { product: Product }) {
 
   return (
     <article
-      className={`${card} group flex flex-col overflow-hidden transition-[border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-pop motion-reduce:transform-none motion-reduce:transition-none`}
+      className={`${card} group flex flex-col overflow-hidden animate-fade-up transition-[border-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-pop motion-reduce:transform-none motion-reduce:transition-none`}
     >
       <Link
         to={`/products/${p.id}`}
