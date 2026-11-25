@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import type { Banner } from '../api/types';
 import { btnBase } from './ui/storefront';
 
-const ctaClass = `${btnBase} mt-2 h-11 self-start bg-white px-5 text-primary hover:bg-white/90 focus-visible:outline-white max-[760px]:h-[38px] max-[760px]:text-[13px]`;
+const ctaClass = `${btnBase} mt-2 h-11 self-start bg-white px-5 text-primary-container hover:bg-white/90 focus-visible:outline-white max-[760px]:h-[38px] max-[760px]:text-[13px]`;
 
 /** Carousel banner promo: rotasi otomatis, bisa digeser manual, dan berhenti saat disentuh/hover. */
 export function BannerCarousel({ banners }: { banners: Banner[] }) {
@@ -22,7 +22,7 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
 
   return (
     <div
-      className="relative isolate mb-6 h-[300px] overflow-hidden rounded-banner bg-primary text-white max-[760px]:h-[230px] max-[760px]:rounded-card"
+      className="relative isolate mb-6 h-[300px] overflow-hidden rounded-banner bg-primary-container text-white max-[760px]:h-[230px] max-[760px]:rounded-card"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}

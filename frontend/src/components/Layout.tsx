@@ -25,11 +25,11 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg text-ink">
-      <div className="bg-primary px-4 py-2 text-center text-[13px] font-semibold text-on-primary print:hidden">
-        Harga sudah termasuk PPN · Ongkir bebas PPN · Invoice lengkap di setiap pesanan
+      <div className="truncate bg-primary px-4 py-2 text-center text-[13px] font-semibold text-on-primary print:hidden max-[760px]:py-1.5 max-[760px]:text-xs">
+        Harga sudah termasuk PPN <span className="max-[760px]:hidden">· Ongkir bebas PPN · Invoice lengkap di setiap pesanan</span><span className="min-[761px]:hidden">· Ongkir bebas PPN</span>
       </div>
       <header className="sticky top-0 z-20 border-b border-outline-soft/80 bg-surface/90 shadow-[0_6px_20px_-16px_rgb(15_23_42/0.35)] backdrop-blur-md print:hidden">
-        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 min-[761px]:px-6 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-5 min-[1101px]:py-0">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-2.5 px-4 py-2.5 min-[761px]:px-6 min-[761px]:py-3 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-5 min-[1101px]:py-0">
           <Link
             to="/"
             className="inline-flex flex-none items-center gap-2.5 font-display text-xl font-bold tracking-tight text-ink no-underline hover:no-underline"

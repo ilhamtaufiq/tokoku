@@ -135,7 +135,7 @@ export default function ProductDetail() {
       </nav>
 
       <div className="grid grid-cols-1 items-start gap-[18px] min-[1001px]:grid-cols-[1.1fr_1fr] min-[1001px]:gap-12">
-        <div className="aspect-square overflow-hidden rounded-card border border-outline-soft bg-surface min-[1001px]:sticky min-[1001px]:top-[100px]">
+        <div className="aspect-[4/3] overflow-hidden rounded-card border border-outline-soft bg-surface min-[761px]:aspect-square min-[1001px]:sticky min-[1001px]:top-[100px]">
           <ProductImage name={p.name} src={p.image_url} large className="h-full w-full rounded-none" />
         </div>
 

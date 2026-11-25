@@ -67,7 +67,7 @@ export default function Catalog() {
       {banners.data && banners.data.length > 0 ? (
         <BannerCarousel banners={banners.data} />
       ) : (
-        <div className="animate-fade-up mb-6 flex flex-col items-center gap-5 rounded-banner bg-primary px-6 py-14 text-center text-white max-[760px]:rounded-card max-[760px]:px-5 max-[760px]:py-10">
+        <div className="animate-fade-up mb-6 flex flex-col items-center gap-5 rounded-banner bg-primary-container px-6 py-14 text-center text-white max-[760px]:rounded-card max-[760px]:px-5 max-[760px]:py-10">
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-white/15 px-3 py-1 text-xs font-semibold">
             <span className="material-symbols-outlined text-base" aria-hidden>sell</span>
             Harga sudah termasuk PPN
@@ -76,7 +76,7 @@ export default function Catalog() {
             Perlengkapan sekolah & elektronik, harga sudah termasuk PPN.
           </h1>
           <p className="m-0 text-[15px] text-white/85 max-[760px]:text-sm">Ongkir tidak kena PPN. Invoice keluar untuk setiap pesanan.</p>
-          <a href="#katalog" className="mt-1 inline-flex h-12 items-center rounded-pill bg-white px-7 text-sm font-bold text-primary no-underline transition-transform duration-150 hover:-translate-y-0.5">
+          <a href="#katalog" className="mt-1 inline-flex h-12 items-center rounded-pill bg-white px-7 text-sm font-bold text-primary-container no-underline transition-transform duration-150 hover:-translate-y-0.5">
             Belanja sekarang
           </a>
           <div className="flex flex-wrap justify-center gap-2" aria-label="Keunggulan">
@@ -100,26 +100,26 @@ export default function Catalog() {
           aria-label="Kategori"
         >
           <button
-            className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[74px] max-[760px]:flex-none ${category === '' ? 'text-primary' : 'text-ink-2'}`}
+            className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[80px] max-[760px]:flex-none ${category === '' ? 'text-primary' : 'text-ink-2'}`}
             onClick={() => update({ category: '' })}
           >
             <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 ease-out group-hover:scale-105 group-active:scale-95 max-[760px]:h-[60px] max-[760px]:w-[60px] ${category === '' ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
               <span className="material-symbols-outlined text-[26px]" aria-hidden>apps</span>
             </span>
-            <span className="max-w-full truncate">Semua</span>
+            <span className="max-w-full truncate max-[760px]:overflow-visible max-[760px]:text-clip max-[760px]:whitespace-normal max-[760px]:break-words max-[760px]:hyphens-auto max-[760px]:text-center max-[760px]:text-[12px] max-[760px]:leading-4">Semua</span>
           </button>
           {categories.data.map((c) => {
             const on = category === String(c.id);
             return (
               <button
                 key={c.id}
-                className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[74px] max-[760px]:flex-none ${on ? 'text-primary' : 'text-ink-2'}`}
+                className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[80px] max-[760px]:flex-none ${on ? 'text-primary' : 'text-ink-2'}`}
                 onClick={() => update({ category: String(c.id) })}
               >
                 <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 ease-out group-hover:scale-105 group-active:scale-95 max-[760px]:h-[60px] max-[760px]:w-[60px] ${on ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
                   <span className="material-symbols-outlined text-[26px]" aria-hidden>{CATEGORY_ICON[c.slug] ?? 'category'}</span>
                 </span>
-                <span className="max-w-full truncate">{c.name}</span>
+                <span className="max-w-full truncate max-[760px]:overflow-visible max-[760px]:text-clip max-[760px]:whitespace-normal max-[760px]:break-words max-[760px]:hyphens-auto max-[760px]:text-center max-[760px]:text-[12px] max-[760px]:leading-4">{c.name}</span>
               </button>
             );
           })}
