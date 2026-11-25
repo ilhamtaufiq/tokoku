@@ -81,7 +81,7 @@ export default function Invoice({ variant = 'invoice' }: { variant?: 'invoice' |
         </div>
 
         <div className="overflow-hidden">
-          <table className="w-full border-collapse text-[13px] sm:text-sm">
+          <table className="w-full border-collapse text-[13px] sm:text-sm max-[600px]:block max-[600px]:[&_thead]:hidden max-[600px]:[&_tbody]:block max-[600px]:[&_tr]:block max-[600px]:[&_tr]:border-b max-[600px]:[&_tr]:border-[#e4e3ee] max-[600px]:[&_tr]:py-2.5 max-[600px]:[&_td]:flex max-[600px]:[&_td]:items-center max-[600px]:[&_td]:justify-between max-[600px]:[&_td]:gap-3 max-[600px]:[&_td]:border-0 max-[600px]:[&_td]:px-0 max-[600px]:[&_td]:py-1 max-[600px]:[&_td]:text-right max-[600px]:[&_td::before]:text-left max-[600px]:[&_td::before]:text-xs max-[600px]:[&_td::before]:font-semibold max-[600px]:[&_td::before]:text-[#5b5e6e] max-[600px]:[&_td::before]:content-[attr(data-label)] max-[600px]:[&_td[data-label='']::before]:content-none">
             <thead>
               <tr>
                 <th className="bg-transparent border-b border-[#1a1b22] px-1.5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-[#5b5e6e] sm:px-2 sm:text-[11px]">Barang</th>
@@ -93,13 +93,13 @@ export default function Invoice({ variant = 'invoice' }: { variant?: 'invoice' |
             <tbody>
               {o.items.map((i) => (
                 <tr key={i.product_id}>
-                  <td className="bg-transparent border-b border-[#e4e3ee] px-1.5 py-3 align-top text-[#1a1b22] [overflow-wrap:anywhere] sm:px-2">
+                  <td data-label="" className="max-[600px]:text-left! bg-transparent border-b border-[#e4e3ee] px-1.5 py-3 align-top text-[#1a1b22] [overflow-wrap:anywhere] sm:px-2 max-[600px]:block!">
                     {i.product_name}
                     {!i.is_taxable && <span className="text-xs text-[#5b5e6e]"> (tidak kena PPN)</span>}
                   </td>
-                  <td className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{i.qty}</td>
-                  <td className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{rp(i.unit_price)}</td>
-                  <td className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{rp(i.line_subtotal)}</td>
+                  <td data-label="Qty" className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{i.qty}</td>
+                  <td data-label="Harga (termasuk PPN)" className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{rp(i.unit_price)}</td>
+                  <td data-label="Jumlah" className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{rp(i.line_subtotal)}</td>
                 </tr>
               ))}
             </tbody>
