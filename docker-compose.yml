@@ -14,8 +14,8 @@ services:
       DATABASE_URL: mysql://toko:${DB_PASSWORD:?isi DB_PASSWORD}@db:3306/toko_online
       BIND_ADDR: 0.0.0.0:8080
       JWT_SECRET: ${JWT_SECRET:?isi JWT_SECRET (minimal 32 karakter)}
-      CORS_ORIGIN: https://tokoku.cjr.my.id
-      FRONTEND_URL: https://tokoku.cjr.my.id
+      CORS_ORIGIN: https://tokoku.cianjur.space
+      FRONTEND_URL: https://tokoku.cianjur.space
       COOKIE_SECURE: "true"
       MIDTRANS_SERVER_KEY: ${MIDTRANS_SERVER_KEY:?isi MIDTRANS_SERVER_KEY}
       MIDTRANS_ENV: ${MIDTRANS_ENV:-sandbox}
