@@ -199,3 +199,12 @@ export interface VariantInput {
   is_active?: boolean;
   sort_order?: number;
 }
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: 'customer' | 'admin';
+  is_active: boolean;
+  created_at: string;
+}

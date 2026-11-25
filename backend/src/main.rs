@@ -12,6 +12,7 @@ mod promo;
 mod routes;
 mod settings;
 mod state;
+mod users;
 mod variants;
 mod midtrans;
 

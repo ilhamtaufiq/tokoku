@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { Link, NavLink, Outlet } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { SearchBox } from './SearchBox';
 import { useAuth } from '../auth/AuthContext';
@@ -7,8 +7,7 @@ import { api } from '../api';
 const YEAR = new Date().getFullYear();
 
 export function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart, enabled: !!user });
   const cartCount = (cart.data ?? []).reduce((n, i) => n + i.qty, 0);
 
@@ -38,15 +37,10 @@ export function Layout() {
               </NavLink>
             )}
             {user ? (
-              <button
-                className="btn ghost"
-                onClick={async () => {
-                  await logout();
-                  navigate('/');
-                }}
-              >
-                Keluar
-              </button>
+              <NavLink to="/account" className="account-link">
+                <span className="avatar small" aria-hidden>{user.name.charAt(0).toUpperCase()}</span>
+                <span className="account-name">{user.name.split(' ')[0]}</span>
+              </NavLink>
             ) : (
               <Link to="/login" className="btn primary">Masuk</Link>
             )}
@@ -82,10 +76,10 @@ export function Layout() {
           <span>Pesanan</span>
         </NavLink>
         {user ? (
-          <button className="mn-btn" onClick={async () => { await logout(); navigate('/'); }}>
-            <span className="material-symbols-outlined" aria-hidden>logout</span>
-            <span>Keluar</span>
-          </button>
+          <NavLink to="/account">
+            <span className="material-symbols-outlined" aria-hidden>person</span>
+            <span>Akun</span>
+          </NavLink>
         ) : (
           <NavLink to="/login">
             <span className="material-symbols-outlined" aria-hidden>person</span>

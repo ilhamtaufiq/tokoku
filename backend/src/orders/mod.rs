@@ -467,7 +467,7 @@ pub async fn create_invoice_for_order(
         gross_amount: order.grand_total.trunc().to_i64().unwrap_or(0),
         items,
         customer_name: truncate(&order.buyer_name.clone().unwrap_or_else(|| "Pelanggan".into()), 50),
-        customer_email: email.to_string(),
+        customer_email: if crate::auth::is_valid_email(email) { Some(email.trim().to_string()) } else { None },
         finish_url: format!("{}/orders/{}", state.cfg.frontend_url, order.id),
         expiry_minutes: (order.seconds_left + 59) / 60,
         enabled_payments: method.enabled_payments(),

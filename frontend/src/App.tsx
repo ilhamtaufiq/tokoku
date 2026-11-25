@@ -16,6 +16,8 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminPromos from './pages/admin/AdminPromos';
 import AdminStore from './pages/admin/AdminStore';
 import AdminBanners from './pages/admin/AdminBanners';
+import AdminUsers from './pages/admin/AdminUsers';
+import Account from './pages/Account';
 import Invoice from './pages/Invoice';
 import { Privacy, Refund, Terms } from './pages/Legal';
 
@@ -37,6 +39,7 @@ export default function App() {
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="orders/:id/invoice" element={<Invoice />} />
+          <Route path="account" element={<Account />} />
         </Route>
 
         <Route path="*" element={<p className="error">Halaman tidak ditemukan.</p>} />
@@ -48,6 +51,7 @@ export default function App() {
           <Route path="products" element={<AdminProducts />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="banners" element={<AdminBanners />} />
+          <Route path="users" element={<AdminUsers />} />
           <Route path="promos" element={<AdminPromos />} />
           <Route path="store" element={<AdminStore />} />
         </Route>

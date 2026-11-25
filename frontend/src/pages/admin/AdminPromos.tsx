@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '../../api';
+import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 
 export default function AdminPromos() {
@@ -32,7 +33,7 @@ export default function AdminPromos() {
 
   return (
     <section className="narrow">
-      <h1>Kode promo</h1>
+      <PageHeader title="Kode promo" subtitle="Buat kode diskon persen atau nominal, lengkap dengan minimum belanja dan kuota." />
       <form
         className="card form"
         onSubmit={(e) => {

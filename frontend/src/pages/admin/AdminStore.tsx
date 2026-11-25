@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
+import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 import type { StoreInfo } from '../../api/types';
 
@@ -29,8 +30,7 @@ export default function AdminStore() {
 
   return (
     <section className="narrow wide">
-      <h1>Data toko</h1>
-      <p className="muted small">Data ini dicetak di invoice. Isi NPWP dan alamat sesuai dokumen perpajakan toko.</p>
+      <PageHeader title="Data toko" subtitle="Data ini dicetak di invoice. Isi NPWP dan alamat sesuai dokumen perpajakan toko." />
       <form
         className="card form"
         onSubmit={(e) => {

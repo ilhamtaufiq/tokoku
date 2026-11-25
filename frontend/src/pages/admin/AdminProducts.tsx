@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
+import { PageHeader } from '../../components/PageHeader';
 import type { ProductInput } from '../../api';
 import { ApiError } from '../../api/client';
 import type { Product } from '../../api/types';
@@ -37,10 +38,16 @@ export default function AdminProducts() {
 
   return (
     <section>
-      <div className="toolbar">
-        <h1>Produk</h1>
-        <input type="search" placeholder="Cari…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button className="btn primary" onClick={() => setEditing('new')}>+ Produk baru</button>
+      <PageHeader
+        title="Produk"
+        subtitle="Kelola katalog, harga, stok, dan varian. Produk yang dinonaktifkan tidak tampil di toko."
+        actions={<button className="btn primary" onClick={() => setEditing('new')}>+ Produk baru</button>}
+      />
+      <div className="filter-bar card">
+        <div className="search-field">
+          <span className="material-symbols-outlined" aria-hidden>search</span>
+          <input type="search" placeholder="Cari nama atau SKU…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Cari produk" />
+        </div>
       </div>
       {message && <p className={message.kind === 'ok' ? 'success' : 'error'}>{message.text}</p>}
 

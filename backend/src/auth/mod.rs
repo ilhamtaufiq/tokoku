@@ -6,7 +6,7 @@ use axum::{
     extract::State,
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -24,7 +24,62 @@ pub fn router() -> Router<AppState> {
         .route("/login", post(login))
         .route("/refresh", post(refresh))
         .route("/logout", post(logout))
-        .route("/me", get(me))
+        .route("/me", get(me).put(update_profile))
+        .route("/password", put(change_password))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ProfileReq {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PasswordReq {
+    pub current_password: String,
+    pub new_password: String,
+}
+
+/// Ubah nama tampilan pengguna yang sedang login.
+async fn update_profile(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<ProfileReq>,
+) -> AppResult<Json<UserView>> {
+    let name = req.name.trim();
+    if name.is_empty() || name.chars().count() > 120 {
+        return Err(AppError::BadRequest("nama wajib diisi (maks 120 karakter)".into()));
+    }
+    sqlx::query("UPDATE users SET name = ? WHERE id = ?")
+        .bind(name)
+        .bind(user.id)
+        .execute(&state.pool)
+        .await?;
+    me(State(state), user).await
+}
+
+/// Ganti password: wajib memasukkan password saat ini. Semua sesi lain tetap berlaku sampai kedaluwarsa.
+async fn change_password(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Json(req): Json<PasswordReq>,
+) -> AppResult<StatusCode> {
+    if req.new_password.len() < 8 {
+        return Err(AppError::BadRequest("password baru minimal 8 karakter".into()));
+    }
+    let (hash,): (String,) = sqlx::query_as("SELECT password_hash FROM users WHERE id = ?")
+        .bind(user.id)
+        .fetch_one(&state.pool)
+        .await?;
+    if !password::verify(&req.current_password, &hash) {
+        return Err(AppError::BadRequest("password saat ini salah".into()));
+    }
+    let new_hash = password::hash(&req.new_password)?;
+    sqlx::query("UPDATE users SET password_hash = ? WHERE id = ?")
+        .bind(new_hash)
+        .bind(user.id)
+        .execute(&state.pool)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,6 +110,7 @@ struct UserRow {
     name: String,
     role: String,
     password_hash: String,
+    is_active: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -76,10 +132,25 @@ fn normalize_email(email: &str) -> String {
     email.trim().to_lowercase()
 }
 
+/// Pemeriksaan format email sederhana: satu '@', bagian lokal dan domain terisi, domain punya titik.
+pub fn is_valid_email(email: &str) -> bool {
+    let email = email.trim();
+    if email.len() > 190 || email.contains(char::is_whitespace) {
+        return false;
+    }
+    let Some((local, domain)) = email.split_once('@') else { return false };
+    !local.is_empty()
+        && !domain.contains('@')
+        && domain.contains('.')
+        && !domain.starts_with('.')
+        && !domain.ends_with('.')
+        && !domain.contains("..")
+        && domain.split('.').all(|label| !label.is_empty())
+}
+
 fn validate_register(req: &RegisterReq) -> AppResult<()> {
-    let email = req.email.trim();
-    if !email.contains('@') || email.len() > 190 {
-        return Err(AppError::BadRequest("email tidak valid".into()));
+    if !is_valid_email(&req.email) {
+        return Err(AppError::BadRequest("format email tidak valid".into()));
     }
     if req.password.len() < 8 {
         return Err(AppError::BadRequest("password minimal 8 karakter".into()));
@@ -133,6 +204,7 @@ async fn register(
                 name: req.name.trim().to_string(),
                 role: "customer".into(),
                 password_hash: hash,
+                is_active: true,
             };
             session_response(&state, &row, StatusCode::CREATED)
         }
@@ -149,7 +221,7 @@ async fn login(
 ) -> AppResult<Response> {
     let email = normalize_email(&req.email);
     let user = sqlx::query_as::<_, UserRow>(
-        "SELECT id, email, name, CAST(role AS CHAR) AS role, password_hash FROM users WHERE email = ?",
+        "SELECT id, email, name, CAST(role AS CHAR) AS role, password_hash, is_active FROM users WHERE email = ?",
     )
     .bind(&email)
     .fetch_optional(&state.pool)
@@ -159,6 +231,9 @@ async fn login(
 
     if !password::verify(&req.password, &user.password_hash) {
         return Err(AppError::Unauthorized);
+    }
+    if !user.is_active {
+        return Err(AppError::BadRequest("akun ini dinonaktifkan. Hubungi admin.".into()));
     }
     session_response(&state, &user, StatusCode::OK)
 }
@@ -179,12 +254,15 @@ async fn refresh(State(state): State<AppState>, headers: HeaderMap) -> AppResult
 
     // Ambil ulang dari DB: user yang sudah dihapus tidak bisa refresh lagi
     let user = sqlx::query_as::<_, UserRow>(
-        "SELECT id, email, name, CAST(role AS CHAR) AS role, password_hash FROM users WHERE id = ?",
+        "SELECT id, email, name, CAST(role AS CHAR) AS role, password_hash, is_active FROM users WHERE id = ?",
     )
     .bind(id)
     .fetch_optional(&state.pool)
     .await?
     .ok_or(AppError::Unauthorized)?;
+    if !user.is_active {
+        return Err(AppError::Unauthorized);
+    }
 
     session_response(&state, &user, StatusCode::OK)
 }
@@ -219,4 +297,23 @@ pub async fn create_admin(pool: &sqlx::MySqlPool, email: &str, name: &str, passw
         .await?;
     println!("admin dibuat: {}", normalize_email(email));
     Ok(())
+}
+
+#[cfg(test)]
+mod email_tests {
+    use super::is_valid_email;
+
+    #[test]
+    fn email_valid_dan_tidak_valid() {
+        assert!(is_valid_email("budi@example.com"));
+        assert!(is_valid_email("nadia.k@toko.co.id"));
+        assert!(!is_valid_email("budi"));
+        assert!(!is_valid_email("budi@"));
+        assert!(!is_valid_email("@example.com"));
+        assert!(!is_valid_email("budi@example"));
+        assert!(!is_valid_email("budi@.com"));
+        assert!(!is_valid_email("budi@example..com"));
+        assert!(!is_valid_email("bu di@example.com"));
+        assert!(!is_valid_email("a@b@c.com"));
+    }
 }

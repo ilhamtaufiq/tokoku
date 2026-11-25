@@ -10,6 +10,8 @@ interface AuthState {
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
+  /** Memperbarui data pengguna yang tampil (mis. setelah ganti nama). */
+  updateUser: (next: User) => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
+    () => ({ user, loading, login, register, logout, updateUser: setUser }),
     [user, loading, login, register, logout],
   );
 

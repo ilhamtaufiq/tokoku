@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import type { OrderStatus } from '../../api/types';
@@ -13,10 +14,21 @@ const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
 
 type Pending = { id: number; kind: 'ship' | 'refund' } | null;
 
+const STATUS_CHIPS: { value: OrderStatus | ''; label: string }[] = [
+  { value: '', label: 'Semua' },
+  { value: 'paid', label: 'Perlu diproses' },
+  { value: 'processing', label: 'Diproses' },
+  { value: 'shipped', label: 'Dikirim' },
+  { value: 'completed', label: 'Selesai' },
+  { value: 'pending_payment', label: 'Menunggu bayar' },
+  { value: 'cancelled', label: 'Dibatalkan' },
+];
+
 export default function AdminOrders() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<OrderStatus | ''>('');
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const [pending, setPending] = useState<Pending>(null);
   const [value, setValue] = useState('');
 
@@ -46,14 +58,30 @@ export default function AdminOrders() {
     onError: (e) => setError(e instanceof ApiError ? e.message : 'Gagal mengubah status.'),
   });
 
+  const visible = (orders.data ?? []).filter((o) => {
+    const term = search.trim().toLowerCase();
+    if (!term) return true;
+    return o.invoice_no.toLowerCase().includes(term) || (o.buyer_name ?? '').toLowerCase().includes(term);
+  });
+
   return (
     <section>
-      <div className="toolbar">
-        <h1>Pesanan</h1>
-        <select value={status} onChange={(e) => setStatus(e.target.value as OrderStatus | '')} aria-label="Filter status">
-          <option value="">Semua status</option>
-          {Object.entries(ORDER_STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+      <PageHeader
+        title="Pesanan"
+        subtitle={orders.data ? `${visible.length} pesanan${search.trim() ? ' cocok dengan pencarian' : ''}` : 'Memuat pesanan…'}
+      />
+      <div className="filter-bar card">
+        <div className="search-field">
+          <span className="material-symbols-outlined" aria-hidden>search</span>
+          <input type="search" placeholder="Cari nomor invoice atau nama pembeli…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Cari pesanan" />
+        </div>
+        <div className="chip-group" role="group" aria-label="Filter status">
+          {STATUS_CHIPS.map((c) => (
+            <button key={c.value} className={`chip ${status === c.value ? 'on' : ''}`} aria-pressed={status === c.value} onClick={() => setStatus(c.value)}>
+              {c.label}
+            </button>
+          ))}
+        </div>
       </div>
       {error && <p className="error">{error}</p>}
       <div className="card table-wrap">
@@ -62,7 +90,7 @@ export default function AdminOrders() {
             <tr><th>Invoice</th><th>Tanggal</th><th>Total</th><th>PPN</th><th>Status</th><th>Pembayaran</th><th /></tr>
           </thead>
           <tbody>
-            {orders.data?.map((o) => {
+            {visible.map((o) => {
               const next = NEXT[o.status];
               const canRefund = o.payment_status === 'paid' && (o.status === 'paid' || o.status === 'processing');
               const isOpen = pending?.id === o.id;

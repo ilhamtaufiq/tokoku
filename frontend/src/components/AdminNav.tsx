@@ -7,6 +7,7 @@ const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
   { to: '/admin/orders', label: 'Pesanan', icon: 'receipt_long' },
   { to: '/admin/products', label: 'Produk', icon: 'inventory_2' },
   { to: '/admin/banners', label: 'Banner', icon: 'view_carousel' },
+  { to: '/admin/users', label: 'Pengguna', icon: 'group' },
   { to: '/admin/promos', label: 'Promo', icon: 'sell' },
   { to: '/admin/store', label: 'Data toko', icon: 'store' },
 ];
@@ -39,7 +40,10 @@ export function AdminLayout() {
             <span className="material-symbols-outlined" aria-hidden>arrow_back</span>
             Ke toko
           </NavLink>
-          <p className="muted small">{user?.name}</p>
+          <NavLink to="/account" className="admin-foot-link">
+            <span className="material-symbols-outlined" aria-hidden>manage_accounts</span>
+            {user?.name ?? 'Akun saya'}
+          </NavLink>
           <button
             className="btn ghost small-btn"
             onClick={async () => {

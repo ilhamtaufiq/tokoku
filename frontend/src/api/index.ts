@@ -15,6 +15,7 @@ import type {
   Product,
   StoreInfo,
   Suggestion,
+  AdminUser,
   User,
   Variant,
   VariantInput,
@@ -28,6 +29,9 @@ export const api = {
     request<AuthResponse>('/auth/login', { method: 'POST', body }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: () => request<User>('/auth/me'),
+  updateProfile: (body: { name: string }) => request<User>('/auth/me', { method: 'PUT', body }),
+  changePassword: (body: { current_password: string; new_password: string }) =>
+    request<void>('/auth/password', { method: 'PUT', body }),
 
   // Katalog
   categories: () => request<Category[]>('/categories'),
@@ -94,6 +98,13 @@ export const api = {
     form.append('file', file);
     return request<Banner>(`/admin/banners/${id}/image`, { method: 'POST', body: form });
   },
+  adminUsers: (params: { q?: string; role?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) qs.set(k, v); });
+    return request<AdminUser[]>(`/admin/users?${qs.toString()}`);
+  },
+  adminUpdateUser: (id: number, body: { role?: string; is_active?: boolean }) =>
+    request<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', body }),
   adminDashboard: () => request<AdminDashboard>('/admin/dashboard'),
   adminListVariants: (product_id: number) => request<Variant[]>(`/admin/products/${product_id}/variants`),
   adminCreateVariant: (product_id: number, body: VariantInput) =>

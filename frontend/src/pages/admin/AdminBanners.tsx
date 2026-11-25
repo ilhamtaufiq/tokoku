@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../api';
+import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 import type { Banner, BannerInput } from '../../api/types';
 
@@ -29,10 +30,11 @@ export default function AdminBanners() {
 
   return (
     <section>
-      <div className="toolbar">
-        <h1>Banner promo</h1>
-        <button className="btn primary" onClick={() => setEditing('new')}>+ Banner baru</button>
-      </div>
+      <PageHeader
+        title="Banner promo"
+        subtitle="Banner aktif tampil berurutan di katalog. Urutan kecil tampil lebih dulu. Gambar ideal 1600×600 px."
+        actions={<button className="btn primary" onClick={() => setEditing('new')}>+ Banner baru</button>}
+      />
       <p className="muted small">Banner aktif tampil berurutan di katalog (urutan kecil tampil lebih dulu). Gambar ideal 1600×600 px.</p>
       {message && <p className={message.kind === 'ok' ? 'success' : 'error'}>{message.text}</p>}
 

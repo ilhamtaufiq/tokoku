@@ -24,7 +24,8 @@ pub struct SnapRequest {
     pub gross_amount: i64,
     pub items: Vec<SnapItem>,
     pub customer_name: String,
-    pub customer_email: String,
+    /// None jika email pembeli tidak valid; Midtrans menolak format email yang salah.
+    pub customer_email: Option<String>,
     pub finish_url: String,
     pub expiry_minutes: i64,
     /// Daftar metode yang ditampilkan di Snap (mis. ["qris"]). None = semua metode.
@@ -68,10 +69,13 @@ pub async fn create_snap(http: &reqwest::Client, cfg: &Config, req: &SnapRequest
     let mut body = json!({
         "transaction_details": { "order_id": req.order_id, "gross_amount": req.gross_amount },
         "item_details": items,
-        "customer_details": { "first_name": req.customer_name, "email": req.customer_email },
+        "customer_details": { "first_name": req.customer_name },
         "callbacks": { "finish": req.finish_url },
         "expiry": { "unit": "minutes", "duration": req.expiry_minutes.max(1) },
     });
+    if let Some(email) = &req.customer_email {
+        body["customer_details"]["email"] = json!(email);
+    }
     if let Some(methods) = &req.enabled_payments {
         body["enabled_payments"] = json!(methods);
     }
