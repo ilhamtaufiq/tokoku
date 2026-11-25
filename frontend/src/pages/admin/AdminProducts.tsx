@@ -24,7 +24,6 @@ import {
   SEARCH_WRAP,
   SKU,
   StatusBadge,
-  TABLE,
   TABLE_WRAP,
   TBODY,
   TD,

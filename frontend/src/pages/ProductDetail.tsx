@@ -10,7 +10,7 @@ import { ProductReviews } from '../components/Reviews';
 import { useToast } from '../components/Toast';
 import { rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
-import { btnBase, btnDefault, btnOutline, btnPrimary, card, emptyNote, errorBox, ppnChip, skeletonBlock } from '../components/ui/storefront';
+import { btnBase, btnDefault, btnOutline, btnPrimary, emptyNote, errorBox, ppnChip, skeletonBlock } from '../components/ui/storefront';
 
 const MAX_QTY = 99;
 
