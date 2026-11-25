@@ -17,7 +17,7 @@ function statusInfo(status: OrderStatus, payment: PaymentStatus): { label: strin
 }
 
 const KPI_TOP = 'flex items-center justify-between gap-2 text-sm font-semibold text-ink-2';
-const KPI_ICON = 'material-symbols-outlined text-[22px] text-primary';
+const KPI_ICON = 'material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field bg-secondary-container text-[20px] text-on-secondary-container';
 const KPI_VALUE = 'font-display text-xl font-bold leading-7 tabular-nums tracking-[-0.3px] text-ink sm:text-[26px] sm:leading-8';
 const SECTION_TITLE = 'font-display text-lg font-semibold leading-7 text-ink sm:text-xl';
 const LINK_SMALL = 'text-xs font-semibold text-primary hover:underline';
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
                   p.stock <= 2 ? 'bg-warning-soft/70' : 'bg-surface-low',
                 )}
               >
-                <div className="min-w-0">
+                <div className="min-w-0 text-left">
                   <strong className="block font-display text-[15px] font-semibold text-ink">{p.name}</strong>
                   <span className={cx(SKU, 'mt-0.5 block truncate')}>{p.sku}</span>
                 </div>

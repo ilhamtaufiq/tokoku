@@ -34,7 +34,7 @@ export function btn(variant: BtnVariant = 'default', size: BtnSize = 'md', extra
 
 /* ---------- Kartu, badge, notifikasi ---------- */
 
-export const CARD = 'rounded-card border border-outline-soft bg-surface';
+export const CARD = 'rounded-card border border-outline-soft/70 bg-surface shadow-card';
 
 export type Tone = 'neutral' | 'ok' | 'warn' | 'danger' | 'info';
 

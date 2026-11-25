@@ -8,11 +8,11 @@ export const btnBase =
   'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-field px-4 text-sm font-semibold no-underline cursor-pointer transition-[background-color,border-color,color,filter,opacity] duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:opacity-85 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 [&_.material-symbols-outlined]:text-xl';
 
 export const btnDefault = 'border border-outline bg-surface text-ink hover:border-primary hover:text-primary';
-export const btnPrimary = 'border border-primary bg-primary text-on-primary hover:brightness-110';
+export const btnPrimary = 'border border-primary bg-primary text-on-primary shadow-cta hover:brightness-110 hover:shadow-pop';
 export const btnOutline = 'border-[1.5px] border-primary bg-surface text-primary hover:bg-secondary-container';
 
 /** Kartu permukaan standar. */
-export const card = 'rounded-card border border-outline-soft bg-surface';
+export const card = 'rounded-card border border-outline-soft/70 bg-surface shadow-card';
 
 /** Keadaan kosong (empty state) di dalam kartu. */
 export const emptyNote =

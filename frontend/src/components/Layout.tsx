@@ -24,7 +24,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg text-ink">
-      <header className="sticky top-0 z-20 border-b border-outline bg-surface print:hidden">
+      <header className="sticky top-0 z-20 border-b border-outline-soft/80 bg-surface/90 shadow-[0_6px_20px_-16px_rgb(15_23_42/0.35)] backdrop-blur-md print:hidden">
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 min-[761px]:px-6 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-5 min-[1101px]:py-0">
           <Link
             to="/"
