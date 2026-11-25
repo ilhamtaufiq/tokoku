@@ -33,6 +33,7 @@ import {
   TH_NUM,
   btn,
   cx,
+  TABLE_STACK,
 } from './adminUi';
 
 const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0 };
@@ -106,7 +107,7 @@ export default function AdminProducts() {
       {editing && editing !== 'new' && <div className="mt-4"><VariantsEditor productId={editing.id} /></div>}
 
       <div className={cx(TABLE_WRAP, 'mt-4')}>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Nama</th>
@@ -121,7 +122,7 @@ export default function AdminProducts() {
           <tbody className={TBODY}>
             {products.data?.items.map((p) => (
               <tr key={p.id} className={p.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                <td className={TD}>
+                <td data-label="" className={cx(TD, 'max-md:block!')}>
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-field bg-surface-high font-display text-sm font-bold text-muted">
                       {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover" /> : p.name.charAt(0)}
@@ -129,14 +130,14 @@ export default function AdminProducts() {
                     <span className="min-w-0 font-medium">{p.name}</span>
                   </div>
                 </td>
-                <td className={cx(TD, SKU)}>{p.sku}</td>
-                <td className={TD_NUM}>{rp(p.price)}</td>
-                <td className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums')}>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>
-                <td className={TD_NUM}>{p.stock}</td>
-                <td className={TD}>
+                <td data-label="SKU" className={cx(TD, SKU)}>{p.sku}</td>
+                <td data-label="Harga" className={TD_NUM}>{rp(p.price)}</td>
+                <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums')}>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>
+                <td data-label="Stok" className={TD_NUM}>{p.stock}</td>
+                <td data-label="Status" className={TD}>
                   <StatusBadge tone={p.is_active ? 'ok' : 'neutral'}>{p.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
                 </td>
-                <td className={cx(TD, 'whitespace-nowrap')}>
+                <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
                   <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
                     <button type="button" className={btn('link', 'link')} onClick={() => setEditing(p)}>Ubah</button>
                     {p.is_active && (

@@ -30,6 +30,7 @@ import {
   chipClass,
   cx,
   type Tone,
+  TABLE_STACK,
 } from './adminUi';
 
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
@@ -153,7 +154,7 @@ export default function AdminOrders() {
       </div>
       {error && <div className="mb-4"><Notice kind="error">{error}</Notice></div>}
       <div className={TABLE_WRAP}>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Invoice</th>
@@ -173,24 +174,24 @@ export default function AdminOrders() {
               return (
                 <Fragment key={o.id}>
                   <tr>
-                    <td className={cx(TD, 'min-w-[120px]')}>
+                    <td data-label="Invoice" className={cx(TD, 'min-w-[120px]')}>
                       <Link to={`/admin/orders/${o.id}`} className="font-semibold text-primary hover:underline">{o.invoice_no}</Link>
                     </td>
-                    <td className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
-                    <td className={cx(TD, 'whitespace-nowrap text-right tabular-nums')}>{rp(o.grand_total)}</td>
-                    <td className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums text-muted')}>{rp(o.ppn_total)}</td>
-                    <td className={TD}>
+                    <td data-label="Tanggal" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
+                    <td data-label="Total" className={cx(TD, 'whitespace-nowrap text-right tabular-nums')}>{rp(o.grand_total)}</td>
+                    <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums text-muted')}>{rp(o.ppn_total)}</td>
+                    <td data-label="Status" className={TD}>
                       <StatusBadge tone={TONE_BY_STATUS[o.status] ?? 'neutral'}>{ORDER_STATUS_LABEL[o.status]}</StatusBadge>
                       {o.estimated_days && <div className={cx(MUTED_SMALL, 'mt-1.5')}>Estimasi {o.estimated_days} hari</div>}
                       {o.estimated_due_at && <div className={MUTED_SMALL}>Tenggat {formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</div>}
                       {o.tracking_number && <div className={cx(SKU, 'mt-0.5')}>Resi {o.tracking_number}</div>}
                     </td>
-                    <td className={cx(TD, HIDE_MD)}>
+                    <td data-label="Pembayaran" className={cx(TD, HIDE_MD)}>
                       <StatusBadge tone={o.payment_status === 'paid' ? 'ok' : o.payment_status === 'refunded' ? 'danger' : 'neutral'}>
                         {o.payment_status}
                       </StatusBadge>
                     </td>
-                    <td className={cx(TD, 'whitespace-nowrap')}>
+                    <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
                       <div className="flex flex-col items-start gap-1">
                         {next === 'shipped' && (
                           <button type="button" className={btn('link', 'link')} onClick={() => openAction({ id: o.id, kind: 'ship' })}>
@@ -217,7 +218,7 @@ export default function AdminOrders() {
                   </tr>
                   {isOpen && pending && (
                     <tr className="bg-surface-low">
-                      <td colSpan={7} className="px-3 py-3 sm:px-4">
+                      <td colSpan={7} className="max-md:block! px-3 py-3 sm:px-4">
                         <form
                           className={cx(ACTIONS, 'items-end')}
                           onSubmit={(e) => {

@@ -93,6 +93,22 @@ export const HINT = 'text-xs text-muted';
 
 export const TABLE_WRAP = cx(CARD, 'overflow-x-auto');
 export const TABLE = 'w-full border-collapse text-sm';
+/**
+ * Tabel yang berubah jadi daftar kartu di bawah md. Setiap sel memberi judul
+ * lewat atribut data-label. Di md ke atas tampilannya tetap tabel biasa.
+ */
+export const TABLE_STACK = cx(
+  TABLE,
+  'max-md:block',
+  'max-md:[&_thead]:hidden',
+  'max-md:[&_tbody]:block',
+  'max-md:[&_tr]:block max-md:[&_tr]:border-b max-md:[&_tr]:border-outline-soft max-md:[&_tr]:px-3 max-md:[&_tr]:py-2.5',
+  'max-md:[&_td]:flex max-md:[&_td]:items-center max-md:[&_td]:justify-between max-md:[&_td]:gap-3 max-md:[&_td]:border-0 max-md:[&_td]:px-0 max-md:[&_td]:py-1.5 max-md:[&_td]:text-right',
+  'max-md:[&_td:first-child]:text-left',
+  'max-md:[&_td::before]:text-left max-md:[&_td::before]:text-xs max-md:[&_td::before]:font-semibold max-md:[&_td::before]:text-muted',
+  'max-md:[&_td::before]:content-[attr(data-label)]',
+  "max-md:[&_td[data-label='']::before]:content-none",
+);
 export const TBODY = '[&>tr:last-child>td]:border-b-0';
 export const TH = 'whitespace-nowrap border-b border-outline-soft bg-surface-low px-3 py-3 text-left text-[11px] font-bold uppercase tracking-[0.6px] text-muted sm:px-4';
 export const TD = 'border-b border-outline-soft px-3 py-3 align-middle text-ink sm:px-4';

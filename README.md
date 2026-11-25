@@ -76,7 +76,7 @@ Skrip `backend/seed/dummy_products.sql` menambahkan 3 kategori dan 10 produk con
 Di server (Coolify), jalankan di folder compose:
 
 ```bash
-docker compose exec -T db sh -c 'mariadb -u root -p"$MARIADB_ROOT_PASSWORD" toko_online' < backend/seed/dummy_products.sql
+docker compose exec -T db sh -c 'mariadb --default-character-set=utf8mb4 -u root -p"$MARIADB_ROOT_PASSWORD" toko_online' < backend/seed/dummy_products.sql
 ```
 
 Produk contoh tidak punya gambar, sehingga tampil dengan placeholder huruf. Gambar bisa diunggah dari panel admin.
