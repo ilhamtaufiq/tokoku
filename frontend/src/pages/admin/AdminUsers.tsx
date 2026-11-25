@@ -18,14 +18,12 @@ import {
   SEARCH_ICON,
   SEARCH_WRAP,
   StatusBadge,
-  TABLE,
   TABLE_WRAP,
   TBODY,
   TD,
   TH,
   chipClass,
-  cx,
-} from './adminUi';
+  cx, TABLE_STACK } from './adminUi';
 
 const ROLE_OPTIONS = [
   { v: '', l: 'Semua' },
@@ -100,7 +98,7 @@ export default function AdminUsers() {
       {users.isError && <div className="mb-4"><Notice kind="error">Gagal memuat pengguna.</Notice></div>}
 
       <div className={TABLE_WRAP}>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Pengguna</th>
@@ -115,7 +113,7 @@ export default function AdminUsers() {
               const lastAdmin = u.role === 'admin' && u.is_active && adminCount <= 1;
               return (
                 <tr key={u.id} className={u.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                  <td className={TD}>
+                  <td data-label="" className={cx(TD, 'max-md:block!')}>
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-secondary-container font-display text-sm font-bold text-on-secondary-container" aria-hidden>
                         {u.name.charAt(0).toUpperCase()}
@@ -127,7 +125,7 @@ export default function AdminUsers() {
                       </div>
                     </div>
                   </td>
-                  <td className={TD}>
+                  <td data-label="Role" className={TD}>
                     <select
                       value={u.role}
                       disabled={isMe || lastAdmin || update.isPending}
@@ -139,7 +137,7 @@ export default function AdminUsers() {
                       <option value="admin">Admin</option>
                     </select>
                   </td>
-                  <td className={TD}>
+                  <td data-label="Status" className={TD}>
                     <label
                       className={cx(
                         'relative inline-flex cursor-pointer items-center gap-2.5 whitespace-nowrap text-[13px] font-semibold text-ink-2',
@@ -162,7 +160,7 @@ export default function AdminUsers() {
                       <span className={cx('peer-disabled:opacity-60', u.is_active ? 'text-ink' : 'text-muted')}>{u.is_active ? 'Aktif' : 'Nonaktif'}</span>
                     </label>
                   </td>
-                  <td className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(u.created_at)}</td>
+                  <td data-label="Bergabung" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(u.created_at)}</td>
                 </tr>
               );
             })}

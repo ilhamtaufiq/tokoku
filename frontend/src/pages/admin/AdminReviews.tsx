@@ -5,7 +5,7 @@ import { Stars } from '../../components/Reviews';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import { formatDate } from '../../lib/money';
-import { CHIP_GROUP, EMPTY_ROW, FILTER_BAR, HIDE_LG, MUTED_SMALL, Notice, StatusBadge, TABLE, TABLE_WRAP, TBODY, TD, TH, btn, chipClass, cx } from './adminUi';
+import { CHIP_GROUP, EMPTY_ROW, FILTER_BAR, HIDE_LG, MUTED_SMALL, Notice, StatusBadge, TABLE_WRAP, TBODY, TD, TH, btn, chipClass, cx, TABLE_STACK } from './adminUi';
 
 /** Moderasi ulasan: sembunyikan ulasan yang melanggar, tampilkan kembali jika perlu. */
 export default function AdminReviews() {
@@ -40,7 +40,7 @@ export default function AdminReviews() {
       </div>
       {error && <div className="mb-4"><Notice kind="error">{error}</Notice></div>}
       <div className={TABLE_WRAP}>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Produk</th>
@@ -55,17 +55,17 @@ export default function AdminReviews() {
           <tbody className={TBODY}>
             {(reviews.data ?? []).map((r) => (
               <tr key={r.id}>
-                <td className={cx(TD, 'font-medium')}>{r.product_name}</td>
-                <td className={TD}><Stars value={r.rating} /></td>
-                <td className={cx(TD, 'max-w-[320px] whitespace-normal break-words')}>
+                <td data-label="Produk" className={cx(TD, 'font-medium')}>{r.product_name}</td>
+                <td data-label="Rating" className={TD}><Stars value={r.rating} /></td>
+                <td data-label="Ulasan" className={cx(TD, 'max-w-[320px] whitespace-normal break-words')}>
                   {r.comment || <span className={MUTED_SMALL}>(tanpa komentar)</span>}
                 </td>
-                <td className={TD}>{r.buyer_name}</td>
-                <td className={cx(TD, HIDE_LG, MUTED_SMALL)}>{formatDate(r.created_at)}</td>
-                <td className={TD}>
+                <td data-label="Pembeli" className={TD}>{r.buyer_name}</td>
+                <td data-label="Tanggal" className={cx(TD, HIDE_LG, MUTED_SMALL)}>{formatDate(r.created_at)}</td>
+                <td data-label="Status" className={TD}>
                   <StatusBadge tone={r.is_visible ? 'ok' : 'neutral'}>{r.is_visible ? 'Tampil' : 'Disembunyikan'}</StatusBadge>
                 </td>
-                <td className={cx(TD, 'whitespace-nowrap')}>
+                <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
                   <button
                     type="button"
                     className={btn('link', 'link')}

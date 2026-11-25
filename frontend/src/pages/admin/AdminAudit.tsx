@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { formatDate } from '../../lib/money';
-import { EMPTY_ROW, HIDE_MD, HIDE_SM, TABLE, TABLE_WRAP, TBODY, TD, TH, cx } from './adminUi';
+import { EMPTY_ROW, HIDE_MD, HIDE_SM, TABLE_WRAP, TBODY, TD, TH, cx, TABLE_STACK } from './adminUi';
 
 const ACTION_LABEL: Record<string, string> = {
   'order.status': 'Ubah status pesanan',
@@ -17,7 +17,7 @@ export default function AdminAudit() {
     <section>
       <PageHeader title="Aktivitas" subtitle="Riwayat perubahan status pesanan dan aksi admin, terbaru di atas." />
       <div className={TABLE_WRAP}>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Waktu</th>
@@ -30,11 +30,11 @@ export default function AdminAudit() {
           <tbody className={TBODY}>
             {(log.data ?? []).map((e) => (
               <tr key={e.id}>
-                <td className={cx(TD, 'whitespace-nowrap text-muted')}>{formatDate(e.created_at)}</td>
-                <td className={cx(TD, 'font-medium')}>{ACTION_LABEL[e.action] ?? e.action}</td>
-                <td className={cx(TD, HIDE_SM)}>{e.actor_name ?? 'Sistem'}</td>
-                <td className={cx(TD, HIDE_MD, 'whitespace-nowrap')}>{e.entity} #{e.entity_id ?? '-'}</td>
-                <td className={cx(TD, 'max-w-[360px] whitespace-normal break-words text-ink-2')}>{e.detail}</td>
+                <td data-label="Waktu" className={cx(TD, 'whitespace-nowrap text-muted')}>{formatDate(e.created_at)}</td>
+                <td data-label="Aksi" className={cx(TD, 'font-medium')}>{ACTION_LABEL[e.action] ?? e.action}</td>
+                <td data-label="Oleh" className={cx(TD, HIDE_SM)}>{e.actor_name ?? 'Sistem'}</td>
+                <td data-label="Objek" className={cx(TD, HIDE_MD, 'whitespace-nowrap')}>{e.entity} #{e.entity_id ?? '-'}</td>
+                <td data-label="Keterangan" className={cx(TD, 'max-w-[360px] whitespace-normal break-words text-ink-2')}>{e.detail}</td>
               </tr>
             ))}
           </tbody>

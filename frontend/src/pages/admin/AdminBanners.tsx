@@ -20,14 +20,12 @@ import {
   ROW,
   SKU,
   StatusBadge,
-  TABLE,
   TABLE_WRAP,
   TBODY,
   TD,
   TH,
   btn,
-  cx,
-} from './adminUi';
+  cx, TABLE_STACK } from './adminUi';
 
 const empty: BannerInput = { title: '', subtitle: '', cta_label: '', cta_url: '', is_active: true, sort_order: 0 };
 
@@ -84,7 +82,7 @@ export default function AdminBanners() {
       )}
 
       <div className={TABLE_WRAP}>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Gambar</th>
@@ -98,21 +96,21 @@ export default function AdminBanners() {
           <tbody className={TBODY}>
             {banners.data?.map((b) => (
               <tr key={b.id} className={b.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                <td className={TD}>
+                <td data-label="Gambar" className={TD}>
                   <span className="flex h-[45px] w-20 items-center justify-center overflow-hidden rounded-field bg-surface-high text-muted sm:h-[54px] sm:w-24">
                     {b.image_url ? <img src={b.image_url} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined" aria-hidden>image</span>}
                   </span>
                 </td>
-                <td className={TD}>
+                <td data-label="Judul" className={TD}>
                   <strong className="font-semibold">{b.title}</strong>
                   {b.subtitle && <div className={MUTED_SMALL}>{b.subtitle}</div>}
                 </td>
-                <td className={cx(TD, HIDE_MD, SKU)}>{b.cta_url ?? '—'}</td>
-                <td className={cx(TD, HIDE_SM, 'tabular-nums')}>{b.sort_order}</td>
-                <td className={TD}>
+                <td data-label="Tautan" className={cx(TD, HIDE_MD, SKU)}>{b.cta_url ?? '—'}</td>
+                <td data-label="Urutan" className={cx(TD, HIDE_SM, 'tabular-nums')}>{b.sort_order}</td>
+                <td data-label="Status" className={TD}>
                   <StatusBadge tone={b.is_active ? 'ok' : 'neutral'}>{b.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
                 </td>
-                <td className={cx(TD, 'whitespace-nowrap')}>
+                <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
                   <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
                     <button type="button" className={btn('link', 'link')} onClick={() => setEditing(b)}>Ubah</button>
                     <button

@@ -100,7 +100,7 @@ export default function Catalog() {
           aria-label="Kategori"
         >
           <button
-            className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[80px] max-[760px]:flex-none ${category === '' ? 'text-primary' : 'text-ink-2'}`}
+            className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[96px] max-[760px]:flex-none ${category === '' ? 'text-primary' : 'text-ink-2'}`}
             onClick={() => update({ category: '' })}
           >
             <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 ease-out group-hover:scale-105 group-active:scale-95 max-[760px]:h-[60px] max-[760px]:w-[60px] ${category === '' ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
@@ -113,7 +113,7 @@ export default function Catalog() {
             return (
               <button
                 key={c.id}
-                className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[80px] max-[760px]:flex-none ${on ? 'text-primary' : 'text-ink-2'}`}
+                className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[96px] max-[760px]:flex-none ${on ? 'text-primary' : 'text-ink-2'}`}
                 onClick={() => update({ category: String(c.id) })}
               >
                 <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-[transform,background-color,border-color] duration-200 ease-out group-hover:scale-105 group-active:scale-95 max-[760px]:h-[60px] max-[760px]:w-[60px] ${on ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
