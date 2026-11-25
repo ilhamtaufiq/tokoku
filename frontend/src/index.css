@@ -1,0 +1,56 @@
+/*
+ * Urutan layer menentukan prioritas: layer yang dideklarasikan belakangan menang.
+ * styles.css (legacy) dibungkus layer "legacy" sehingga utilitas Tailwind
+ * menang atas aturan lama. Preflight tidak diimpor agar halaman yang belum
+ * dimigrasi tidak berubah tampilannya.
+ */
+@layer theme, legacy, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "./styles.css" layer(legacy);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/*
+ * Token desain. Nilainya merujuk ke variabel :root di styles.css, jadi mode
+ * gelap (data-theme="dark") ikut berubah tanpa varian dark: di setiap kelas.
+ * Pakai: bg-surface, text-muted, border-outline-soft, rounded-card, dst.
+ */
+@theme inline {
+  --color-primary: var(--c-primary);
+  --color-on-primary: var(--c-on-primary);
+  --color-primary-container: var(--c-primary-container);
+  --color-secondary-container: var(--c-secondary-container);
+  --color-on-secondary-container: var(--c-on-secondary-container);
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-on-accent-soft: var(--c-on-accent-soft);
+  --color-success: var(--c-success);
+  --color-success-soft: var(--c-success-soft);
+  --color-on-success-soft: var(--c-on-success-soft);
+  --color-warning-soft: var(--c-warning-soft);
+  --color-on-warning-soft: var(--c-on-warning-soft);
+  --color-error: var(--c-error);
+  --color-error-soft: var(--c-error-soft);
+  --color-on-error-soft: var(--c-on-error-soft);
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-low: var(--surface-low);
+  --color-surface-mid: var(--surface-mid);
+  --color-surface-high: var(--surface-high);
+  --color-surface-highest: var(--surface-highest);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-outline: var(--outline);
+  --color-outline-soft: var(--outline-soft);
+
+  --radius-card: var(--r-md);
+  --radius-field: var(--r);
+  --radius-banner: var(--r-lg);
+  --radius-pill: var(--r-full);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
