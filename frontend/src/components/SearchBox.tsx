@@ -97,7 +97,7 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         aria-label="Cari produk"
-        className="h-11 w-full rounded-field border border-outline-soft bg-surface-low pl-10 pr-3 text-sm text-ink outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 max-[760px]:h-10"
+        className="h-11 w-full rounded-pill border border-outline-soft bg-surface-low pl-10 pr-3 text-sm text-ink outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 max-[760px]:h-10"
       />
 
       {showList && (

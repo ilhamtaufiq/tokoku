@@ -67,28 +67,26 @@ export default function Catalog() {
       {banners.data && banners.data.length > 0 ? (
         <BannerCarousel banners={banners.data} />
       ) : (
-        <div className="mb-5 grid items-center gap-6 rounded-banner bg-[linear-gradient(120deg,var(--c-primary)_0%,var(--c-primary-container)_60%,#3b5bd6_100%)] p-8 text-white max-[760px]:gap-4 max-[760px]:rounded-card max-[760px]:p-5 min-[761px]:grid-cols-[1.4fr_1fr]">
-          <div className="flex flex-col">
-            <span className="inline-flex items-center gap-1.5 self-start rounded-pill bg-white/20 px-3 py-1 text-xs font-semibold">
-              <span className="material-symbols-outlined text-base" aria-hidden>sell</span>
-              Harga jujur, pajak transparan
-            </span>
-            <h1 className="mb-1.5 mt-2.5 font-display text-[30px] font-bold leading-[38px] tracking-tight text-white max-[760px]:text-[22px] max-[760px]:leading-[30px]">
-              Perlengkapan sekolah & elektronik, harga sudah termasuk PPN.
-            </h1>
-            <p className="m-0 text-[15px] text-white/90 max-[760px]:text-sm">Ongkir tidak dikenai PPN. Invoice lengkap di setiap pesanan.</p>
-          </div>
-          <div className="flex flex-col gap-2.5 max-[760px]:flex-row max-[760px]:flex-wrap max-[760px]:gap-2" aria-label="Keunggulan">
+        <div className="mb-6 flex flex-col items-center gap-5 rounded-banner bg-primary px-6 py-14 text-center text-white max-[760px]:rounded-card max-[760px]:px-5 max-[760px]:py-10">
+          <span className="inline-flex items-center gap-1.5 rounded-pill bg-white/15 px-3 py-1 text-xs font-semibold">
+            <span className="material-symbols-outlined text-base" aria-hidden>sell</span>
+            Harga jujur, pajak transparan
+          </span>
+          <h1 className="m-0 max-w-[720px] font-display text-[40px] font-bold leading-[46px] tracking-tight text-white max-[760px]:text-[28px] max-[760px]:leading-[34px]">
+            Perlengkapan sekolah & elektronik, harga sudah termasuk PPN.
+          </h1>
+          <p className="m-0 text-[15px] text-white/85 max-[760px]:text-sm">Ongkir tidak dikenai PPN. Invoice lengkap di setiap pesanan.</p>
+          <a href="#katalog" className="mt-1 inline-flex h-12 items-center rounded-pill bg-white px-7 text-sm font-bold text-primary no-underline transition-transform duration-150 hover:-translate-y-0.5">
+            Belanja sekarang
+          </a>
+          <div className="flex flex-wrap justify-center gap-2" aria-label="Keunggulan">
             {[
               ['verified', 'Harga final'],
               ['receipt_long', 'Invoice lengkap'],
               ['local_shipping', 'Ongkir bebas PPN'],
             ].map(([icon, text]) => (
-              <span
-                key={text}
-                className="flex items-center gap-2.5 rounded-field bg-white/15 px-3.5 py-2.5 text-sm font-semibold max-[760px]:px-2.5 max-[760px]:py-2 max-[760px]:text-xs"
-              >
-                <span className="material-symbols-outlined text-xl" aria-hidden>{icon}</span>
+              <span key={text} className="flex items-center gap-2 rounded-pill bg-white/15 px-3.5 py-1.5 text-sm font-semibold">
+                <span className="material-symbols-outlined text-lg" aria-hidden>{icon}</span>
                 {text}
               </span>
             ))}
@@ -105,7 +103,7 @@ export default function Catalog() {
             className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[74px] max-[760px]:flex-none ${category === '' ? 'text-primary' : 'text-ink-2'}`}
             onClick={() => update({ category: '' })}
           >
-            <span className={`flex h-14 w-14 items-center justify-center rounded-[16px] border transition-colors max-[760px]:h-[52px] max-[760px]:w-[52px] ${category === '' ? 'border-primary bg-primary text-white' : 'border-outline-soft bg-surface text-primary group-hover:border-primary'}`}>
+            <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-colors max-[760px]:h-[60px] max-[760px]:w-[60px] ${category === '' ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
               <span className="material-symbols-outlined text-[26px]" aria-hidden>apps</span>
             </span>
             <span className="max-w-full truncate">Semua</span>
@@ -118,7 +116,7 @@ export default function Catalog() {
                 className={`group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-field border-0 bg-transparent px-1 py-1.5 text-center font-body text-[13px] font-semibold max-[760px]:w-[74px] max-[760px]:flex-none ${on ? 'text-primary' : 'text-ink-2'}`}
                 onClick={() => update({ category: String(c.id) })}
               >
-                <span className={`flex h-14 w-14 items-center justify-center rounded-[16px] border transition-colors max-[760px]:h-[52px] max-[760px]:w-[52px] ${on ? 'border-primary bg-primary text-white' : 'border-outline-soft bg-surface text-primary group-hover:border-primary'}`}>
+                <span className={`flex h-16 w-16 items-center justify-center rounded-full border transition-colors max-[760px]:h-[60px] max-[760px]:w-[60px] ${on ? 'border-primary bg-primary text-white' : 'border-transparent bg-surface-high text-primary group-hover:bg-secondary-container'}`}>
                   <span className="material-symbols-outlined text-[26px]" aria-hidden>{CATEGORY_ICON[c.slug] ?? 'category'}</span>
                 </span>
                 <span className="max-w-full truncate">{c.name}</span>
