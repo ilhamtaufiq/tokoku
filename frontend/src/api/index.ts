@@ -1,4 +1,4 @@
-import { request } from './client';
+import { downloadFile, request } from './client';
 import type {
   AuthResponse,
   Breakdown,
@@ -16,6 +16,11 @@ import type {
   StoreInfo,
   Suggestion,
   AdminUser,
+  AdminReview,
+  AuditEntry,
+  MyReview,
+  ReviewItem,
+  ReviewSummary,
   User,
   Variant,
   VariantInput,
@@ -86,9 +91,20 @@ export const api = {
   },
   adminShipOrder: (id: number, tracking_number: string) =>
     request<OrderView>(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status: 'shipped', tracking_number } }),
+  adminExportOrdersCsv: (status: OrderStatus | '') =>
+    downloadFile(`/admin/orders/export${status ? `?status=${status}` : ''}`, 'pesanan.csv'),
   adminRefundCancel: (id: number, note: string) =>
     request<OrderView>(`/admin/orders/${id}/refund-cancel`, { method: 'POST', body: { note } }),
   store: () => request<StoreInfo>('/store'),
+  reviews: (productId: number) => request<ReviewSummary>(`/products/${productId}/reviews`),
+  myReview: (productId: number) => request<MyReview>(`/products/${productId}/reviews/me`),
+  createReview: (productId: number, rating: number, comment: string) =>
+    request<ReviewItem>(`/products/${productId}/reviews`, { method: 'POST', body: { rating, comment } }),
+  adminReviews: (hiddenOnly: boolean) =>
+    request<AdminReview[]>(`/admin/reviews${hiddenOnly ? '?hidden=true' : ''}`),
+  adminSetReviewVisible: (id: number, is_visible: boolean) =>
+    request<void>(`/admin/reviews/${id}`, { method: 'PATCH', body: { is_visible } }),
+  adminAudit: () => request<AuditEntry[]>('/admin/audit?limit=200'),
   adminUpdateStore: (body: StoreInfo) => request<StoreInfo>('/admin/store', { method: 'PUT', body }),
   banners: () => request<Banner[]>('/banners'),
   adminBanners: () => request<Banner[]>('/admin/banners'),

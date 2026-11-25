@@ -10,12 +10,13 @@ use serde_json::{json, Value};
 
 use tower_http::services::ServeDir;
 
-use crate::{auth, banners, cart, catalog, orders, payments, pricing, promo, settings, state::AppState, users, variants};
+use crate::{audit, auth, banners, cart, catalog, orders, payments, pricing, promo, reviews, settings, state::AppState, users, variants};
 
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
         .nest("/auth", auth::router())
         .merge(catalog::public_router())
+        .merge(reviews::public_router())
         .merge(banners::public_router())
         .route("/store", get(settings::store_info))
         .nest("/cart", cart::router())
@@ -30,6 +31,8 @@ pub fn router(state: AppState) -> Router {
                 .merge(variants::admin_router())
                 .merge(users::admin_router())
                 .merge(orders::admin_router())
+                .merge(reviews::admin_router())
+                .merge(audit::admin_router())
                 .route("/store", axum::routing::put(settings::admin_update_store)),
         );
 
@@ -72,7 +75,7 @@ async fn sitemap(State(state): State<AppState>) -> crate::error::AppResult<impl 
     let mut xml = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n",
     );
-    for path in ["/", "/syarat", "/privasi", "/pengembalian"] {
+    for path in ["/", "/bantuan", "/syarat", "/privasi", "/pengembalian"] {
         xml.push_str(&format!("  <url><loc>{base}{path}</loc></url>\n"));
     }
     for (id, created) in products {

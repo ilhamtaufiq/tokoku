@@ -9,6 +9,8 @@ const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
   { to: '/admin/banners', label: 'Banner', icon: 'view_carousel' },
   { to: '/admin/users', label: 'Pengguna', icon: 'group' },
   { to: '/admin/promos', label: 'Promo', icon: 'sell' },
+  { to: '/admin/reviews', label: 'Ulasan', icon: 'rate_review' },
+  { to: '/admin/aktivitas', label: 'Aktivitas', icon: 'history' },
   { to: '/admin/store', label: 'Data toko', icon: 'store' },
 ];
 

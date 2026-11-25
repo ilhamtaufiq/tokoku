@@ -6,6 +6,7 @@ import { ApiError } from '../api/client';
 import type { Variant } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { ProductImage } from '../components/ProductImage';
+import { ProductReviews } from '../components/Reviews';
 import { useToast } from '../components/Toast';
 import { rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
@@ -231,6 +232,8 @@ export default function ProductDetail() {
           </button>
         </div>
       )}
+
+      <ProductReviews productId={productId} />
     </section>
   );
 }

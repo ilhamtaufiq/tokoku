@@ -28,3 +28,13 @@ export function formatDate(iso: string): string {
     timeStyle: 'short',
   });
 }
+
+/** Sisa waktu sampai tenggat, dihitung dari ISO timestamp (UTC). */
+export function sisaWaktu(iso: string): string {
+  const due = new Date(iso.endsWith('Z') ? iso : `${iso.replace(' ', 'T')}Z`).getTime();
+  const days = Math.ceil((due - Date.now()) / 86_400_000);
+  if (days > 1) return `sisa ${days} hari`;
+  if (days === 1) return 'tinggal 1 hari';
+  if (days === 0) return 'jatuh tempo hari ini';
+  return 'sudah melewati tenggat';
+}

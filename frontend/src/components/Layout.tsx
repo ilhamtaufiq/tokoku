@@ -95,6 +95,7 @@ export function Layout() {
             <Link to="/syarat">Syarat & Ketentuan</Link>
             <Link to="/privasi">Privasi</Link>
             <Link to="/pengembalian">Pengembalian Dana</Link>
+            <Link to="/bantuan">Bantuan</Link>
           </nav>
         </div>
       </footer>

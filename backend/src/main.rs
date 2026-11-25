@@ -1,3 +1,4 @@
+mod audit;
 mod auth;
 mod banners;
 mod cart;
@@ -8,6 +9,7 @@ mod error;
 mod orders;
 mod payments;
 mod pricing;
+mod reviews;
 mod promo;
 mod routes;
 mod settings;

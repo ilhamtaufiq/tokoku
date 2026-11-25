@@ -77,3 +77,21 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/** Mengunduh file (mis. CSV) dengan token akses, lalu memicu simpan di browser. */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const doFetch = () =>
+    fetch(`/api${path}`, {
+      credentials: 'include',
+      headers: accessToken ? { authorization: `Bearer ${accessToken}` } : {},
+    });
+  let res = await doFetch();
+  if (res.status === 401 && (await refreshSession())) res = await doFetch();
+  if (!res.ok) throw new ApiError(res.status, `Unduhan gagal (${res.status}).`);
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

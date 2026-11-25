@@ -4,7 +4,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import type { OrderStatus } from '../../api/types';
-import { ORDER_STATUS_LABEL, formatDate, rp } from '../../lib/money';
+import { ORDER_STATUS_LABEL, formatDate, rp, sisaWaktu } from '../../lib/money';
 
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
   paid: 'processing',
@@ -74,6 +74,14 @@ export default function AdminOrders() {
       <PageHeader
         title="Pesanan"
         subtitle={orders.data ? `${visible.length} pesanan${search.trim() ? ' cocok dengan pencarian' : ''}` : 'Memuat pesanan…'}
+        actions={
+          <button
+            className="btn ghost small-btn"
+            onClick={() => api.adminExportOrdersCsv(status).catch((e) => setError(e instanceof ApiError ? e.message : 'Ekspor gagal.'))}
+          >
+            Ekspor CSV
+          </button>
+        }
       />
       <div className="filter-bar card">
         <div className="search-field">
@@ -109,6 +117,7 @@ export default function AdminOrders() {
                   <td>
                     {ORDER_STATUS_LABEL[o.status]}
                     {o.estimated_days && <div className="muted small">Estimasi {o.estimated_days} hari</div>}
+                    {o.estimated_due_at && <div className="muted small">Tenggat {formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</div>}
                     {o.tracking_number && <div className="muted small">Resi {o.tracking_number}</div>}
                   </td>
                   <td>{o.payment_status}</td>

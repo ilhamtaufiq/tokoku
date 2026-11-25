@@ -108,6 +108,7 @@ export interface OrderView {
   created_at: string;
   tracking_number: string | null;
   estimated_days: number | null;
+  estimated_due_at: string | null;
   refund_note: string | null;
   buyer_name: string | null;
 }
@@ -207,5 +208,45 @@ export interface AdminUser {
   name: string;
   role: 'customer' | 'admin';
   is_active: boolean;
+  created_at: string;
+}
+
+export interface ReviewItem {
+  id: number;
+  rating: number;
+  comment: string;
+  buyer_name: string;
+  created_at: string;
+}
+
+export interface ReviewSummary {
+  average: number | null;
+  count: number;
+  items: ReviewItem[];
+}
+
+export interface MyReview {
+  can_review: boolean;
+  review: ReviewItem | null;
+}
+
+export interface AdminReview {
+  id: number;
+  product_id: number;
+  product_name: string;
+  buyer_name: string;
+  rating: number;
+  comment: string;
+  is_visible: boolean;
+  created_at: string;
+}
+
+export interface AuditEntry {
+  id: number;
+  actor_name: string | null;
+  action: string;
+  entity: string;
+  entity_id: number | null;
+  detail: string;
   created_at: string;
 }

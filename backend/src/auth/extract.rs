@@ -28,7 +28,9 @@ impl FromRequestParts<AppState> for AuthUser {
 
 /// Sama seperti AuthUser, tapi wajib role admin.
 #[derive(Debug, Clone)]
-pub struct AdminUser;
+pub struct AdminUser {
+    pub id: u64,
+}
 
 impl FromRequestParts<AppState> for AdminUser {
     type Rejection = AppError;
@@ -38,6 +40,6 @@ impl FromRequestParts<AppState> for AdminUser {
         if user.role != "admin" {
             return Err(AppError::Forbidden);
         }
-        Ok(AdminUser)
+        Ok(AdminUser { id: user.id })
     }
 }

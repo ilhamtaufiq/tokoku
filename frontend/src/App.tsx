@@ -19,6 +19,9 @@ import AdminBanners from './pages/admin/AdminBanners';
 import AdminUsers from './pages/admin/AdminUsers';
 import Account from './pages/Account';
 import Invoice from './pages/Invoice';
+import Help from './pages/Help';
+import AdminReviews from './pages/admin/AdminReviews';
+import AdminAudit from './pages/admin/AdminAudit';
 import { Privacy, Refund, Terms } from './pages/Legal';
 
 export default function App() {
@@ -32,6 +35,7 @@ export default function App() {
         <Route path="syarat" element={<Terms />} />
         <Route path="privasi" element={<Privacy />} />
         <Route path="pengembalian" element={<Refund />} />
+        <Route path="bantuan" element={<Help />} />
 
         <Route element={<RequireAuth />}>
           <Route path="cart" element={<Cart />} />
@@ -39,6 +43,7 @@ export default function App() {
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="orders/:id/invoice" element={<Invoice />} />
+          <Route path="orders/:id/surat-pesanan" element={<Invoice variant="sp" />} />
           <Route path="account" element={<Account />} />
         </Route>
 
@@ -54,6 +59,8 @@ export default function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="promos" element={<AdminPromos />} />
           <Route path="store" element={<AdminStore />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="aktivitas" element={<AdminAudit />} />
         </Route>
       </Route>
     </Routes>

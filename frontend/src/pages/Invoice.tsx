@@ -4,16 +4,18 @@ import { api } from '../api';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
-/** Invoice yang bisa dicetak atau disimpan sebagai PDF lewat dialog cetak browser. */
-export default function Invoice() {
-  useSeo({ title: 'Invoice', noindex: true });
+/** Invoice atau surat pesanan yang bisa dicetak atau disimpan sebagai PDF lewat dialog cetak browser. */
+export default function Invoice({ variant = 'invoice' }: { variant?: 'invoice' | 'sp' }) {
+  const isSp = variant === 'sp';
+  const label = isSp ? 'SURAT PESANAN' : 'INVOICE';
+  useSeo({ title: isSp ? 'Surat pesanan' : 'Invoice', noindex: true });
   const { id } = useParams();
   const orderId = Number(id);
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => api.order(orderId) });
   const store = useQuery({ queryKey: ['store'], queryFn: api.store });
 
-  if (order.isPending) return <p className="muted">Memuat invoice…</p>;
-  if (order.isError || !order.data) return <p className="error">Invoice tidak ditemukan.</p>;
+  if (order.isPending) return <p className="muted">Memuat dokumen…</p>;
+  if (order.isError || !order.data) return <p className="error">Dokumen tidak ditemukan.</p>;
 
   const o = order.data;
   const s = store.data;
@@ -29,7 +31,7 @@ export default function Invoice() {
       <article className="invoice">
         <header className="invoice-head">
           <div>
-            <h1 className="invoice-title">INVOICE</h1>
+            <h1 className="invoice-title">{label}</h1>
             <p className="invoice-no">{o.invoice_no}</p>
             <p className="muted small">Tanggal: {formatDate(o.created_at)}</p>
             <p className="muted small">Status: {ORDER_STATUS_LABEL[o.status] ?? o.status}</p>
@@ -99,8 +101,9 @@ export default function Invoice() {
         </div>
 
         <footer className="invoice-foot">
-          {o.payment_status === 'paid' && <p className="small"><strong>LUNAS</strong> · dibayar melalui Midtrans</p>}
-          {unpaid && <p className="small">Belum dibayar. Batas pembayaran sesuai halaman pesanan.</p>}
+          {isSp && <p className="small">Surat pesanan ini bukan bukti pembayaran. Bukti bayar tersedia di invoice setelah pembayaran lunas.</p>}
+          {!isSp && o.payment_status === 'paid' && <p className="small"><strong>LUNAS</strong> · dibayar melalui Midtrans</p>}
+          {!isSp && unpaid && <p className="small">Belum dibayar. Batas pembayaran sesuai halaman pesanan.</p>}
           {o.payment_status === 'refunded' && <p className="small">Pesanan dibatalkan. Dana dikembalikan kepada pembeli.</p>}
           <p className="muted small">Harga sudah termasuk PPN. Dokumen ini dibuat secara elektronik.</p>
         </footer>

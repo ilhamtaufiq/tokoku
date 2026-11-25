@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{AssertSqlSafe, FromRow, MySql, MySqlPool, QueryBuilder, Transaction};
 
 use crate::{
+    audit,
     auth::{AdminUser, AuthUser},
     error::{AppError, AppResult},
     pricing::{calculate, PricingLine},
@@ -31,6 +32,7 @@ pub fn admin_router() -> Router<AppState> {
         .route("/orders", get(admin_list_orders))
         .route("/orders/{id}/status", patch(admin_update_status))
         .route("/orders/{id}/refund-cancel", post(admin_refund_cancel))
+        .route("/orders/export", get(admin_export_orders))
         .route("/dashboard", get(admin_dashboard))
 }
 
@@ -38,6 +40,7 @@ const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS statu
     CAST(payment_status AS CHAR) AS payment_status, subtotal, discount_total, dpp, ppn_rate,
     ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code,
     payment_url, created_at, tracking_number, refund_note, estimated_days,
+    CAST(DATE_FORMAT(DATE_ADD(processed_at, INTERVAL estimated_days DAY), '%Y-%m-%dT%H:%i:%sZ') AS CHAR) AS estimated_due_at,
     (SELECT name FROM users WHERE users.id = orders.user_id) AS buyer_name,
     TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), expires_at) AS seconds_left";
 
@@ -63,6 +66,7 @@ pub struct OrderRow {
     pub tracking_number: Option<String>,
     pub refund_note: Option<String>,
     pub estimated_days: Option<u16>,
+    pub estimated_due_at: Option<String>,
     pub buyer_name: Option<String>,
     pub seconds_left: i64,
 }
@@ -110,6 +114,7 @@ pub struct OrderView {
     pub tracking_number: Option<String>,
     pub refund_note: Option<String>,
     pub estimated_days: Option<u16>,
+    pub estimated_due_at: Option<String>,
     pub buyer_name: Option<String>,
 }
 
@@ -149,6 +154,7 @@ fn to_view(o: OrderRow) -> OrderView {
         tracking_number: o.tracking_number,
         refund_note: o.refund_note,
         estimated_days: o.estimated_days,
+        estimated_due_at: o.estimated_due_at,
         buyer_name: o.buyer_name,
     }
 }
@@ -612,7 +618,7 @@ fn allowed_transition(from: &str, to: &str) -> bool {
 }
 
 async fn admin_update_status(
-    _admin: AdminUser,
+    admin: AdminUser,
     State(state): State<AppState>,
     Path(id): Path<u64>,
     Json(req): Json<StatusReq>,
@@ -629,7 +635,7 @@ async fn admin_update_status(
         if !(1..=365).contains(&days) {
             return Err(AppError::BadRequest("estimasi pengiriman wajib diisi (1–365 hari)".into()));
         }
-        sqlx::query("UPDATE orders SET status = 'processing', estimated_days = ? WHERE id = ? AND status = ?")
+        sqlx::query("UPDATE orders SET status = 'processing', estimated_days = ?, processed_at = UTC_TIMESTAMP() WHERE id = ? AND status = ?")
             .bind(days)
             .bind(id)
             .bind(&order.status)
@@ -654,6 +660,15 @@ async fn admin_update_status(
             .execute(&state.pool)
             .await?;
     }
+    audit::record(
+        &state.pool,
+        Some(admin.id),
+        "order.status",
+        "order",
+        Some(id),
+        &format!("{} → {}", order.status, req.status),
+    )
+    .await;
     Ok(Json(to_view(fetch_order(&state.pool, id).await?)))
 }
 
@@ -744,7 +759,7 @@ pub struct RefundReq {
 /// Pembatalan pesanan yang sudah lunas tetapi belum dikirim. Uang dikembalikan MANUAL lewat dashboard
 /// Midtrans; admin mencatat catatan refund di sini. Stok dikembalikan.
 async fn admin_refund_cancel(
-    _admin: AdminUser,
+    admin: AdminUser,
     State(state): State<AppState>,
     Path(id): Path<u64>,
     Json(req): Json<RefundReq>,
@@ -794,6 +809,7 @@ async fn admin_refund_cancel(
     }
     tx.commit().await?;
     tracing::info!(order_id, "pesanan dibatalkan dengan refund manual");
+    audit::record(&state.pool, Some(admin.id), "order.refund_cancel", "order", Some(order_id), &note).await;
     Ok(Json(to_view(fetch_order(&state.pool, order_id).await?)))
 }
 
@@ -977,4 +993,86 @@ pub async fn adjust_stock_tx(
             .await?,
     };
     Ok(done.rows_affected() > 0)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ExportQuery {
+    pub status: Option<String>,
+}
+
+/// Ekspor pesanan ke CSV (dibuka di Excel/Sheets). Filter status opsional.
+async fn admin_export_orders(
+    _admin: AdminUser,
+    State(state): State<AppState>,
+    Query(q): Query<ExportQuery>,
+) -> AppResult<axum::response::Response> {
+    let status = q.status.unwrap_or_default();
+    let rows: Vec<(
+        String,
+        DateTime<Utc>,
+        String,
+        String,
+        Decimal,
+        Decimal,
+        Decimal,
+        Decimal,
+        Decimal,
+        Option<String>,
+        Option<u16>,
+        Option<String>,
+        String,
+    )> = sqlx::query_as(
+        "SELECT o.invoice_no, o.created_at, CAST(o.status AS CHAR), CAST(o.payment_status AS CHAR),
+                o.subtotal, o.discount_total, o.dpp, o.ppn_total, o.grand_total,
+                o.tracking_number, o.estimated_days,
+                (SELECT name FROM users WHERE users.id = o.user_id), o.shipping_address
+         FROM orders o
+         WHERE (? = '' OR CAST(o.status AS CHAR) = ?)
+         ORDER BY o.id DESC LIMIT 5000",
+    )
+    .bind(&status)
+    .bind(&status)
+    .fetch_all(&state.pool)
+    .await?;
+
+    let mut body = String::from("\u{feff}Invoice,Tanggal (UTC),Status,Pembayaran,Subtotal,Diskon,DPP,PPN,Total,Resi,Estimasi (hari),Pembeli,Alamat\r\n");
+    for (invoice, created, st, pay, subtotal, discount, dpp, ppn, total, resi, days, buyer, address) in rows {
+        let cells = [
+            csv_cell(&invoice),
+            csv_cell(&created.format("%Y-%m-%d %H:%M").to_string()),
+            csv_cell(&st),
+            csv_cell(&pay),
+            csv_cell(&subtotal.to_string()),
+            csv_cell(&discount.to_string()),
+            csv_cell(&dpp.to_string()),
+            csv_cell(&ppn.to_string()),
+            csv_cell(&total.to_string()),
+            csv_cell(resi.as_deref().unwrap_or("")),
+            csv_cell(&days.map(|d| d.to_string()).unwrap_or_default()),
+            csv_cell(buyer.as_deref().unwrap_or("")),
+            csv_cell(&address),
+        ];
+        body.push_str(&cells.join(","));
+        body.push_str("\r\n");
+    }
+
+    use axum::response::IntoResponse;
+    Ok((
+        [
+            (axum::http::header::CONTENT_TYPE, "text/csv; charset=utf-8"),
+            (axum::http::header::CONTENT_DISPOSITION, "attachment; filename=\"pesanan.csv\""),
+        ],
+        body,
+    )
+        .into_response())
+}
+
+/// Escape satu sel CSV. Teks yang diawali = + - @ diberi apostrof agar tidak dibaca sebagai rumus.
+fn csv_cell(value: &str) -> String {
+    let safe = if value.starts_with(['=', '+', '-', '@']) {
+        format!("'{value}")
+    } else {
+        value.to_string()
+    };
+    format!("\"{}\"", safe.replace('"', "\"\""))
 }

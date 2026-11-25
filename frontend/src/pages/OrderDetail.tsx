@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 import { ApiError } from '../api/client';
 import { Breakdown } from '../components/Breakdown';
-import { ORDER_STATUS_LABEL, formatDate, percent, rp } from '../lib/money';
+import { ORDER_STATUS_LABEL, formatDate, percent, rp, sisaWaktu } from '../lib/money';
 import type { OrderDetail as OrderDetailType } from '../api/types';
 import { useSeo } from '../lib/seo';
 
@@ -55,10 +55,14 @@ export default function OrderDetail() {
 
       <div className="no-print">
         <Link to={`/orders/${o.id}/invoice`} className="btn ghost small-btn">Lihat & cetak invoice</Link>
+        <Link to={`/orders/${o.id}/surat-pesanan`} className="btn ghost small-btn">Surat pesanan</Link>
       </div>
 
       {o.estimated_days && (o.status === 'processing' || o.status === 'shipped' || o.status === 'completed') && (
-        <p className="callout-info">Estimasi pengiriman: <strong>{o.estimated_days} hari</strong> sejak pesanan diproses.</p>
+        <p className="callout-info">
+          Estimasi pengiriman: <strong>{o.estimated_days} hari</strong> sejak pesanan diproses.
+          {o.estimated_due_at && o.status === 'processing' && <> Perkiraan selesai {formatDate(o.estimated_due_at)} ({sisaWaktu(o.estimated_due_at)}).</>}
+        </p>
       )}
       {o.tracking_number && (
         <p className="callout-info">Nomor resi pengiriman: <strong>{o.tracking_number}</strong></p>

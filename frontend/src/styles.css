@@ -884,3 +884,21 @@ input:disabled { background: var(--surface-high); color: var(--muted); cursor: n
 .chip:hover { border-color: var(--c-primary); color: var(--c-primary); }
 .chip.on { background: var(--c-secondary-container); border-color: var(--c-primary); color: var(--c-on-secondary-container); }
 .chip:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+
+/* Ulasan produk */
+.reviews { margin-top: 24px; padding: 20px; display: grid; gap: 16px; }
+.reviews-head h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.reviews-rating { display: flex; gap: 6px; align-items: center; margin: 0; }
+.stars { color: var(--c-accent, #ea580c); letter-spacing: 1px; }
+.stars-empty { color: var(--c-outline-variant, #c4c5d5); }
+.review-form { display: grid; gap: 10px; }
+.rating-pick { display: flex; gap: 6px; flex-wrap: wrap; }
+.review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.review-item { border-top: 1px solid var(--c-outline-variant, #c4c5d5); padding-top: 12px; }
+.review-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.review-item p { margin: 6px 0 0; }
+.review-cell { max-width: 360px; white-space: normal; }
+.help-page { max-width: 720px; margin: 0 auto; line-height: 1.6; }
+.help-page h1 { font-size: 1.6rem; }
+.help-page h2 { margin-top: 32px; font-size: 1.15rem; }
+.help-page p { margin: 6px 0 14px; }
