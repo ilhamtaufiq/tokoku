@@ -16,6 +16,8 @@ import type {
   StoreInfo,
   Suggestion,
   User,
+  Variant,
+  VariantInput,
 } from './types';
 
 export const api = {
@@ -41,15 +43,16 @@ export const api = {
 
   // Keranjang
   cart: () => request<CartItem[]>('/cart'),
-  setCartItem: (product_id: number, qty: number) =>
-    request<void>('/cart/items', { method: 'PUT', body: { product_id, qty } }),
-  removeCartItem: (product_id: number) => request<void>(`/cart/items/${product_id}`, { method: 'DELETE' }),
-  setCartSelected: (product_id: number, selected: boolean) =>
-    request<void>(`/cart/items/${product_id}/select`, { method: 'PUT', body: { selected } }),
+  setCartItem: (product_id: number, variant_id: number, qty: number) =>
+    request<void>('/cart/items', { method: 'PUT', body: { product_id, variant_id, qty } }),
+  removeCartItem: (product_id: number, variant_id: number) =>
+    request<void>(`/cart/items/${product_id}/${variant_id}`, { method: 'DELETE' }),
+  setCartSelected: (product_id: number, variant_id: number, selected: boolean) =>
+    request<void>(`/cart/items/${product_id}/${variant_id}/select`, { method: 'PUT', body: { selected } }),
   setAllCartSelected: (selected: boolean) => request<void>('/cart/select-all', { method: 'PUT', body: { selected } }),
 
   // Pratinjau harga
-  preview: (items: { product_id: number; qty: number }[], promo_code?: string) =>
+  preview: (items: { product_id: number; variant_id: number; qty: number }[], promo_code?: string) =>
     request<Breakdown>('/pricing/preview', { method: 'POST', body: { items, promo_code: promo_code || null } }),
 
   // Pesanan
@@ -92,6 +95,11 @@ export const api = {
     return request<Banner>(`/admin/banners/${id}/image`, { method: 'POST', body: form });
   },
   adminDashboard: () => request<AdminDashboard>('/admin/dashboard'),
+  adminListVariants: (product_id: number) => request<Variant[]>(`/admin/products/${product_id}/variants`),
+  adminCreateVariant: (product_id: number, body: VariantInput) =>
+    request<Variant>(`/admin/products/${product_id}/variants`, { method: 'POST', body }),
+  adminUpdateVariant: (id: number, body: VariantInput) => request<Variant>(`/admin/variants/${id}`, { method: 'PUT', body }),
+  adminDeactivateVariant: (id: number) => request<void>(`/admin/variants/${id}`, { method: 'DELETE' }),
   adminCreatePromo: (body: PromoInput) => request<{ id: number; code: string }>('/admin/promos', { method: 'POST', body }),
 };
 

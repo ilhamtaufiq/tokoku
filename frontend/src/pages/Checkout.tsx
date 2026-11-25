@@ -22,8 +22,8 @@ export default function Checkout() {
   const ready = items.length > 0 && items.every((i) => i.is_active && i.stock >= i.qty);
 
   const preview = useQuery({
-    queryKey: ['preview', 'checkout', appliedPromo, items.map((i) => [i.product_id, i.qty])],
-    queryFn: () => api.preview(items.map((i) => ({ product_id: i.product_id, qty: i.qty })), appliedPromo),
+    queryKey: ['preview', 'checkout', appliedPromo, items.map((i) => [i.product_id, i.variant_id, i.qty])],
+    queryFn: () => api.preview(items.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id, qty: i.qty })), appliedPromo),
     enabled: ready,
     retry: false,
   });
@@ -116,7 +116,7 @@ export default function Checkout() {
           <h2>Ringkasan pesanan</h2>
           <ul className="order-lines">
             {items.map((i) => (
-              <li key={i.product_id}>
+              <li key={`${i.product_id}-${i.variant_id}`}>
                 <div>
                   <strong>{i.name}</strong>
                   <div className="muted">{i.qty} × {rp(i.price)}</div>

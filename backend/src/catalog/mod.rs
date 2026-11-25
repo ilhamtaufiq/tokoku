@@ -90,6 +90,9 @@ struct ProductRow {
     stock: u32,
     is_active: bool,
     image_url: Option<String>,
+    variant_count: i64,
+    min_variant_price: Option<Decimal>,
+    variant_stock: Option<Decimal>,
 }
 
 #[derive(Debug, Serialize)]
@@ -111,29 +114,40 @@ pub struct ProductView {
     pub stock: u32,
     pub is_active: bool,
     pub image_url: Option<String>,
+    /// Produk dengan varian: harga = harga varian termurah, stok = total stok varian aktif.
+    pub has_variants: bool,
+    /// Daftar varian aktif (hanya diisi di halaman detail).
+    pub variants: Vec<crate::variants::VariantView>,
 }
 
 fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
-    // Tarif yang dipakai untuk tampilan: tarif global saat ini (bukan snapshot produk).
-    let ppn_included = ppn_included_in_price(row.price, ppn_percent, row.is_taxable);
+    let has_variants = row.variant_count > 0;
+    let price = if has_variants { row.min_variant_price.unwrap_or(row.price) } else { row.price };
+    let stock = if has_variants { crate::variants::total_stock(row.variant_stock) } else { row.stock };
+    // Tampilan PPN memakai harga yang benar-benar ditampilkan
+    let ppn_included = ppn_included_in_price(price, ppn_percent, row.is_taxable);
     ProductView {
         id: row.id,
         category_id: row.category_id,
         sku: row.sku,
         name: row.name,
         description: row.description,
-        price: row.price,
+        price,
         ppn_included,
         tax_rate: ppn_percent,
         is_taxable: row.is_taxable,
-        stock: row.stock,
+        stock,
         is_active: row.is_active,
         image_url: row.image_url,
+        has_variants,
+        variants: Vec::new(),
     }
 }
 
-const PRODUCT_COLUMNS: &str =
-    "id, category_id, sku, name, description, price, is_taxable, stock, is_active, image_url";
+const PRODUCT_COLUMNS: &str = "id, category_id, sku, name, description, price, is_taxable, stock, is_active, image_url,
+    (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_count,
+    (SELECT MIN(v.price) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS min_variant_price,
+    (SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_stock";
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
@@ -210,7 +224,10 @@ async fn get_product(State(state): State<AppState>, Path(id): Path<u64>) -> AppR
         return Err(AppError::NotFound(format!("produk {id}")));
     }
     let ppn = settings::ppn_percent(&state.pool).await?;
-    Ok(Json(to_view(row, ppn)))
+    let variants = crate::variants::active_for_product(&state.pool, id).await?;
+    let mut view = to_view(row, ppn);
+    view.variants = variants;
+    Ok(Json(view))
 }
 
 #[derive(Debug, Deserialize)]

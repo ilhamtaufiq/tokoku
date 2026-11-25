@@ -12,6 +12,7 @@ mod promo;
 mod routes;
 mod settings;
 mod state;
+mod variants;
 mod midtrans;
 
 use std::sync::Arc;

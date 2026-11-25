@@ -66,8 +66,13 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   }
 
   if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new ApiError(res.status, data.error ?? `Permintaan gagal (${res.status})`);
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    if (data?.error) throw new ApiError(res.status, data.error);
+    // Respons bukan JSON dari backend: biasanya gateway/proxy yang gagal menjangkau server
+    if (res.status >= 500) {
+      throw new ApiError(res.status, 'Layanan sedang tidak bisa dihubungi (kode ' + res.status + '). Tunggu sebentar lalu coba lagi.');
+    }
+    throw new ApiError(res.status, `Permintaan gagal (${res.status})`);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;

@@ -209,10 +209,12 @@ pub async fn next_invoice_no(tx: &mut Transaction<'_, MySql>, prefix: &str) -> A
 #[derive(Debug, FromRow)]
 struct CartLine {
     product_id: u64,
+    variant_id: u64,
     name: String,
     price: Decimal,
     is_taxable: bool,
-    is_active: bool,
+    product_active: bool,
+    variant_active: Option<bool>,
     stock: u32,
     qty: u32,
 }
@@ -260,8 +262,17 @@ async fn checkout(
     let mut tx = state.pool.begin().await?;
 
     let cart: Vec<CartLine> = sqlx::query_as(
-        "SELECT p.id AS product_id, p.name, p.price, p.is_taxable, p.is_active, p.stock, c.qty
-         FROM cart_items c JOIN products p ON p.id = c.product_id
+        "SELECT c.product_id, c.variant_id,
+            CONCAT(p.name, IF(c.variant_id > 0, CONCAT(' · ', v.name), '')) AS name,
+            COALESCE(v.price, p.price) AS price,
+            p.is_taxable,
+            p.is_active AS product_active,
+            v.is_active AS variant_active,
+            COALESCE(v.stock, p.stock) AS stock,
+            c.qty
+         FROM cart_items c
+         JOIN products p ON p.id = c.product_id
+         LEFT JOIN product_variants v ON v.id = c.variant_id AND c.variant_id > 0
          WHERE c.user_id = ? AND c.selected = TRUE FOR UPDATE",
     )
     .bind(user.id)
@@ -272,7 +283,7 @@ async fn checkout(
         return Err(AppError::BadRequest("pilih minimal satu barang di keranjang".into()));
     }
     for line in &cart {
-        if !line.is_active {
+        if !line.product_active || !line.variant_active.unwrap_or(true) {
             return Err(AppError::BadRequest(format!("produk '{}' sudah tidak tersedia", line.name)));
         }
         if line.stock < line.qty {
@@ -346,13 +357,16 @@ async fn checkout(
     .await?;
     let order_id = done.last_insert_id();
 
-    for line in &breakdown.lines {
+    // Urutan baris breakdown sama dengan urutan keranjang, sehingga variant_id bisa dipasangkan
+    for (line, cart_line) in breakdown.lines.iter().zip(cart.iter()) {
+        let variant_id = cart_line.variant_id;
         sqlx::query(
-            "INSERT INTO order_items (order_id, product_id, product_name, unit_price, is_taxable, qty, line_subtotal, line_discount)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO order_items (order_id, product_id, variant_id, product_name, unit_price, is_taxable, qty, line_subtotal, line_discount)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(order_id)
         .bind(line.product_id)
+        .bind(variant_id)
         .bind(&line.name)
         .bind(line.unit_price)
         .bind(line.is_taxable)
@@ -362,19 +376,14 @@ async fn checkout(
         .execute(&mut *tx)
         .await?;
 
-        let stock = sqlx::query("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?")
-            .bind(line.qty)
-            .bind(line.product_id)
-            .bind(line.qty)
-            .execute(&mut *tx)
-            .await?;
-        if stock.rows_affected() == 0 {
+        if !adjust_stock_tx(&mut tx, line.product_id, variant_id, line.qty, Adjust::Reserve).await? {
             return Err(AppError::Conflict(format!("stok '{}' baru saja habis", line.name)));
         }
         sqlx::query(
-            "INSERT INTO stock_movements (product_id, order_id, change_qty, reason) VALUES (?, ?, ?, 'checkout')",
+            "INSERT INTO stock_movements (product_id, variant_id, order_id, change_qty, reason) VALUES (?, ?, ?, ?, 'checkout')",
         )
         .bind(line.product_id)
+        .bind(variant_id)
         .bind(order_id)
         .bind(-(line.qty as i64))
         .execute(&mut *tx)
@@ -540,18 +549,15 @@ pub async fn cancel_unpaid_tx(tx: &mut Transaction<'_, MySql>, order_id: u64, re
         return Ok(false);
     }
 
-    let items: Vec<(u64, u32)> = sqlx::query_as("SELECT product_id, qty FROM order_items WHERE order_id = ?")
+    let items: Vec<(u64, u64, u32)> = sqlx::query_as("SELECT product_id, variant_id, qty FROM order_items WHERE order_id = ?")
         .bind(order_id)
         .fetch_all(&mut **tx)
         .await?;
-    for (product_id, qty) in items {
-        sqlx::query("UPDATE products SET stock = stock + ? WHERE id = ?")
-            .bind(qty)
+    for (product_id, variant_id, qty) in items {
+        adjust_stock_tx(tx, product_id, variant_id, qty, Adjust::Restore).await?;
+        sqlx::query("INSERT INTO stock_movements (product_id, variant_id, order_id, change_qty, reason) VALUES (?, ?, ?, ?, ?)")
             .bind(product_id)
-            .execute(&mut **tx)
-            .await?;
-        sqlx::query("INSERT INTO stock_movements (product_id, order_id, change_qty, reason) VALUES (?, ?, ?, ?)")
-            .bind(product_id)
+            .bind(variant_id)
             .bind(order_id)
             .bind(qty as i64)
             .bind(reason)
@@ -757,18 +763,15 @@ async fn admin_refund_cancel(
     .execute(&mut *tx)
     .await?;
 
-    let items: Vec<(u64, u32)> = sqlx::query_as("SELECT product_id, qty FROM order_items WHERE order_id = ?")
+    let items: Vec<(u64, u64, u32)> = sqlx::query_as("SELECT product_id, variant_id, qty FROM order_items WHERE order_id = ?")
         .bind(order_id)
         .fetch_all(&mut *tx)
         .await?;
-    for (product_id, qty) in items {
-        sqlx::query("UPDATE products SET stock = stock + ? WHERE id = ?")
-            .bind(qty)
+    for (product_id, variant_id, qty) in items {
+        adjust_stock_tx(&mut tx, product_id, variant_id, qty, Adjust::Restore).await?;
+        sqlx::query("INSERT INTO stock_movements (product_id, variant_id, order_id, change_qty, reason) VALUES (?, ?, ?, ?, 'refund_cancel')")
             .bind(product_id)
-            .execute(&mut *tx)
-            .await?;
-        sqlx::query("INSERT INTO stock_movements (product_id, order_id, change_qty, reason) VALUES (?, ?, ?, 'refund_cancel')")
-            .bind(product_id)
+            .bind(variant_id)
             .bind(order_id)
             .bind(qty as i64)
             .execute(&mut *tx)
@@ -915,4 +918,48 @@ impl PaymentMethod {
             Self::Ewallet => Some(vec!["gopay".into(), "shopeepay".into()]),
         }
     }
+}
+
+/// Arah perubahan stok: Reserve = kurangi jika cukup (checkout), Restore = kembalikan.
+#[derive(Debug, Clone, Copy)]
+pub enum Adjust {
+    Reserve,
+    Restore,
+}
+
+/// Mengubah stok baris yang tepat: varian bila variant_id > 0, selain itu produk.
+/// Mengembalikan false jika Reserve gagal karena stok tidak cukup.
+pub async fn adjust_stock_tx(
+    tx: &mut Transaction<'_, MySql>,
+    product_id: u64,
+    variant_id: u64,
+    qty: u32,
+    mode: Adjust,
+) -> AppResult<bool> {
+    let done = match (variant_id > 0, mode) {
+        (true, Adjust::Reserve) => sqlx::query("UPDATE product_variants SET stock = stock - ? WHERE id = ? AND product_id = ? AND stock >= ?")
+            .bind(qty)
+            .bind(variant_id)
+            .bind(product_id)
+            .bind(qty)
+            .execute(&mut **tx)
+            .await?,
+        (true, Adjust::Restore) => sqlx::query("UPDATE product_variants SET stock = stock + ? WHERE id = ?")
+            .bind(qty)
+            .bind(variant_id)
+            .execute(&mut **tx)
+            .await?,
+        (false, Adjust::Reserve) => sqlx::query("UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?")
+            .bind(qty)
+            .bind(product_id)
+            .bind(qty)
+            .execute(&mut **tx)
+            .await?,
+        (false, Adjust::Restore) => sqlx::query("UPDATE products SET stock = stock + ? WHERE id = ?")
+            .bind(qty)
+            .bind(product_id)
+            .execute(&mut **tx)
+            .await?,
+    };
+    Ok(done.rows_affected() > 0)
 }

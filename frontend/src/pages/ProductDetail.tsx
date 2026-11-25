@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
 import { ApiError } from '../api/client';
+import type { Variant } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { ProductImage } from '../components/ProductImage';
 import { useToast } from '../components/Toast';
@@ -20,6 +21,7 @@ export default function ProductDetail() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [qty, setQty] = useState(1);
+  const [chosenVariant, setChosenVariant] = useState<number | null>(null);
 
   const product = useQuery({ queryKey: ['product', productId], queryFn: () => api.product(productId) });
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart, enabled: !!user });
@@ -53,13 +55,26 @@ export default function ProductDetail() {
       : {},
   );
 
+  // Varian: pilihan awal = varian aktif pertama yang masih ada stok
+  const variants: Variant[] = useMemo(() => product.data?.variants ?? [], [product.data]);
+  const hasVariants = variants.length > 0;
+  const firstAvailable = variants.find((v) => v.stock > 0) ?? variants[0];
+  const selectedId = chosenVariant ?? firstAvailable?.id ?? 0;
+  const variant = variants.find((v) => v.id === selectedId) ?? null;
+
+  const unitPrice = variant ? variant.price : product.data?.price ?? '0';
+  const maxStock = variant ? variant.stock : product.data?.stock ?? 0;
+  const outOfStock = hasVariants ? !variant || variant.stock === 0 : (product.data?.stock === 0 || !product.data?.is_active);
+  const cap = Math.min(maxStock, MAX_QTY);
+
   const add = useMutation({
     mutationFn: async (checkout: boolean) => {
       const p = product.data;
       if (!p) throw new Error('produk belum dimuat');
-      const existing = cart.data?.find((i) => i.product_id === productId)?.qty ?? 0;
-      const total = Math.min(existing + qty, p.stock, MAX_QTY);
-      await api.setCartItem(productId, total);
+      const vid = variant?.id ?? 0;
+      const existing = cart.data?.find((i) => i.product_id === productId && i.variant_id === vid)?.qty ?? 0;
+      const total = Math.min(existing + qty, maxStock, MAX_QTY);
+      await api.setCartItem(productId, vid, total);
       return { total, checkout };
     },
     onSuccess: ({ checkout }) => {
@@ -67,7 +82,7 @@ export default function ProductDetail() {
       if (checkout) {
         navigate('/checkout');
       } else {
-        toast.show(`${product.data?.name ?? 'Produk'} ditambahkan ke keranjang`);
+        toast.show(`${product.data?.name ?? 'Produk'}${variant ? ` (${variant.name})` : ''} ditambahkan ke keranjang`);
       }
     },
     onError: (e) => toast.show(e instanceof ApiError ? e.message : 'Gagal menambahkan ke keranjang.', 'error'),
@@ -98,8 +113,8 @@ export default function ProductDetail() {
   }
 
   const p = product.data;
-  const outOfStock = p.stock === 0 || !p.is_active;
   const inCart = user && cart.data?.some((i) => i.product_id === productId);
+  const canBuy = !outOfStock && !(hasVariants && !variant);
 
   return (
     <section className="detail">
@@ -116,22 +131,51 @@ export default function ProductDetail() {
 
         <div className="detail-info">
           <h1>{p.name}</h1>
-          <p className="sku">SKU {p.sku}</p>
+          <p className="sku">SKU {variant ? variant.sku : p.sku}</p>
 
           <div className="price-box">
-            <span className="price big">{rp(p.price)}</span>
+            <span className="price big">{hasVariants && !variant ? rp(p.price) : rp(unitPrice)}</span>
             {p.is_taxable && <span className="ppn-chip">Termasuk PPN {Number(p.tax_rate)}%</span>}
           </div>
+
+          {hasVariants && (
+            <div className="variant-block">
+              <h2>Pilih varian</h2>
+              <div className="variant-grid" role="radiogroup" aria-label="Varian produk">
+                {variants.map((v) => {
+                  const soldOut = !v.is_active || v.stock === 0;
+                  return (
+                    <label key={v.id} className={`variant-card ${v.id === selectedId ? 'on' : ''} ${soldOut ? 'soldout' : ''}`}>
+                      <input
+                        type="radio"
+                        name="variant"
+                        value={v.id}
+                        checked={v.id === selectedId}
+                        disabled={soldOut}
+                        onChange={() => {
+                          setChosenVariant(v.id);
+                          setQty(1);
+                        }}
+                      />
+                      <strong>{v.name}</strong>
+                      <span className="variant-price">{rp(v.price)}</span>
+                      <span className="muted small">{soldOut ? 'Habis' : `Stok ${v.stock}`}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <ul className="detail-facts">
             <li>
               <span className="material-symbols-outlined" aria-hidden>inventory_2</span>
-              {outOfStock ? 'Stok habis' : p.stock <= 5 ? `Stok tinggal ${p.stock} unit` : `Stok tersedia ${p.stock} unit`}
+              {outOfStock ? 'Stok habis' : maxStock <= 5 ? `Stok tinggal ${maxStock} unit` : `Stok tersedia ${maxStock} unit`}
             </li>
             <li>
               <span className="material-symbols-outlined" aria-hidden>receipt_long</span>
               {p.is_taxable
-                ? <>PPN {rp(p.ppn_included)} sudah termasuk dalam harga</>
+                ? <>PPN {rp(Math.round(Number(unitPrice) - Number(unitPrice) / (1 + Number(p.tax_rate) / 100)))} sudah termasuk dalam harga</>
                 : 'Produk ini tidak kena PPN'}
             </li>
             <li>
@@ -147,14 +191,14 @@ export default function ProductDetail() {
             </div>
           )}
 
-          {!outOfStock && (
+          {canBuy && (
             <div className="add-row desktop-only">
               <div className="qty-field-wrap">
                 <span className="qty-label">Jumlah</span>
                 <div className="qty">
                   <button className="btn" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="Kurangi">−</button>
                   <span>{qty}</span>
-                  <button className="btn" onClick={() => setQty((q) => Math.min(Math.min(p.stock, MAX_QTY), q + 1))} disabled={qty >= Math.min(p.stock, MAX_QTY)} aria-label="Tambah">+</button>
+                  <button className="btn" onClick={() => setQty((q) => Math.min(cap, q + 1))} disabled={qty >= cap} aria-label="Tambah">+</button>
                 </div>
               </div>
               <button className="btn outline add-btn" disabled={add.isPending} onClick={() => (user ? add.mutate(false) : requireLogin())}>
@@ -166,6 +210,7 @@ export default function ProductDetail() {
               </button>
             </div>
           )}
+          {hasVariants && !variant && <p className="error">Pilih varian terlebih dahulu.</p>}
           {inCart && <p className="small"><Link to="/cart">Lihat keranjang →</Link></p>}
 
           <ul className="trust-row">
@@ -176,8 +221,7 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Bar aksi tetap di bawah untuk mobile */}
-      {!outOfStock && (
+      {canBuy && (
         <div className="buy-bar mobile-only" role="region" aria-label="Aksi belanja">
           <button className="btn outline" disabled={add.isPending} onClick={() => (user ? add.mutate(false) : requireLogin())} aria-label="Tambah ke keranjang">
             <span className="material-symbols-outlined" aria-hidden>add_shopping_cart</span>

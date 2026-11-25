@@ -816,3 +816,21 @@ td.actions { white-space: nowrap; }
 
 .snap-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 14px; border-radius: var(--r); background: var(--surface-low); font-size: 14px; color: var(--text-2); }
 .snap-note .material-symbols-outlined { color: var(--c-primary); font-size: 20px; margin-top: 1px; }
+
+/* Varian produk */
+.price-from { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 4px; }
+.variant-block { margin: 18px 0 4px; }
+.variant-block h2 { font-size: 15px; margin: 0 0 10px; }
+.variant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.variant-card { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r); border: 1.5px solid var(--outline); background: var(--surface); cursor: pointer; transition: border-color var(--t-state) ease-out, background-color var(--t-state) ease-out; }
+.variant-card:hover { border-color: var(--c-primary); }
+.variant-card input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.variant-card strong { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--text); }
+.variant-card .variant-price { font-size: 13px; color: var(--c-primary); font-weight: 600; }
+.variant-card.on { border-color: var(--c-primary); background: color-mix(in srgb, var(--c-secondary-container) 40%, var(--surface)); box-shadow: inset 0 0 0 1px var(--c-primary); }
+.variant-card.soldout { opacity: 0.45; cursor: not-allowed; }
+.btn.outline.block { width: 100%; }
+.variants-editor { margin-top: 16px; gap: 16px; }
+.variants-editor .section-head { margin-bottom: 0; }
+.variants-editor .section-head .muted { margin-top: 4px; max-width: 560px; }
+.variant-form { display: flex; flex-direction: column; gap: 14px; padding-top: 16px; border-top: 1px solid var(--outline-soft); }

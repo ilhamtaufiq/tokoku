@@ -5,6 +5,7 @@ import type { ProductInput } from '../../api';
 import { ApiError } from '../../api/client';
 import type { Product } from '../../api/types';
 import { rp } from '../../lib/money';
+import { VariantsEditor } from './VariantsEditor';
 
 const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0 };
 
@@ -55,6 +56,8 @@ export default function AdminProducts() {
           onError={fail}
         />
       )}
+
+      {editing && editing !== 'new' && <VariantsEditor productId={editing.id} />}
 
       <div className="card table-wrap">
         <table>

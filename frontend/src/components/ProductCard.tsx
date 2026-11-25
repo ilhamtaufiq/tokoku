@@ -17,12 +17,13 @@ export function ProductCard({ product: p }: { product: Product }) {
   const toast = useToast();
   const cart = useQuery({ queryKey: ['cart'], queryFn: api.cart, enabled: !!user });
   const outOfStock = p.stock === 0 || !p.is_active;
+  const hasVariants = !!p.has_variants;
 
   const add = useMutation({
     mutationFn: async () => {
-      const existing = cart.data?.find((i) => i.product_id === p.id)?.qty ?? 0;
+      const existing = cart.data?.find((i) => i.product_id === p.id && i.variant_id === 0)?.qty ?? 0;
       const total = Math.min(existing + 1, p.stock, 99);
-      await api.setCartItem(p.id, total);
+      await api.setCartItem(p.id, 0, total);
       return total;
     },
     onSuccess: () => {
@@ -42,25 +43,32 @@ export function ProductCard({ product: p }: { product: Product }) {
       <div className="product-body">
         <Link to={`/products/${p.id}`} className="product-name">{p.name}</Link>
         <div className="price-row">
-          <span className="price">{rp(p.price)}</span>
+          <span className="price">{hasVariants && <span className="price-from">mulai </span>}{rp(p.price)}</span>
         </div>
         {p.is_taxable
           ? <span className="ppn-chip">Termasuk PPN</span>
           : <span className="muted small">Tidak kena PPN</span>}
-        <button
-          className="btn primary block card-cta"
-          disabled={outOfStock || add.isPending}
-          onClick={() => {
-            if (!user) {
-              navigate(`/login?next=${encodeURIComponent(location.pathname)}`);
-              return;
-            }
-            add.mutate();
-          }}
-        >
-          <span className="material-symbols-outlined" aria-hidden>add_shopping_cart</span>
-          {outOfStock ? 'Stok habis' : user ? 'Tambah' : 'Masuk untuk belanja'}
-        </button>
+        {hasVariants ? (
+          <Link to={`/products/${p.id}`} className="btn outline block card-cta">
+            <span className="material-symbols-outlined" aria-hidden>tune</span>
+            Pilih varian
+          </Link>
+        ) : (
+          <button
+            className="btn primary block card-cta"
+            disabled={outOfStock || add.isPending}
+            onClick={() => {
+              if (!user) {
+                navigate(`/login?next=${encodeURIComponent(location.pathname)}`);
+                return;
+              }
+              add.mutate();
+            }}
+          >
+            <span className="material-symbols-outlined" aria-hidden>add_shopping_cart</span>
+            {outOfStock ? 'Stok habis' : user ? 'Tambah' : 'Masuk untuk belanja'}
+          </button>
+        )}
       </div>
     </article>
   );

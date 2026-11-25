@@ -14,6 +14,17 @@ export interface Category {
   slug: string;
 }
 
+export interface Variant {
+  id: number;
+  product_id: number;
+  name: string;
+  sku: string;
+  price: Money;
+  stock: number;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export interface Product {
   id: number;
   category_id: number;
@@ -27,6 +38,8 @@ export interface Product {
   stock: number;
   is_active: boolean;
   image_url: string | null;
+  has_variants?: boolean;
+  variants?: Variant[];
 }
 
 export interface Page<T> {
@@ -38,6 +51,7 @@ export interface Page<T> {
 
 export interface CartItem {
   product_id: number;
+  variant_id: number;
   name: string;
   image_url: string | null;
   price: Money;
@@ -175,4 +189,13 @@ export interface Suggestion {
   sku: string;
   price: Money;
   image_url: string | null;
+}
+
+export interface VariantInput {
+  name: string;
+  sku: string;
+  price: string;
+  stock?: number;
+  is_active?: boolean;
+  sort_order?: number;
 }

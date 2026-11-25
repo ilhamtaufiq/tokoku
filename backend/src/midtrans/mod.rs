@@ -110,9 +110,15 @@ pub async fn get_status(http: &reqwest::Client, cfg: &Config, order_id: &str) ->
         let text = resp.text().await.unwrap_or_default();
         return Err(AppError::Gateway(format!("midtrans status HTTP {status}: {text}")));
     }
-    let parsed = resp
-        .json::<TxStatus>()
+    // Midtrans kadang membalas HTTP 200 dengan isi status_code "404" untuk transaksi yang belum ada
+    let body: serde_json::Value = resp
+        .json()
         .await
+        .map_err(|e| AppError::Gateway(format!("respons status midtrans tidak valid: {e}")))?;
+    if body.get("status_code").and_then(|v| v.as_str()) == Some("404") {
+        return Ok(None);
+    }
+    let parsed: TxStatus = serde_json::from_value(body)
         .map_err(|e| AppError::Gateway(format!("respons status midtrans tidak valid: {e}")))?;
     Ok(Some(parsed))
 }

@@ -21,26 +21,28 @@ export default function Cart() {
   const checkoutReady = selected.length > 0 && issues.length === 0 && selectable.length === selected.length;
 
   const preview = useQuery({
-    queryKey: ['preview', selectable.map((i) => [i.product_id, i.qty])],
-    queryFn: () => api.preview(selectable.map((i) => ({ product_id: i.product_id, qty: i.qty }))),
+    queryKey: ['preview', selectable.map((i) => [i.product_id, i.variant_id, i.qty])],
+    queryFn: () => api.preview(selectable.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id, qty: i.qty }))),
     enabled: selectable.length > 0,
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['cart'] });
   const setQty = useMutation({
-    mutationFn: ({ productId, qty }: { productId: number; qty: number }) => api.setCartItem(productId, qty),
+    mutationFn: ({ productId, variantId, qty }: { productId: number; variantId: number; qty: number }) =>
+      api.setCartItem(productId, variantId, qty),
     onSuccess: refresh,
     onError: (e) => toast.show((e as Error).message, 'error'),
   });
   const remove = useMutation({
-    mutationFn: (productId: number) => api.removeCartItem(productId),
+    mutationFn: ({ productId, variantId }: { productId: number; variantId: number }) => api.removeCartItem(productId, variantId),
     onSuccess: () => {
       toast.show('Barang dihapus dari keranjang');
       refresh();
     },
   });
   const toggleOne = useMutation({
-    mutationFn: ({ productId, selected }: { productId: number; selected: boolean }) => api.setCartSelected(productId, selected),
+    mutationFn: ({ productId, variantId, selected }: { productId: number; variantId: number; selected: boolean }) =>
+      api.setCartSelected(productId, variantId, selected),
     onSuccess: refresh,
   });
   const toggleAll = useMutation({
@@ -102,12 +104,12 @@ export default function Cart() {
               const unavailable = !item.is_active;
               const lowStock = !unavailable && item.stock < item.qty;
               return (
-                <li key={item.product_id} className={`card cart-item ${item.selected ? '' : 'unchecked'}`}>
+                <li key={`${item.product_id}-${item.variant_id}`} className={`card cart-item ${item.selected ? '' : 'unchecked'}`}>
                   <label className="item-check">
                     <input
                       type="checkbox"
                       checked={item.selected}
-                      onChange={(e) => toggleOne.mutate({ productId: item.product_id, selected: e.target.checked })}
+                      onChange={(e) => toggleOne.mutate({ productId: item.product_id, variantId: item.variant_id, selected: e.target.checked })}
                       aria-label={`Pilih ${item.name}`}
                     />
                   </label>
@@ -126,19 +128,19 @@ export default function Cart() {
                     <button
                       className="btn"
                       disabled={item.qty <= 1 || setQty.isPending}
-                      onClick={() => setQty.mutate({ productId: item.product_id, qty: item.qty - 1 })}
+                      onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty - 1 })}
                       aria-label="Kurangi"
                     >−</button>
                     <span>{item.qty}</span>
                     <button
                       className="btn"
                       disabled={item.qty >= Math.min(item.stock, 99) || setQty.isPending}
-                      onClick={() => setQty.mutate({ productId: item.product_id, qty: item.qty + 1 })}
+                      onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty + 1 })}
                       aria-label="Tambah"
                     >+</button>
                   </div>
                   <div className="line-total">{rp(Number(item.price) * item.qty)}</div>
-                  <button className="btn link danger" onClick={() => remove.mutate(item.product_id)}>Hapus</button>
+                  <button className="btn link danger" onClick={() => remove.mutate({ productId: item.product_id, variantId: item.variant_id })}>Hapus</button>
                 </li>
               );
             })}
