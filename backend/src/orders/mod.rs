@@ -31,6 +31,7 @@ pub fn customer_router() -> Router<AppState> {
         .route("/{id}", get(get_order))
         .route("/{id}/pay", post(pay_order))
         .route("/{id}/bast", get(crate::bast::get_bast).post(crate::bast::create_bast))
+        .route("/{id}/bast/response", post(crate::bast::seller_response))
 }
 
 pub fn admin_router() -> Router<AppState> {

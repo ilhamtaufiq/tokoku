@@ -28,6 +28,11 @@ pub struct BastView {
     pub received_by: String,
     pub note: String,
     pub created_at: DateTime<Utc>,
+    /// Tanda tangan penerima (PNG data URL).
+    pub signature_png: Option<String>,
+    /// Tindak lanjut penjual atas barang rusak.
+    pub seller_note: Option<String>,
+    pub seller_responded_at: Option<DateTime<Utc>>,
     pub items: Vec<BastItemView>,
 }
 
@@ -38,11 +43,37 @@ struct BastRow {
     received_by: String,
     note: String,
     created_at: DateTime<Utc>,
+    signature_png: Option<String>,
+    seller_note: Option<String>,
+    seller_responded_at: Option<DateTime<Utc>>,
+}
+
+/// Batas ukuran tanda tangan (karakter data URL), sekitar 150 KB.
+const MAX_SIGNATURE_CHARS: usize = 200_000;
+
+/// Pengguna penjual yang memiliki toko pesanan ini (atau admin platform).
+async fn may_respond(pool: &sqlx::MySqlPool, user: &AuthUser, order_id: u64) -> AppResult<bool> {
+    if user.role == "admin" {
+        return Ok(true);
+    }
+    if user.role != "seller" {
+        return Ok(false);
+    }
+    let row: Option<(i64,)> = sqlx::query_as(
+        "SELECT 1 FROM orders o JOIN stores s ON s.id = o.store_id
+         WHERE o.id = ? AND s.owner_user_id = ?",
+    )
+    .bind(order_id)
+    .bind(user.id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.is_some())
 }
 
 async fn load(pool: &sqlx::MySqlPool, order_id: u64) -> AppResult<Option<BastView>> {
     let row: Option<BastRow> = sqlx::query_as(
-        "SELECT id, order_id, received_by, note, created_at FROM order_bast WHERE order_id = ?",
+        "SELECT id, order_id, received_by, note, created_at, signature_png, seller_note, seller_responded_at
+         FROM order_bast WHERE order_id = ?",
     )
     .bind(order_id)
     .fetch_optional(pool)
@@ -72,13 +103,55 @@ async fn load(pool: &sqlx::MySqlPool, order_id: u64) -> AppResult<Option<BastVie
         received_by: row.received_by,
         note: row.note,
         created_at: row.created_at,
+        signature_png: row.signature_png,
+        seller_note: row.seller_note,
+        seller_responded_at: row.seller_responded_at,
         items,
     }))
 }
 
 /// BAST pesanan (null jika belum dibuat). Dapat dibaca pembeli, dan admin.
 pub async fn get_bast(user: AuthUser, State(state): State<AppState>, Path(id): Path<u64>) -> AppResult<Json<Option<BastView>>> {
-    fetch_owned_order(&state.pool, id, &user).await?;
+    // Pembeli dan admin lewat pemeriksaan pesanan biasa; penjual hanya untuk toko miliknya
+    if user.role == "seller" {
+        if !may_respond(&state.pool, &user, id).await? {
+            return Err(AppError::NotFound(format!("pesanan {id}")));
+        }
+    } else {
+        fetch_owned_order(&state.pool, id, &user).await?;
+    }
+    Ok(Json(load(&state.pool, id).await?))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SellerResponseReq {
+    pub note: String,
+}
+
+/// Penjual menanggapi BAST: menulis tindak lanjut atas barang rusak.
+pub async fn seller_response(
+    user: AuthUser,
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Json(req): Json<SellerResponseReq>,
+) -> AppResult<Json<Option<BastView>>> {
+    if !may_respond(&state.pool, &user, id).await? {
+        return Err(AppError::NotFound(format!("pesanan {id}")));
+    }
+    let note = req.note.trim().to_string();
+    if note.chars().count() < 5 || note.chars().count() > 500 {
+        return Err(AppError::BadRequest("tindak lanjut wajib diisi (5–500 karakter)".into()));
+    }
+    let done = sqlx::query(
+        "UPDATE order_bast SET seller_note = ?, seller_responded_at = UTC_TIMESTAMP() WHERE order_id = ?",
+    )
+    .bind(&note)
+    .bind(id)
+    .execute(&state.pool)
+    .await?;
+    if done.rows_affected() == 0 {
+        return Err(AppError::NotFound("BAST pesanan ini belum dibuat".into()));
+    }
     Ok(Json(load(&state.pool, id).await?))
 }
 
@@ -95,6 +168,8 @@ pub struct BastReq {
     #[serde(default)]
     pub note: String,
     pub items: Vec<BastItemReq>,
+    /// Tanda tangan penerima sebagai PNG data URL.
+    pub signature_png: String,
 }
 
 /// Pembeli membuat BAST setelah pesanan dikirim. Jumlah baik + rusak harus sama dengan jumlah pesanan.
@@ -122,6 +197,9 @@ pub async fn create_bast(
     if load(&state.pool, id).await?.is_some() {
         return Err(AppError::Conflict("BAST pesanan ini sudah dibuat".into()));
     }
+    if !req.signature_png.starts_with("data:image/png;base64,") || req.signature_png.len() > MAX_SIGNATURE_CHARS {
+        return Err(AppError::BadRequest("tanda tangan wajib diisi (PNG, maks 150 KB)".into()));
+    }
 
     // Setiap baris pesanan harus dilaporkan tepat sekali dan jumlahnya cocok
     let lines: Vec<(u64, u32)> = sqlx::query_as("SELECT id, qty FROM order_items WHERE order_id = ?")
@@ -143,10 +221,11 @@ pub async fn create_bast(
     }
 
     let mut tx = state.pool.begin().await?;
-    let done = sqlx::query("INSERT INTO order_bast (order_id, received_by, note) VALUES (?, ?, ?)")
+    let done = sqlx::query("INSERT INTO order_bast (order_id, received_by, note, signature_png) VALUES (?, ?, ?, ?)")
         .bind(id)
         .bind(&received_by)
         .bind(&note)
+        .bind(&req.signature_png)
         .execute(&mut *tx)
         .await?;
     let bast_id = done.last_insert_id();
