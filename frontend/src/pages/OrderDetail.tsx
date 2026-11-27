@@ -88,6 +88,12 @@ export default function OrderDetail() {
       <div className="print:hidden mb-2 flex flex-wrap gap-2">
         <Link to={`/orders/${o.id}/invoice`} className={btnOutline}>Lihat & cetak invoice</Link>
         <Link to={`/orders/${o.id}/surat-pesanan`} className={btnOutline}>Surat pesanan</Link>
+        {(o.status === 'shipped' || o.status === 'completed') && (
+          <>
+            <Link to={`/orders/${o.id}/surat-jalan`} className={btnOutline}>Surat jalan</Link>
+            <Link to={`/orders/${o.id}/bast`} className={btnOutline}>BAST</Link>
+          </>
+        )}
       </div>
 
       {o.estimated_days && (o.status === 'processing' || o.status === 'shipped' || o.status === 'completed') && (

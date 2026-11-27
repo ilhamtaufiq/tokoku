@@ -19,6 +19,9 @@ import AdminBanners from './pages/admin/AdminBanners';
 import AdminUsers from './pages/admin/AdminUsers';
 import Account from './pages/Account';
 import Invoice from './pages/Invoice';
+import PurchaseOrder from './pages/PurchaseOrder';
+import DeliveryNote from './pages/DeliveryNote';
+import Bast from './pages/Bast';
 import Help from './pages/Help';
 import Sell from './pages/Sell';
 import AdminStores from './pages/admin/AdminStores';
@@ -46,7 +49,9 @@ export default function App() {
           <Route path="orders" element={<Orders />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="orders/:id/invoice" element={<Invoice />} />
-          <Route path="orders/:id/surat-pesanan" element={<Invoice variant="sp" />} />
+          <Route path="orders/:id/surat-pesanan" element={<PurchaseOrder />} />
+          <Route path="orders/:id/surat-jalan" element={<DeliveryNote />} />
+          <Route path="orders/:id/bast" element={<Bast />} />
           <Route path="account" element={<Account />} />
           <Route path="jual" element={<Sell />} />
         </Route>

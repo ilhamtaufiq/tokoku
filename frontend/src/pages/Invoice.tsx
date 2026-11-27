@@ -1,158 +1,113 @@
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
-import { ORDER_STATUS_LABEL, formatDate, percent, rp } from '../lib/money';
+import { DocToolbar, Paper, SignatureBox, StoreBlock, docDate } from '../components/docs/shared';
+import { ORDER_STATUS_LABEL, percent, rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
-const btnBase =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-field border px-3 text-[13px] font-semibold no-underline transition-[background-color,border-color,opacity] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
-const btnPrimary = `${btnBase} h-[34px] border-primary bg-primary text-on-primary hover:brightness-110 active:opacity-85`;
-const btnOutline = `${btnBase} h-[34px] border-outline bg-surface text-ink hover:border-primary`;
-
-/** Invoice atau surat pesanan yang bisa dicetak atau disimpan sebagai PDF lewat dialog cetak browser. */
-export default function Invoice({ variant = 'invoice' }: { variant?: 'invoice' | 'sp' }) {
-  const isSp = variant === 'sp';
-  const label = isSp ? 'SURAT PESANAN' : 'INVOICE';
-  useSeo({ title: isSp ? 'Surat pesanan' : 'Invoice', noindex: true });
+/** Faktur pajak: dokumen bukti bayar. Menampilkan DPP, PPN, dan status lunas. */
+export default function Invoice() {
+  useSeo({ title: 'Invoice', noindex: true });
   const { id } = useParams();
   const orderId = Number(id);
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => api.order(orderId) });
 
-  if (order.isPending) {
-    return (
-      <div role="status" aria-busy="true" className="mx-auto flex max-w-[840px] flex-col gap-4 rounded-card border border-outline-soft bg-surface p-6 sm:p-10">
-        <span className="sr-only">Memuat dokumen…</span>
-        <div className="h-8 w-48 animate-pulse rounded-field bg-surface-high motion-reduce:animate-none" />
-        <div className="h-4 w-64 animate-pulse rounded-field bg-surface-high motion-reduce:animate-none" />
-        <div className="mt-4 h-48 animate-pulse rounded-field bg-surface-high motion-reduce:animate-none" />
-      </div>
-    );
-  }
-  if (order.isError || !order.data) {
-    return (
-      <p className="my-3 rounded-field bg-error-soft px-4 py-3 text-sm text-on-error-soft">
-        Dokumen tidak ditemukan.
-      </p>
-    );
-  }
-
+  if (order.isPending) return <p className="text-muted">Memuat invoice…</p>;
+  if (order.isError || !order.data) return <p className="text-error">Invoice tidak ditemukan.</p>;
   const o = order.data;
-  const s = {
-    name: o.store_name ?? '',
-    npwp: o.store_npwp ?? '',
-    address: o.store_address ?? '',
-    phone: o.store_phone ?? '',
-  };
-  const unpaid = o.payment_status !== 'paid' && o.payment_status !== 'refunded';
+  const paid = o.payment_status === 'paid';
+  const refunded = o.payment_status === 'refunded';
 
   return (
-    <section className="mx-auto max-w-[840px] print:max-w-none">
-      <div className="print:hidden mb-4 flex flex-wrap justify-between gap-2.5">
-        <Link to={`/orders/${o.id}`} className={btnOutline}>← Kembali ke pesanan</Link>
-        <button type="button" className={btnPrimary} onClick={() => window.print()}>Cetak / Simpan PDF</button>
-      </div>
-
-      {/* Kertas dokumen selalu putih dengan warna tetap, termasuk di mode gelap dan saat dicetak. */}
-      <article className="rounded-banner border border-outline-soft bg-white p-6 text-[#1a1b22] sm:p-12 print:rounded-none print:border-0 print:p-0">
-        <header className="flex flex-wrap justify-between gap-6 border-b-2 border-[#1a1b22] pb-6">
-          <div className="min-w-0">
-            <h1 className="m-0 font-display text-[28px] font-bold tracking-[0.5px] text-[#1a1b22] sm:text-[32px]">{label}</h1>
-            <p className="my-1.5 font-mono font-medium text-[#1a1b22]">{o.invoice_no}</p>
-            <p className="my-0.5 text-xs text-[#5b5e6e]">Tanggal: {formatDate(o.created_at)}</p>
-            <p className="my-0.5 text-xs text-[#5b5e6e]">Status: {ORDER_STATUS_LABEL[o.status] ?? o.status}</p>
+    <section>
+      <DocToolbar orderId={o.id} active="invoice" />
+      <Paper accent="#00288e">
+        <header className="flex flex-wrap items-start justify-between gap-6">
+          <div>
+            <h1 className="m-0 font-display text-[40px] font-bold leading-none tracking-tight text-[#00288e]">INVOICE</h1>
+            <p className="mt-3 font-mono text-sm">{o.invoice_no}</p>
+            <p className="m-0 text-xs text-[#5b5e6e]">Tanggal: {docDate(o.created_at)}</p>
+            <p className="m-0 text-xs text-[#5b5e6e]">Status pesanan: {ORDER_STATUS_LABEL[o.status] ?? o.status}</p>
           </div>
-          <div className="min-w-0 text-left sm:text-right">
-            <strong className="font-display text-lg text-[#1a1b22]">{s?.name || 'Nama toko belum diatur'}</strong>
-            {s?.npwp && <p className="my-0.5 text-sm text-[#444653]">NPWP: {formatNpwp(s.npwp)}</p>}
-            {s?.address && <p className="my-0.5 text-sm text-[#444653]">{s.address}</p>}
-            {s?.phone && <p className="my-0.5 text-sm text-[#444653]">Telp: {s.phone}</p>}
-          </div>
+          <StoreBlock order={o} />
         </header>
 
-        <div className="flex flex-wrap justify-between gap-6 py-6">
-          <div className="min-w-0">
-            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.8px] text-[#757684]">Ditagihkan kepada</p>
-            <strong className="text-[#1a1b22]">{o.buyer_name ?? '-'}</strong>
-            <p className="my-1 whitespace-pre-wrap text-[13px] text-[#444653]">{o.shipping_address}</p>
-            {o.buyer_npwp && <p className="my-1 text-[13px] text-[#444653]">NPWP: {formatNpwp(o.buyer_npwp)}</p>}
+        <div className="mt-8 grid gap-6 border-t border-[#e4e3ee] pt-6 sm:grid-cols-2">
+          <div>
+            <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-[#5b5e6e]">Ditagihkan kepada</p>
+            <p className="m-0 mt-1 font-semibold">{o.buyer_name ?? '-'}</p>
+            <p className="m-0 whitespace-pre-line text-sm">{o.shipping_address}</p>
+            {o.buyer_npwp && <p className="m-0 text-sm">NPWP: {o.buyer_npwp}</p>}
           </div>
-          {o.tracking_number && (
-            <div className="min-w-0">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.8px] text-[#757684]">Pengiriman</p>
-              <p className="my-1 text-[13px] text-[#444653]">Nomor resi: <strong className="text-[#1a1b22]">{o.tracking_number}</strong></p>
-            </div>
-          )}
+          <div className="text-sm">
+            <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-[#5b5e6e]">Pembayaran</p>
+            <p className="m-0 mt-1">{paid ? 'Lunas melalui Midtrans' : refunded ? 'Dibatalkan, dana dikembalikan' : 'Belum dibayar'}</p>
+          </div>
         </div>
 
-        <div className="overflow-hidden">
-          <table className="w-full border-collapse text-[13px] sm:text-sm max-[600px]:block max-[600px]:[&_thead]:hidden max-[600px]:[&_tbody]:block max-[600px]:[&_tr]:block max-[600px]:[&_tr]:border-b max-[600px]:[&_tr]:border-[#e4e3ee] max-[600px]:[&_tr]:py-2.5 max-[600px]:[&_td]:flex max-[600px]:[&_td]:items-center max-[600px]:[&_td]:justify-between max-[600px]:[&_td]:gap-3 max-[600px]:[&_td]:border-0 max-[600px]:[&_td]:px-0 max-[600px]:[&_td]:py-1 max-[600px]:[&_td]:text-right max-[600px]:[&_td::before]:text-left max-[600px]:[&_td::before]:text-xs max-[600px]:[&_td::before]:font-semibold max-[600px]:[&_td::before]:text-[#5b5e6e] max-[600px]:[&_td::before]:content-[attr(data-label)] max-[600px]:[&_td[data-label='']::before]:content-none">
-            <thead>
-              <tr>
-                <th className="bg-transparent border-b border-[#1a1b22] px-1.5 py-3 text-left text-[10px] font-bold uppercase tracking-[0.6px] text-[#5b5e6e] sm:px-2 sm:text-[11px]">Barang</th>
-                <th className="bg-transparent whitespace-nowrap border-b border-[#1a1b22] px-1.5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.6px] text-[#5b5e6e] sm:px-2 sm:text-[11px]">Qty</th>
-                <th className="bg-transparent border-b border-[#1a1b22] px-1.5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.6px] text-[#5b5e6e] sm:px-2 sm:text-[11px]">Harga (termasuk PPN)</th>
-                <th className="bg-transparent whitespace-nowrap border-b border-[#1a1b22] px-1.5 py-3 text-right text-[10px] font-bold uppercase tracking-[0.6px] text-[#5b5e6e] sm:px-2 sm:text-[11px]">Jumlah</th>
+        <table className="mt-8 w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b-2 border-[#00288e] text-left text-[11px] uppercase tracking-wider text-[#5b5e6e]">
+              <th className="py-2 pr-2">Barang</th>
+              <th className="py-2 pr-2 text-right">Qty</th>
+              <th className="py-2 pr-2 text-right">Harga (termasuk PPN)</th>
+              <th className="py-2 text-right">Jumlah</th>
+            </tr>
+          </thead>
+          <tbody>
+            {o.items.map((i) => (
+              <tr key={i.id} className="border-b border-[#e4e3ee] align-top">
+                <td className="py-2.5 pr-2">
+                  {i.product_name}
+                  {!i.is_taxable && <span className="text-xs text-[#5b5e6e]"> (tidak kena PPN)</span>}
+                </td>
+                <td className="py-2.5 pr-2 text-right tabular-nums">{i.qty}</td>
+                <td className="py-2.5 pr-2 text-right tabular-nums">{rp(i.unit_price)}</td>
+                <td className="py-2.5 text-right tabular-nums">{rp(i.line_subtotal)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {o.items.map((i) => (
-                <tr key={i.product_id}>
-                  <td data-label="" className="max-[600px]:text-left! bg-transparent border-b border-[#e4e3ee] px-1.5 py-3 align-top text-[#1a1b22] [overflow-wrap:anywhere] sm:px-2 max-[600px]:block!">
-                    {i.product_name}
-                    {!i.is_taxable && <span className="text-xs text-[#5b5e6e]"> (tidak kena PPN)</span>}
-                  </td>
-                  <td data-label="Qty" className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{i.qty}</td>
-                  <td data-label="Harga (termasuk PPN)" className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{rp(i.unit_price)}</td>
-                  <td data-label="Jumlah" className="bg-transparent whitespace-nowrap border-b border-[#e4e3ee] px-1.5 py-3 text-right align-top tabular-nums text-[#1a1b22] sm:px-2">{rp(i.line_subtotal)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
 
-        <div className="mt-5 flex justify-end">
-          <dl className="m-0 flex w-full flex-col gap-2.5 sm:w-[340px]">
-            <TotalRow label="Subtotal" value={rp(o.subtotal)} />
+        <div className="mt-6 ml-auto max-w-sm text-sm">
+          <dl className="m-0 grid grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 tabular-nums">
+            <dt>Subtotal</dt>
+            <dd className="m-0 text-right">{rp(o.subtotal)}</dd>
             {Number(o.discount_total) > 0 && (
-              <TotalRow label={`Diskon${o.promo_code ? ` (${o.promo_code})` : ''}`} value={`−${rp(o.discount_total)}`} />
+              <>
+                <dt>Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt>
+                <dd className="m-0 text-right">−{rp(o.discount_total)}</dd>
+              </>
             )}
             {Number(o.dpp) > 0 && (
               <>
-                <TotalRow label="DPP (dasar pengenaan pajak)" value={rp(o.dpp)} sub />
-                <TotalRow label={`PPN ${percent(o.ppn_rate)}`} value={rp(o.ppn_total)} sub />
+                <dt className="text-[#5b5e6e]">DPP (dasar pengenaan pajak)</dt>
+                <dd className="m-0 text-right">{rp(o.dpp)}</dd>
+                <dt className="text-[#5b5e6e]">PPN {percent(o.ppn_rate)}</dt>
+                <dd className="m-0 text-right">{rp(o.ppn_total)}</dd>
               </>
             )}
-            <TotalRow label="Ongkos kirim (tidak kena PPN)" value={rp(o.shipping_fee)} />
-            <div className="mt-1.5 flex justify-between gap-3 border-t-2 border-[#1a1b22] pt-3 text-[#1a1b22]">
-              <dt className="font-display text-xl font-bold">Total</dt>
-              <dd className="m-0 font-display text-xl font-bold tabular-nums">{rp(o.grand_total)}</dd>
-            </div>
+            <dt>Ongkos kirim (tidak kena PPN)</dt>
+            <dd className="m-0 text-right">{rp(o.shipping_fee)}</dd>
+            <dt className="border-t-2 border-[#1a1b22] pt-2 text-base font-bold">Total</dt>
+            <dd className="m-0 border-t-2 border-[#1a1b22] pt-2 text-right text-base font-bold">{rp(o.grand_total)}</dd>
           </dl>
         </div>
 
-        <footer className="mt-8 border-0 border-t border-dashed border-[#c4c5d5] pt-4 text-[#444653]">
-          {isSp && <p className="my-1 text-xs">Surat pesanan ini bukan bukti pembayaran. Bukti bayar tersedia di invoice setelah pembayaran lunas.</p>}
-          {!isSp && o.payment_status === 'paid' && <p className="my-1 text-xs"><strong>LUNAS</strong> · dibayar melalui Midtrans</p>}
-          {!isSp && unpaid && <p className="my-1 text-xs">Belum dibayar. Batas pembayaran sesuai halaman pesanan.</p>}
-          {o.payment_status === 'refunded' && <p className="my-1 text-xs">Pesanan dibatalkan. Dana dikembalikan kepada pembeli.</p>}
-          <p className="my-1 text-xs text-[#5b5e6e]">Harga sudah termasuk PPN. Dokumen ini dibuat secara elektronik.</p>
-        </footer>
-      </article>
+        <div className="mt-10 flex flex-wrap items-end justify-between gap-6">
+          {paid ? (
+            <span className="inline-block -rotate-6 rounded-md border-[3px] border-[#15803d] px-4 py-1 font-display text-2xl font-bold tracking-wider text-[#15803d]">LUNAS</span>
+          ) : (
+            <p className="m-0 max-w-xs text-xs text-[#5b5e6e]">Belum dibayar. Selesaikan pembayaran lewat halaman pesanan.</p>
+          )}
+          <div className="w-56">
+            <SignatureBox title="Hormat kami" name={o.store_name || 'Penjual'} />
+          </div>
+        </div>
+        <p className="mt-8 border-t border-[#e4e3ee] pt-3 text-[11px] text-[#5b5e6e]">
+          Harga sudah termasuk PPN. Dokumen ini dibuat secara elektronik dan sah tanpa tanda tangan basah.
+        </p>
+      </Paper>
     </section>
   );
-}
-
-function TotalRow({ label, value, sub = false }: { label: string; value: string; sub?: boolean }) {
-  return (
-    <div className={`flex justify-between gap-3 text-sm ${sub ? 'text-[13px] text-[#5b5e6e]' : 'text-[#444653]'}`}>
-      <dt>{label}</dt>
-      <dd className="m-0 font-mono text-sm tabular-nums text-[#1a1b22]">{value}</dd>
-    </div>
-  );
-}
-
-function formatNpwp(raw: string) {
-  const d = raw.replace(/\D/g, '');
-  if (d.length === 15) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}.${d.slice(8, 9)}-${d.slice(9, 12)}.${d.slice(12)}`;
-  return raw;
 }

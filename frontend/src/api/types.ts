@@ -127,6 +127,7 @@ export interface OrderView {
 }
 
 export interface OrderItem {
+  id: number;
   product_id: number;
   product_name: string;
   unit_price: Money;
@@ -176,6 +177,23 @@ export interface ShippingChoice {
   store_id: number;
   code: string;
   service: string;
+}
+
+export interface BastItem {
+  order_item_id: number;
+  product_name: string;
+  qty: number;
+  qty_good: number;
+  qty_damaged: number;
+}
+
+export interface Bast {
+  id: number;
+  order_id: number;
+  received_by: string;
+  note: string;
+  created_at: string;
+  items: BastItem[];
 }
 
 export interface PublicStore {
