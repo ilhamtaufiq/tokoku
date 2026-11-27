@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api';
+import type { CartItem } from '../api/types';
 import { Breakdown } from '../components/Breakdown';
 import { ProductImage } from '../components/ProductImage';
 import { useToast } from '../components/Toast';
@@ -9,9 +10,15 @@ import { alertError, btn, card, pageSub, pageTitle, tagDanger } from '../compone
 import { rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
-const checkbox = 'm-0 h-[18px] w-[18px] min-h-0 cursor-pointer p-0 accent-primary disabled:cursor-not-allowed disabled:opacity-50';
+const checkbox = 'm-0 !h-[18px] !w-[18px] min-h-0 !flex-none cursor-pointer p-0 accent-primary disabled:cursor-not-allowed disabled:opacity-50';
 const qtyButton =
   'flex size-8 cursor-pointer items-center justify-center rounded-pill border-0 bg-surface text-lg leading-none text-ink hover:text-primary disabled:cursor-not-allowed disabled:opacity-45 disabled:pointer-events-none';
+
+/** Tombol oranye pill untuk checkout (warna merek dari DESIGN.md, sama di mode terang dan gelap). */
+const btnOrange =
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-transparent bg-[#ea580c] font-body font-semibold text-white no-underline cursor-pointer select-none shadow-cta transition-colors duration-150 hover:bg-[#c2410c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:pointer-events-none [&_.material-symbols-outlined]:!text-[20px]';
+
+type StoreGroup = { storeId: number; storeName: string; items: CartItem[] };
 
 export default function Cart() {
   useSeo({ title: 'Keranjang', noindex: true });
@@ -69,6 +76,17 @@ export default function Cart() {
     );
   }
 
+  // Kelompokkan barang per toko, urutan mengikuti kemunculan pertama di keranjang.
+  const groups: StoreGroup[] = [];
+  for (const item of items) {
+    let group = groups.find((g) => g.storeId === item.store_id);
+    if (!group) {
+      group = { storeId: item.store_id, storeName: item.store_name, items: [] };
+      groups.push(group);
+    }
+    group.items.push(item);
+  }
+
   const checkoutLabel = selected.length > 0 ? `Checkout (${selectedCount})` : 'Checkout';
 
   return (
@@ -77,9 +95,9 @@ export default function Cart() {
       <p className={pageSub}>Centang barang yang ingin dibayar sekarang.</p>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="flex min-w-0 flex-col">
-          <div className={`${card} mb-3 flex items-center justify-between gap-3 px-4 py-3`}>
-            <label className="flex cursor-pointer flex-row items-center gap-2.5 text-sm font-semibold text-ink">
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className={`${card} flex items-center justify-between gap-3 px-4 py-3`}>
+            <label className="!flex cursor-pointer flex-row items-center gap-2.5 text-sm font-semibold text-ink">
               <input
                 type="checkbox"
                 className={checkbox}
@@ -89,89 +107,106 @@ export default function Cart() {
               />
               Pilih semua ({items.length})
             </label>
-            <span className="text-xs text-muted">{selected.length} jenis dipilih</span>
+            <span className="font-mono text-xs tabular-nums text-muted">{selected.length} jenis dipilih</span>
           </div>
 
           {issues.length > 0 && (
-            <p className={`${alertError} mb-3`}>
+            <p className={alertError}>
               Ada barang yang tidak tersedia atau stoknya kurang: {issues.map((i) => i.name).join(', ')}. Sesuaikan jumlahnya sebelum checkout.
             </p>
           )}
 
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
-            {items.map((item) => {
-              const unavailable = !item.is_active;
-              const lowStock = !unavailable && item.stock < item.qty;
-              return (
-                <li
-                  key={`${item.product_id}-${item.variant_id}`}
-                  className={`${card} flex flex-col gap-3 p-3 transition-opacity md:flex-row md:items-center md:gap-4 md:p-4 ${item.selected ? '' : 'opacity-60'}`}
-                >
-                  {/* Baris atas di mobile: centang, gambar, info. Di desktop wrapper ini tidak membuat kotak (md:contents). */}
-                  <div className="flex min-w-0 items-center gap-3 md:contents">
-                    <label className="flex shrink-0 cursor-pointer items-center">
-                      <input
-                        type="checkbox"
-                        className={checkbox}
-                        checked={item.selected}
-                        onChange={(e) => toggleOne.mutate({ productId: item.product_id, variantId: item.variant_id, selected: e.target.checked })}
-                        aria-label={`Pilih ${item.name}`}
-                      />
-                    </label>
-                    <div className="size-20 shrink-0 overflow-hidden rounded-field border border-outline-soft md:size-24">
-                      <ProductImage name={item.name} src={item.image_url} className="h-full w-full rounded-none text-[28px]" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        to={`/products/${item.product_id}`}
-                        className="font-display text-base font-semibold leading-6 text-ink no-underline hover:text-primary"
-                      >
-                        {item.name}
-                        <span className="block text-xs font-normal text-muted">dari {item.store_name}</span>
-                      </Link>
-                      <p className="text-[13px] text-muted">
-                        {rp(item.price)} / buah {item.is_taxable ? '· termasuk PPN' : '· tidak kena PPN'}
-                      </p>
-                      {(unavailable || lowStock) && (
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {unavailable && <span className={tagDanger}>Tidak tersedia</span>}
-                          {lowStock && <span className={tagDanger}>Stok tersisa {item.stock}</span>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          {groups.map((group) => (
+            <div key={group.storeId} className={`${card} overflow-hidden`}>
+              <div className="flex items-center justify-between gap-3 border-b border-outline-soft bg-surface-low px-4 py-3">
+                <h2 className="m-0 flex min-w-0 items-center gap-2 font-display text-[15px] font-semibold text-ink">
+                  <span className="material-symbols-outlined !text-[20px] text-primary" aria-hidden>storefront</span>
+                  <span className="truncate">{group.storeName}</span>
+                </h2>
+                <span className="shrink-0 font-mono text-[11px] font-medium uppercase tracking-[0.05em] text-muted">
+                  {group.items.length} jenis barang
+                </span>
+              </div>
 
-                  {/* Baris bawah di mobile: jumlah, subtotal, hapus. */}
-                  <div className="flex items-center gap-3 md:contents">
-                    <div className="inline-flex items-center gap-0.5 rounded-pill border border-outline bg-surface-low p-0.5">
-                      <button
-                        className={qtyButton}
-                        disabled={item.qty <= 1 || setQty.isPending}
-                        onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty - 1 })}
-                        aria-label="Kurangi"
-                      >−</button>
-                      <span className="min-w-8 text-center font-mono text-sm tabular-nums">{item.qty}</span>
-                      <button
-                        className={qtyButton}
-                        disabled={item.qty >= Math.min(item.stock, 99) || setQty.isPending}
-                        onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty + 1 })}
-                        aria-label="Tambah"
-                      >+</button>
-                    </div>
-                    <div className="ml-auto min-w-[104px] text-right font-display text-base font-bold tabular-nums text-ink md:min-w-[120px]">
-                      {rp(Number(item.price) * item.qty)}
-                    </div>
-                    <button
-                      className={btn('danger', 'xs')}
-                      onClick={() => remove.mutate({ productId: item.product_id, variantId: item.variant_id })}
+              <ul className="m-0 flex list-none flex-col p-0">
+                {group.items.map((item) => {
+                  const unavailable = !item.is_active;
+                  const lowStock = !unavailable && item.stock < item.qty;
+                  return (
+                    <li
+                      key={`${item.product_id}-${item.variant_id}`}
+                      className={`flex flex-col gap-3 border-b border-outline-soft p-4 transition-opacity last:border-b-0 md:flex-row md:items-center md:gap-4 ${item.selected ? '' : 'opacity-60'}`}
                     >
-                      Hapus
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      {/* Baris atas di mobile: centang, gambar, info. Di desktop wrapper ini tidak membuat kotak (md:contents). */}
+                      <div className="flex min-w-0 items-center gap-3 md:contents">
+                        <label className="!flex shrink-0 cursor-pointer items-center">
+                          <input
+                            type="checkbox"
+                            className={checkbox}
+                            checked={item.selected}
+                            onChange={(e) => toggleOne.mutate({ productId: item.product_id, variantId: item.variant_id, selected: e.target.checked })}
+                            aria-label={`Pilih ${item.name}`}
+                          />
+                        </label>
+                        <div className="size-20 shrink-0 overflow-hidden rounded-field border border-outline-soft bg-surface-low md:size-24">
+                          <ProductImage name={item.name} src={item.image_url} className="h-full w-full rounded-none text-[28px]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            to={`/products/${item.product_id}`}
+                            className="font-display text-base font-semibold leading-6 text-ink no-underline hover:text-primary"
+                          >
+                            {item.name}
+                            <span className="block text-xs font-normal text-muted">dari {item.store_name}</span>
+                          </Link>
+                          <p className="m-0 mt-0.5 font-mono text-[13px] tabular-nums text-muted">
+                            {rp(item.price)} / buah {item.is_taxable ? '· termasuk PPN' : '· tidak kena PPN'}
+                          </p>
+                          {(unavailable || lowStock) && (
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {unavailable && <span className={tagDanger}>Tidak tersedia</span>}
+                              {lowStock && <span className={tagDanger}>Stok tersisa {item.stock}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Baris bawah di mobile: jumlah, subtotal, hapus. */}
+                      <div className="flex items-center gap-3 md:contents">
+                        <div className="inline-flex items-center gap-0.5 rounded-pill border border-outline bg-surface-low p-0.5">
+                          <button
+                            className={qtyButton}
+                            disabled={item.qty <= 1 || setQty.isPending}
+                            onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty - 1 })}
+                            aria-label="Kurangi"
+                          >−</button>
+                          <span className="min-w-8 text-center font-mono text-sm tabular-nums">{item.qty}</span>
+                          <button
+                            className={qtyButton}
+                            disabled={item.qty >= Math.min(item.stock, 99) || setQty.isPending}
+                            onClick={() => setQty.mutate({ productId: item.product_id, variantId: item.variant_id, qty: item.qty + 1 })}
+                            aria-label="Tambah"
+                          >+</button>
+                        </div>
+                        <div className="ml-auto min-w-[104px] text-right md:min-w-[120px]">
+                          <span className="block text-[11px] font-medium uppercase tracking-[0.05em] text-muted md:hidden">Subtotal</span>
+                          <span className="block font-mono text-base font-bold tabular-nums text-ink">
+                            {rp(Number(item.price) * item.qty)}
+                          </span>
+                        </div>
+                        <button
+                          className={btn('danger', 'xs')}
+                          onClick={() => remove.mutate({ productId: item.product_id, variantId: item.variant_id })}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </div>
 
         <aside className={`${card} self-start p-5 md:p-6 lg:sticky lg:top-[100px]`}>
@@ -183,7 +218,7 @@ export default function Cart() {
           <p className="mt-4 text-xs text-muted">Ongkos kirim final dihitung saat checkout dan tidak dikenai PPN.</p>
           <Link
             to="/checkout"
-            className={btn('primary', 'lg', 'mt-5 w-full')}
+            className={`${btnOrange} mt-5 h-12 w-full text-[15px]`}
             aria-disabled={!checkoutReady}
             onClick={(e) => {
               if (!checkoutReady) e.preventDefault();
@@ -201,13 +236,13 @@ export default function Cart() {
       >
         <div className="flex min-w-0 flex-col">
           <span className="text-xs text-muted">Total bayar</span>
-          <strong className="font-display text-lg font-bold text-primary">
+          <strong className="font-mono text-lg font-bold tabular-nums text-primary">
             {preview.data && selected.length > 0 ? rp(preview.data.grand_total) : '—'}
           </strong>
         </div>
         <Link
           to="/checkout"
-          className={btn('primary', 'lg', 'shrink-0')}
+          className={`${btnOrange} h-12 shrink-0 px-5 text-[15px]`}
           aria-disabled={!checkoutReady}
           onClick={(e) => {
             if (!checkoutReady) e.preventDefault();

@@ -43,7 +43,7 @@ export function DestinationSearch({
     <div className="relative">
       <input
         id={id}
-        className="w-full rounded-field border border-outline bg-surface px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="block min-h-11 w-full rounded-field border border-outline bg-surface px-3.5 py-2.5 font-body text-sm font-normal text-ink placeholder:text-muted outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:ring-3 focus:ring-primary/20"
         value={value && term === value.label ? value.label : term}
         onChange={(e) => {
           setTerm(e.target.value);

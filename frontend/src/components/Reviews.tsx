@@ -50,18 +50,26 @@ export function ProductReviews({ productId }: { productId: number }) {
   const own = mine.data;
 
   return (
-    <section className={`${card} mt-6 flex flex-col gap-4 p-5 max-[760px]:p-4`} aria-labelledby="reviews-title">
-      <div>
-        <h2 id="reviews-title" className="m-0 mb-1 font-display text-lg font-semibold tracking-tight text-ink">
-          Ulasan pembeli
-        </h2>
-        {data && data.average !== null ? (
-          <p className="m-0 flex flex-wrap items-center gap-1.5 text-ink">
-            <Stars value={data.average} /> <strong>{data.average.toFixed(1)}</strong>
-            <span className="text-xs text-muted"> · {data.count} ulasan</span>
+    <section className={`${card} mt-8 flex flex-col gap-4 p-5 max-[760px]:p-4`} aria-labelledby="reviews-title">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="reviews-title" className="m-0 mb-1 font-display text-lg font-semibold tracking-tight text-ink">
+            Ulasan pembeli
+          </h2>
+          {data && data.average !== null ? (
+            <p className="m-0 flex flex-wrap items-center gap-1.5 text-ink">
+              <Stars value={data.average} /> <strong className="font-mono tabular-nums">{data.average.toFixed(1)}</strong>
+              <span className="text-xs text-muted"> · {data.count} ulasan</span>
+            </p>
+          ) : (
+            <p className="m-0 text-xs text-muted">Belum ada ulasan.</p>
+          )}
+        </div>
+        {data && data.average !== null && (
+          <p className="m-0 flex items-baseline gap-1 whitespace-nowrap text-ink" aria-hidden>
+            <span className="font-display text-[28px] font-bold leading-9 text-ink">{data.average.toFixed(1)}</span>
+            <span className="text-sm font-semibold text-muted">/5</span>
           </p>
-        ) : (
-          <p className="m-0 text-xs text-muted">Belum ada ulasan.</p>
         )}
       </div>
 

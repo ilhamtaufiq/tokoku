@@ -11,6 +11,10 @@ import type { ShippingChoice, ShippingDestination, StoreShippingOptions } from '
 import { rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
+/** Tombol oranye pill untuk bayar (warna merek dari DESIGN.md, sama di mode terang dan gelap). */
+const btnOrange =
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-pill border border-transparent bg-[#ea580c] font-body font-semibold text-white no-underline cursor-pointer select-none shadow-cta transition-colors duration-150 hover:bg-[#c2410c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none [&_.material-symbols-outlined]:!text-[20px]';
+
 /** Lima layanan termurah, ditambah pilihan yang sedang dipilih bila berada di luar daftar itu. */
 function visibleOptions(
   options: StoreShippingOptions['options'],
@@ -24,6 +28,9 @@ function visibleOptions(
   if (selected && !head.includes(selected)) head.push(selected);
   return head;
 }
+
+/** Langkah checkout sebagai penunjuk visual. Langkah ini berada di tahap kedua. */
+const steps = ['Keranjang', 'Pengiriman & Pajak', 'Pembayaran'];
 
 export default function Checkout() {
   useSeo({ title: 'Checkout', noindex: true });
@@ -144,6 +151,32 @@ export default function Checkout() {
     <section>
       <h1 className={pageTitle}>Checkout</h1>
       <p className={pageSub}>Lengkapi alamat, lalu bayar dengan aman lewat Midtrans.</p>
+
+      <ol className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold text-muted" aria-label="Langkah checkout">
+        {steps.map((step, idx) => {
+          const current = idx === 1;
+          const done = idx === 0;
+          return (
+            <li key={step} className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
+              <span
+                className={`flex size-6 items-center justify-center rounded-pill font-mono text-[11px] font-bold ${
+                  done
+                    ? 'bg-success-soft text-on-success-soft'
+                    : current
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-high text-muted'
+                }`}
+                aria-hidden
+              >
+                {done ? '✓' : idx + 1}
+              </span>
+              <span className={current ? 'text-ink' : undefined}>{step}</span>
+              {idx < steps.length - 1 && <span className="ml-1 hidden h-px w-6 bg-outline-soft sm:inline-block" aria-hidden />}
+            </li>
+          );
+        })}
+      </ol>
+
       {!ready && (
         <p className={`${alertError} mb-4`}>Ada produk yang tidak tersedia atau stoknya kurang. Kembali ke keranjang untuk menyesuaikan.</p>
       )}
@@ -189,37 +222,48 @@ export default function Checkout() {
               {destination && options.isPending && <p className="mt-4 text-sm text-muted">Menghitung ongkir…</p>}
               {destination && options.isError && <p className={`${alertError} mt-4`}>{(options.error as Error).message}</p>}
               {options.data?.map((store) => (
-                <fieldset key={store.store_id} className="mt-5 border-0 p-0">
-                  <legend className="mb-2 font-semibold text-ink">
-                    {store.store_name} <span className="text-xs font-normal text-muted">· {(store.weight_grams / 1000).toLocaleString('id-ID')} kg</span>
+                <fieldset key={store.store_id} className="mt-5 rounded-field border border-outline-soft bg-surface-low p-3.5">
+                  <legend className="mb-2 px-1 font-semibold text-ink">
+                    {store.store_name} <span className="font-mono text-xs font-normal tabular-nums text-muted">· {(store.weight_grams / 1000).toLocaleString('id-ID')} kg</span>
                   </legend>
                   {store.options.length === 0 ? (
                     <p className="text-sm text-error">Toko ini belum mengatur lokasi asal pengiriman, atau tidak ada kurir untuk rute ini.</p>
                   ) : (
-                    <div className="flex flex-col gap-2">
-                      {visibleOptions(store.options, choices[store.store_id], showAllCouriers[store.store_id]).map((o) => {
+                    <div className="flex flex-col gap-2.5">
+                      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                        {visibleOptions(store.options, choices[store.store_id], showAllCouriers[store.store_id]).map((o) => {
                           const key = `${o.code}|${o.service}`;
+                          const on = choices[store.store_id] === key;
                           return (
-                            <label key={key} className="!flex !flex-row cursor-pointer items-center gap-3 rounded-field border border-outline-soft p-3 text-left text-sm has-[:checked]:border-primary has-[:checked]:bg-secondary-container/40">
-                              <input
-                                type="radio"
-                                name={`ship-${store.store_id}`}
-                                checked={choices[store.store_id] === key}
-                                onChange={() => setChoices((prev) => ({ ...prev, [store.store_id]: key }))}
-                                className="!h-4 !w-4 !flex-none accent-primary"
-                              />
-                              <span className="min-w-0 flex-1 !text-left">
-                                <strong className="font-semibold text-ink">{o.name} · {o.service}</strong>
-                                <span className="!block !text-left text-xs text-muted">{o.description || 'Layanan reguler'} · estimasi {o.etd || '-'}</span>
+                            <label
+                              key={key}
+                              className={`flex cursor-pointer flex-col gap-2 rounded-field border-[1.5px] bg-surface p-3.5 text-left text-sm transition-colors ${
+                                on ? 'border-primary bg-secondary-container/40' : 'border-outline-soft hover:border-primary'
+                              }`}
+                            >
+                              <span className="flex items-start justify-between gap-2">
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name={`ship-${store.store_id}`}
+                                    checked={on}
+                                    onChange={() => setChoices((prev) => ({ ...prev, [store.store_id]: key }))}
+                                    className="!h-4 !w-4 !flex-none accent-primary"
+                                  />
+                                  <strong className="min-w-0 font-semibold leading-5 text-ink">{o.name} · {o.service}</strong>
+                                </span>
+                                <span className="shrink-0 font-mono font-semibold tabular-nums text-ink">{rp(o.cost)}</span>
                               </span>
-                              <span className="shrink-0 font-semibold tabular-nums text-ink">{rp(o.cost)}</span>
+                              <span className="pl-6 text-xs leading-4 text-muted">{o.description || 'Layanan reguler'} · estimasi {o.etd || '-'}</span>
+                              <span className="pl-6 font-mono text-[11px] font-medium uppercase tracking-[0.05em] text-success">Bebas PPN</span>
                             </label>
                           );
                         })}
+                      </div>
                       {store.options.length > 5 && (
                         <button
                           type="button"
-                          className="mt-1 self-start text-sm font-semibold text-primary hover:underline"
+                          className="mt-1 min-h-11 self-start text-sm font-semibold text-primary hover:underline"
                           onClick={() => setShowAllCouriers((prev) => ({ ...prev, [store.store_id]: !prev[store.store_id] }))}
                         >
                           {showAllCouriers[store.store_id] ? 'Tampilkan lebih sedikit' : `Lihat semua layanan (${store.options.length})`}
@@ -239,7 +283,13 @@ export default function Checkout() {
             <p className="-mt-1 mb-4 text-[13px] text-muted">Opsional. Isi jika kamu membutuhkan faktur pajak atas nama NPWP.</p>
             <label className={label}>
               NPWP pembeli
-              <input className={field} value={npwp} onChange={(e) => setNpwp(e.target.value)} placeholder="15 atau 16 digit" />
+              <input
+                className={`${field} font-mono tabular-nums tracking-[0.02em]`}
+                value={npwp}
+                onChange={(e) => setNpwp(e.target.value)}
+                placeholder="15 atau 16 digit"
+                inputMode="numeric"
+              />
             </label>
           </div>
 
@@ -263,9 +313,9 @@ export default function Checkout() {
               <li key={`${i.product_id}-${i.variant_id}`} className="flex justify-between gap-3 text-sm">
                 <div className="min-w-0">
                   <strong className="font-semibold text-ink">{i.name}</strong>
-                  <div className="text-xs text-muted">{i.qty} × {rp(i.price)}</div>
+                  <div className="font-mono text-xs tabular-nums text-muted">{i.qty} × {rp(i.price)}</div>
                 </div>
-                <span className="shrink-0 font-semibold tabular-nums text-ink">{rp(Number(i.price) * i.qty)}</span>
+                <span className="shrink-0 font-mono font-semibold tabular-nums text-ink">{rp(Number(i.price) * i.qty)}</span>
               </li>
             ))}
           </ul>
@@ -310,7 +360,7 @@ export default function Checkout() {
           </div>
 
           <button
-            className={btn('primary', 'xl', 'mt-5 w-full')}
+            className={`${btnOrange} mt-5 h-[52px] w-full text-base`}
             disabled={!canSubmit}
             onClick={(e) => {
               e.preventDefault();

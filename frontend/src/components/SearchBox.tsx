@@ -55,7 +55,7 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <form
       ref={wrapRef}
-      className="relative flex w-full max-w-[560px] items-center"
+      className="relative flex w-full max-w-[640px] items-center"
       role="search"
       onSubmit={(e) => {
         e.preventDefault();
@@ -63,7 +63,7 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
       }}
     >
       <span
-        className="material-symbols-outlined pointer-events-none absolute left-3 z-10 text-xl text-muted"
+        className="material-symbols-outlined pointer-events-none absolute left-4 z-10 !text-[20px] text-muted"
         aria-hidden
       >
         search
@@ -97,7 +97,7 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         aria-label="Cari produk"
-        className="h-11 w-full rounded-pill border border-outline-soft bg-surface-low pl-10 pr-3 text-sm text-ink outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/20 max-[760px]:h-10"
+        className="h-11 w-full min-h-11 rounded-pill border-[1.5px] border-outline bg-surface-low pl-11 pr-4 text-sm text-ink shadow-none outline-none transition-[border-color,background-color] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:shadow-none"
       />
 
       {showList && (

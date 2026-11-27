@@ -8,14 +8,15 @@ import { btnBase, btnPrimary } from './ui/storefront';
 const YEAR = new Date().getFullYear();
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
-  `rounded-field px-3 py-2 text-sm font-semibold no-underline transition-colors duration-150 hover:bg-surface-low hover:text-ink max-[760px]:px-2 ${
-    isActive ? 'bg-secondary-container/55 text-primary' : 'text-ink-2'
+  `inline-flex h-11 items-center rounded-pill px-3.5 text-sm font-semibold no-underline transition-colors duration-150 hover:bg-surface-low hover:text-primary ${
+    isActive ? 'bg-primary/10 text-primary' : 'text-ink-2'
   }`;
 
 const mobileItem = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-col items-center gap-0.5 py-1 text-[11px] font-semibold no-underline ${isActive ? 'text-primary' : 'text-muted'}`;
+  `flex min-h-11 flex-col items-center justify-center gap-0.5 py-1 text-[11px] font-semibold no-underline ${isActive ? 'text-primary' : 'text-muted'}`;
 
-const footerLink = 'text-[13px] text-muted no-underline hover:text-primary';
+const footerLink =
+  'inline-flex min-h-11 items-center text-sm font-semibold text-ink-2 no-underline transition-colors hover:text-primary';
 
 export function Layout() {
   const location = useLocation();
@@ -28,15 +29,15 @@ export function Layout() {
       <div className="truncate bg-primary px-4 py-2 text-center text-[13px] font-semibold text-on-primary print:hidden max-[760px]:py-1.5 max-[760px]:text-xs">
         Harga sudah termasuk PPN <span className="max-[760px]:hidden">· Ongkir bebas PPN · Invoice lengkap di setiap pesanan</span><span className="min-[761px]:hidden">· Ongkir bebas PPN</span>
       </div>
-      <header className="sticky top-0 z-20 border-b border-outline-soft/80 bg-surface/90 shadow-[0_6px_20px_-16px_rgb(15_23_42/0.35)] backdrop-blur-md print:hidden">
-        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-2.5 px-4 py-2.5 min-[761px]:px-6 min-[761px]:py-3 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-5 min-[1101px]:py-0">
+      <header className="sticky top-0 z-20 border-b border-outline-soft bg-surface shadow-[0_1px_3px_0_rgb(0_0_0/0.05)] print:hidden">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 min-[761px]:px-6 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-6 min-[1101px]:py-0">
           <Link
             to="/"
-            className="inline-flex flex-none items-center gap-2.5 font-display text-xl font-bold tracking-tight text-ink no-underline hover:no-underline"
+            className="inline-flex min-h-11 flex-none items-center gap-2.5 font-display text-xl font-bold tracking-tight text-ink no-underline hover:no-underline"
             aria-label="Tokoku — beranda"
           >
             <span
-              className="material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field bg-primary text-xl text-on-primary"
+              className="material-symbols-outlined flex h-10 w-10 flex-none items-center justify-center rounded-field bg-primary text-xl text-on-primary"
               aria-hidden
             >
               storefront
@@ -44,7 +45,7 @@ export function Layout() {
             <span>Tokoku</span>
           </Link>
 
-          <div className="order-3 flex basis-full justify-center min-[1101px]:order-none min-[1101px]:basis-auto min-[1101px]:flex-1 min-[1101px]:px-2">
+          <div className="order-3 flex basis-full justify-center min-[1101px]:order-none min-[1101px]:basis-auto min-[1101px]:flex-1">
             <SearchBox />
           </div>
 
@@ -58,7 +59,7 @@ export function Layout() {
             {user && (
               <NavLink
                 to="/cart"
-                className="inline-flex h-11 items-center gap-2 rounded-field border border-outline bg-surface px-3.5 text-sm font-semibold text-ink no-underline hover:border-primary max-[760px]:px-2.5"
+                className="inline-flex h-11 items-center gap-2 rounded-pill border border-outline bg-surface px-3.5 text-sm font-semibold text-ink no-underline hover:border-primary max-[760px]:px-2.5"
               >
                 <span className="material-symbols-outlined text-xl" aria-hidden>shopping_cart</span>
                 <span className="max-[760px]:hidden">Keranjang</span>
@@ -70,10 +71,10 @@ export function Layout() {
             {user ? (
               <NavLink
                 to="/account"
-                className="inline-flex h-11 items-center gap-2 rounded-pill border border-outline py-0 pl-1.5 pr-3 text-sm font-semibold text-ink no-underline hover:border-primary"
+                className="inline-flex h-11 items-center gap-2 rounded-pill border border-outline py-0 pl-1.5 pr-3.5 text-sm font-semibold text-ink no-underline hover:border-primary"
               >
                 <span
-                  className="flex h-7 w-7 flex-none items-center justify-center rounded-pill bg-secondary-container font-display text-xs font-bold text-on-secondary-container"
+                  className="flex h-8 w-8 flex-none items-center justify-center rounded-pill bg-secondary-container font-display text-xs font-bold text-on-secondary-container"
                   aria-hidden
                 >
                   {user.name.charAt(0).toUpperCase()}
@@ -87,7 +88,7 @@ export function Layout() {
         </div>
       </header>
 
-      <main key={location.pathname} className="animate-fade-up mx-auto w-full max-w-[1280px] flex-1 px-4 pb-12 pt-8 min-[761px]:px-6 max-[760px]:pb-6">
+      <main key={location.pathname} className="animate-fade-up mx-auto w-full max-w-[1280px] flex-1 px-4 pb-12 pt-6 min-[761px]:px-6 min-[761px]:pt-8 max-[760px]:pb-6">
         <Outlet />
       </main>
 
@@ -134,10 +135,13 @@ export function Layout() {
         )}
       </nav>
 
-      <footer className="mt-12 border-t border-outline-soft bg-surface py-6 max-[760px]:pb-20 print:hidden">
-        <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center justify-between gap-3 px-4 min-[761px]:px-6">
-          <span className="text-xs text-muted">© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
-          <nav className="flex flex-wrap gap-5" aria-label="Informasi">
+      <footer className="mt-16 border-t border-outline-soft bg-surface py-8 max-[760px]:pb-20 print:hidden">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 min-[761px]:flex-row min-[761px]:items-center min-[761px]:justify-between min-[761px]:px-6">
+          <div className="flex flex-col gap-1">
+            <span className="font-display text-base font-bold tracking-tight text-ink">Tokoku</span>
+            <span className="text-xs text-muted">© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
+          </div>
+          <nav className="flex flex-wrap gap-x-6 gap-y-1" aria-label="Informasi">
             <Link to="/syarat" className={footerLink}>Syarat & Ketentuan</Link>
             <Link to="/privasi" className={footerLink}>Privasi</Link>
             <Link to="/pengembalian" className={footerLink}>Pengembalian Dana</Link>
