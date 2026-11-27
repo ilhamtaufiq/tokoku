@@ -4,11 +4,14 @@ import type { OrderDetail } from '../../api/types';
 import { formatDate } from '../../lib/money';
 import { useAuth } from '../../auth/AuthContext';
 
-/** Kertas dokumen: selalu putih dan berwarna gelap, termasuk mode gelap, agar aman dicetak. */
+/**
+ * Kertas dokumen: selalu putih dan berwarna gelap, termasuk mode gelap, agar aman dicetak.
+ * Warna identitas tiap dokumen dikirim lewat `accent` (garis atas tebal).
+ */
 export function Paper({ accent, children }: { accent: string; children: ReactNode }) {
   return (
     <article
-      className="mx-auto max-w-[820px] rounded-card bg-white p-6 text-[#1a1b22] shadow-card sm:p-10 print:max-w-none print:rounded-none print:border-0 print:p-0 print:shadow-none"
+      className="mx-auto max-w-[820px] rounded-card border border-outline-soft bg-white p-5 font-body text-[#1a1b22] sm:p-10 print:max-w-none print:rounded-none print:border-0 print:p-0 [print-color-adjust:exact] [-webkit-print-color-adjust:exact]"
       style={{ borderTop: `6px solid ${accent}` }}
     >
       {children}
@@ -52,9 +55,9 @@ export function DocToolbar({ orderId, active }: { orderId: number; active: 'invo
 /** Identitas toko penerbit dokumen (diambil dari pesanan, karena setiap pesanan milik satu toko). */
 export function StoreBlock({ order }: { order: OrderDetail }) {
   return (
-    <div className="text-sm">
-      <strong className="font-display text-base">{order.store_name || 'Nama toko belum diatur'}</strong>
-      {order.store_npwp && <p className="m-0">NPWP: {formatNpwp(order.store_npwp)}</p>}
+    <div className="text-sm text-[#1a1b22]">
+      <strong className="font-display text-base font-bold">{order.store_name || 'Nama toko belum diatur'}</strong>
+      {order.store_npwp && <p className="m-0 font-mono text-xs">NPWP: {formatNpwp(order.store_npwp)}</p>}
       {order.store_address && <p className="m-0 whitespace-pre-line">{order.store_address}</p>}
       {order.store_phone && <p className="m-0">Telp: {order.store_phone}</p>}
     </div>
@@ -71,15 +74,44 @@ export function docDate(iso: string) {
   return formatDate(iso);
 }
 
-/** Kolom tanda tangan dengan garis dan nama. */
-export function SignatureBox({ title, name, dateLabel }: { title: string; name: string; dateLabel?: string }) {
+/** Warna identitas per dokumen untuk garis tanda tangan dan judul blok. */
+export const DOC_TONE = {
+  navy: { line: 'border-[#00288e]', text: 'text-[#00288e]' },
+  orange: { line: 'border-[#ea580c]', text: 'text-[#c2410c]' },
+  slate: { line: 'border-[#334155]', text: 'text-[#334155]' },
+  green: { line: 'border-[#15803d]', text: 'text-[#15803d]' },
+} as const;
+
+export type DocTone = keyof typeof DOC_TONE;
+
+/** Kolom tanda tangan: judul berwarna dokumen, ruang tanda tangan, garis, lalu nama. */
+export function SignatureBox({
+  title,
+  name,
+  dateLabel,
+  tone = 'slate',
+  signature,
+}: {
+  title: string;
+  name: string;
+  dateLabel?: string;
+  tone?: DocTone;
+  signature?: ReactNode;
+}) {
+  const t = DOC_TONE[tone];
   return (
-    <div className="flex flex-col gap-1 text-center text-sm">
-      <p className="m-0 font-semibold">{title}</p>
-      <div className="mt-16 border-t border-[#1a1b22] pt-1">
-        <p className="m-0 font-semibold">{name}</p>
+    <div className="flex flex-col gap-1 text-center text-sm text-[#1a1b22]">
+      <p className={`m-0 font-display text-xs font-bold uppercase tracking-wider ${t.text}`}>{title}</p>
+      <div className="flex h-16 items-end justify-center">{signature}</div>
+      <div className={`border-t-2 pt-1.5 ${t.line}`}>
+        <p className="m-0 font-display font-bold">{name}</p>
       </div>
-      {dateLabel && <p className="m-0 text-xs text-[#5b5e6e]">{dateLabel}</p>}
+      {dateLabel && <p className="m-0 font-mono text-xs text-[#5b5e6e]">{dateLabel}</p>}
     </div>
   );
+}
+
+/** Label kecil di atas nilai, dipakai pada kartu item versi mobile. */
+export function MiniLabel({ children }: { children: ReactNode }) {
+  return <span className="block text-[11px] font-bold uppercase tracking-wider text-[#5b5e6e]">{children}</span>;
 }

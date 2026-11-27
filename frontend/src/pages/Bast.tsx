@@ -5,11 +5,11 @@ import { api } from '../api';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { SignaturePad } from '../components/SignaturePad';
-import { DocToolbar, Paper, SignatureBox, docDate } from '../components/docs/shared';
+import { DocToolbar, MiniLabel, Paper, SignatureBox, docDate } from '../components/docs/shared';
 import { formatDate } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
-/** Berita acara serah terima. Pembeli mencatat dan menandatangani; penjual menanggapi kerusakan. */
+/** Berita acara serah terima. Pembeli mencatat dan menandatangani; penjual menanggapi kerusakan. Identitas warna: hijau. */
 export default function Bast() {
   useSeo({ title: 'BAST', noindex: true });
   const { id } = useParams();
@@ -69,14 +69,14 @@ export default function Bast() {
     <section>
       <DocToolbar orderId={o.id} active="bast" />
       <Paper accent="#15803d">
-        <header className="text-center">
-          <p className="m-0 text-xs font-bold uppercase tracking-[0.25em] text-[#15803d]">Berita Acara</p>
-          <h1 className="mt-1 font-display text-[28px] font-bold tracking-tight">Serah Terima Barang</h1>
-          <p className="m-0 font-mono text-sm">{o.invoice_no}</p>
+        <header className="border-b border-[#bbf7d0] pb-6 text-center">
+          <p className="m-0 font-display text-xs font-bold uppercase tracking-[0.25em] text-[#15803d]">Berita Acara</p>
+          <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight text-[#1a1b22] sm:text-[28px]">Serah Terima Barang</h1>
+          <p className="m-0 font-mono text-sm font-semibold">{o.invoice_no}</p>
         </header>
 
         {!doc && !shipped && (
-          <p className="mt-8 rounded-md bg-[#f0fdf4] p-4 text-sm text-[#14532d]">BAST bisa dibuat setelah penjual mengirim pesanan.</p>
+          <p className="mt-8 rounded-field bg-[#f0fdf4] p-4 text-sm text-[#14532d]">BAST bisa dibuat setelah penjual mengirim pesanan.</p>
         )}
 
         {doc ? (
@@ -85,33 +85,56 @@ export default function Bast() {
               Pada tanggal <strong>{docDate(doc.created_at)}</strong>, pihak penerima <strong>{doc.received_by}</strong> menyatakan telah
               menerima barang dari penjual <strong>{o.store_name || '-'}</strong> dengan rincian sebagai berikut:
             </p>
-            <table className="mt-5 w-full border-collapse text-sm">
+            <table className="mt-5 hidden w-full border-collapse text-sm sm:table print:table">
               <thead>
-                <tr className="border-b-2 border-[#15803d] text-left text-[11px] uppercase tracking-wider text-[#5b5e6e]">
-                  <th className="py-2 pr-2">No</th>
-                  <th className="py-2 pr-2">Barang</th>
-                  <th className="py-2 pr-2 text-right">Dipesan</th>
-                  <th className="py-2 pr-2 text-right">Diterima baik</th>
-                  <th className="py-2 text-right">Rusak</th>
+                <tr className="text-left text-[11px] font-bold uppercase tracking-wider [&_th]:bg-[#15803d] [&_th]:text-white">
+                  <th className="px-2 py-2.5 font-bold">No</th>
+                  <th className="px-2 py-2.5 font-bold">Barang</th>
+                  <th className="px-2 py-2.5 text-right font-bold">Dipesan</th>
+                  <th className="px-2 py-2.5 text-right font-bold">Diterima baik</th>
+                  <th className="px-2 py-2.5 text-right font-bold">Rusak</th>
                 </tr>
               </thead>
               <tbody>
                 {doc.items.map((i, idx) => (
-                  <tr key={i.order_item_id} className={`border-b border-[#e4e3ee] ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
-                    <td className="py-2.5 pr-2">{idx + 1}</td>
-                    <td className="py-2.5 pr-2">{i.product_name}</td>
-                    <td className="py-2.5 pr-2 text-right tabular-nums">{i.qty}</td>
-                    <td className="py-2.5 pr-2 text-right tabular-nums">{i.qty_good}</td>
-                    <td className="py-2.5 text-right tabular-nums font-semibold">{i.qty_damaged}</td>
+                  <tr key={i.order_item_id} className={`border-b border-[#dcfce7] print:break-inside-avoid ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
+                    <td className="px-2 py-2.5 font-mono">{idx + 1}</td>
+                    <td className="px-2 py-2.5">{i.product_name}</td>
+                    <td className="px-2 py-2.5 text-right font-mono tabular-nums">{i.qty}</td>
+                    <td className="px-2 py-2.5 text-right font-mono tabular-nums">{i.qty_good}</td>
+                    <td className="px-2 py-2.5 text-right font-mono font-bold tabular-nums">{i.qty_damaged}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <ul className="m-0 mt-5 flex list-none flex-col gap-2.5 p-0 sm:hidden print:hidden">
+              {doc.items.map((i, idx) => (
+                <li key={i.order_item_id} className={`rounded-field border border-[#dcfce7] p-3 text-sm ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
+                  <p className="m-0 font-semibold">
+                    <span className="font-mono text-xs text-[#5b5e6e]">{idx + 1}.</span> {i.product_name}
+                  </p>
+                  <dl className="m-0 mt-2 grid grid-cols-3 gap-2 text-right">
+                    <div>
+                      <dt><MiniLabel>Dipesan</MiniLabel></dt>
+                      <dd className="m-0 font-mono tabular-nums">{i.qty}</dd>
+                    </div>
+                    <div>
+                      <dt><MiniLabel>Diterima baik</MiniLabel></dt>
+                      <dd className="m-0 font-mono tabular-nums">{i.qty_good}</dd>
+                    </div>
+                    <div>
+                      <dt><MiniLabel>Rusak</MiniLabel></dt>
+                      <dd className="m-0 font-mono font-bold tabular-nums">{i.qty_damaged}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
             {doc.note && <p className="mt-4 text-sm"><span className="font-semibold">Catatan penerima:</span> {doc.note}</p>}
             <p className="mt-5 text-sm">Penerima menyatakan transaksi serah terima ini sah sesuai rincian di atas.</p>
 
             {damaged && (
-              <div className="mt-6 rounded-md border border-[#fecaca] bg-[#fef2f2] p-4 text-sm">
+              <div className="mt-6 rounded-field border border-[#fecaca] bg-[#fef2f2] p-4 text-sm">
                 <p className="m-0 mb-1 font-semibold text-[#991b1b]">Tindak lanjut penjual atas barang rusak</p>
                 {doc.seller_note ? (
                   <p className="m-0">
@@ -140,20 +163,19 @@ export default function Bast() {
               </div>
             )}
 
-            <div className="mt-12 grid gap-8 sm:grid-cols-2">
-              <SignatureBox title="Pihak penjual" name={o.store_name || 'Penjual'} />
-              <div className="flex flex-col gap-1 text-center text-sm">
-                <p className="m-0 font-semibold">Pihak penerima</p>
-                {doc.signature_png ? (
-                  <img src={doc.signature_png} alt={`Tanda tangan ${doc.received_by}`} className="mx-auto h-16 object-contain" />
-                ) : (
-                  <div className="h-16" />
-                )}
-                <div className="border-t border-[#1a1b22] pt-1">
-                  <p className="m-0 font-semibold">{doc.received_by}</p>
-                </div>
-                <p className="m-0 text-xs text-[#5b5e6e]">{docDate(doc.created_at)}</p>
-              </div>
+            <div className="mt-12 grid gap-8 sm:grid-cols-2 print:break-inside-avoid">
+              <SignatureBox title="Pihak penjual" name={o.store_name || 'Penjual'} tone="green" />
+              <SignatureBox
+                title="Pihak penerima"
+                name={doc.received_by}
+                dateLabel={docDate(doc.created_at)}
+                tone="green"
+                signature={
+                  doc.signature_png ? (
+                    <img src={doc.signature_png} alt={`Tanda tangan ${doc.received_by}`} className="mx-auto h-16 max-w-full object-contain" />
+                  ) : null
+                }
+              />
             </div>
           </>
         ) : shipped && isBuyer ? (
@@ -175,7 +197,7 @@ export default function Bast() {
               {o.items.map((i) => (
                 <div key={i.id} className="flex flex-wrap items-center justify-between gap-3 rounded-field border border-outline-soft p-3 text-sm">
                   <span className="font-semibold">{i.product_name} <span className="font-normal text-muted">· dipesan {i.qty}</span></span>
-                  <label className="flex items-center gap-2">
+                  <label className="!flex !flex-row items-center gap-2">
                     Diterima baik
                     <input type="number" min={0} max={i.qty} className="w-20 rounded-field border border-outline bg-surface px-2 py-1.5 text-ink"
                       value={good[i.id] ?? i.qty} onChange={(e) => setGood({ ...good, [i.id]: Math.min(i.qty, Math.max(0, Number(e.target.value))) })} />

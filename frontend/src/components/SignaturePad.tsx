@@ -20,7 +20,7 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) 
         ref={canvasRef}
         width={600}
         height={200}
-        className="h-40 w-full touch-none rounded-field border border-dashed border-outline bg-white"
+        className="block h-40 w-full touch-none rounded-field border border-dashed border-[#00288e]/40 bg-white"
         aria-label="Area tanda tangan"
         onPointerDown={(e) => {
           const ctx = canvasRef.current?.getContext('2d');
@@ -49,11 +49,11 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) 
           onChange(canvasRef.current?.toDataURL('image/png') ?? null);
         }}
       />
-      <div className="flex items-center justify-between text-xs text-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
         <span>{dirty ? 'Tanda tangan tersimpan di formulir.' : 'Tanda tangan dengan mouse atau jari.'}</span>
         <button
           type="button"
-          className="font-semibold text-primary hover:underline"
+          className="h-8 rounded-pill border border-outline px-3 font-semibold text-primary hover:bg-primary/5"
           onClick={() => {
             const canvas = canvasRef.current;
             canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
