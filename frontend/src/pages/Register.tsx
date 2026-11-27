@@ -18,10 +18,13 @@ export default function Register() {
   const next = params.get('next') || '/';
 
   return (
-    <section className="mx-auto max-w-[440px] py-2 md:py-6">
-      <h1 className={pageTitle}>Daftar</h1>
+    <section className="mx-auto flex max-w-[440px] flex-col items-stretch py-4 md:py-10">
+      <div className="mb-6 flex flex-col items-center text-center">
+        <span className="material-symbols-outlined mb-3 grid size-14 place-items-center rounded-pill bg-primary-container text-[28px] text-on-primary" aria-hidden>storefront</span>
+        <h1 className={`${pageTitle} !mb-0 text-center`}>Daftar</h1>
+      </div>
       <form
-        className={`${card} mt-4 flex flex-col gap-4 p-5 md:p-6`}
+        className={`${card} flex flex-col gap-4 p-5 shadow-card md:p-8`}
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
