@@ -30,6 +30,7 @@ export interface Product {
   category_id: number;
   sku: string;
   name: string;
+  weight_grams: number;
   description: string | null;
   price: Money;
   ppn_included: Money;
@@ -99,6 +100,10 @@ export interface OrderView {
   store_npwp: string | null;
   store_address: string | null;
   store_phone: string | null;
+  courier: string | null;
+  courier_service: string | null;
+  shipping_etd: string | null;
+  destination_label: string | null;
   status: OrderStatus;
   payment_status: PaymentStatus;
   subtotal: Money;
@@ -145,6 +150,34 @@ export interface CheckoutResponse {
   orders: CheckoutOrder[];
 }
 
+export interface ShippingDestination {
+  id: number;
+  label: string;
+}
+
+export interface ShippingOption {
+  code: string;
+  name: string;
+  service: string;
+  description: string;
+  cost: Money;
+  etd: string;
+}
+
+export interface StoreShippingOptions {
+  store_id: number;
+  store_name: string;
+  weight_grams: number;
+  options: ShippingOption[];
+}
+
+/** Pilihan kurir yang dikirim pembeli untuk satu toko. */
+export interface ShippingChoice {
+  store_id: number;
+  code: string;
+  service: string;
+}
+
 export interface PublicStore {
   slug: string;
   name: string;
@@ -184,6 +217,8 @@ export interface StoreInfo {
   npwp: string;
   address: string;
   phone: string;
+  origin_location_id?: number | null;
+  origin_label?: string | null;
 }
 
 export interface AdminDashboard {

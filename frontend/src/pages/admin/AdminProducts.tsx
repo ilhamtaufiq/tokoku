@@ -35,7 +35,7 @@ import {
   TABLE_STACK,
 } from './adminUi';
 
-const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0 };
+const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0, weight_grams: 1000 };
 
 const FORM_TITLE = 'm-0 text-lg font-semibold text-ink';
 const SECTION_RULE = 'mt-2 flex flex-col gap-3 border-t border-outline-soft pt-5';
@@ -167,6 +167,7 @@ function toInput(p: Product): ProductInput {
     price: String(Number(p.price)),
     is_taxable: p.is_taxable,
     stock: p.stock,
+    weight_grams: p.weight_grams,
   };
 }
 
@@ -252,6 +253,10 @@ function ProductForm({
         <label className={LABEL}>
           Stok
           <input className={INPUT} type="number" min={0} value={form.stock ?? 0} onChange={(e) => set('stock', Number(e.target.value))} />
+        </label>
+        <label className={LABEL}>
+          <span>Berat <span className={HINT}>(gram, untuk ongkir)</span></span>
+          <input className={INPUT} type="number" min={1} max={100000} value={form.weight_grams ?? 1000} onChange={(e) => set('weight_grams', Number(e.target.value))} />
         </label>
       </div>
       <label className={LABEL_CHECK}>

@@ -24,6 +24,7 @@ pub fn router(state: AppState) -> Router {
         .nest("/cart", cart::router())
         .nest("/orders", orders::customer_router())
         .nest("/pricing", pricing::handler::router())
+        .nest("/shipping", crate::shipping::router())
         .nest("/webhooks", payments::router())
         .nest(
             "/admin",

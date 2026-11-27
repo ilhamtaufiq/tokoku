@@ -12,8 +12,10 @@ use crate::{
 /// Keranjang untuk satu toko.
 pub struct StoreGroup {
     pub store_id: u64,
-    /// Ongkir flat toko ini (tidak kena PPN).
+    /// Ongkir toko ini (tidak kena PPN): flat atau hasil cek ongkir.
     pub shipping: Decimal,
+    /// Total berat barang toko ini, gram.
+    pub weight_grams: u32,
     pub lines: Vec<PricingLine>,
 }
 

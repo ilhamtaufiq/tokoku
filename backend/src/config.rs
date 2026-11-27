@@ -12,6 +12,9 @@ pub struct Config {
     pub midtrans_snap_base: String,
     pub midtrans_api_base: String,
     pub upload_dir: String,
+    /// Kunci API RajaOngkir. Kosong = ongkir flat per toko (tanpa cek ongkir).
+    pub rajaongkir_api_key: Option<String>,
+    pub rajaongkir_base: String,
 }
 
 impl Config {
@@ -24,6 +27,8 @@ impl Config {
         let cors_origin = std::env::var("CORS_ORIGIN").unwrap_or_else(|_| "http://localhost:5173".into());
         Ok(Self {
             database_url: std::env::var("DATABASE_URL").context("DATABASE_URL belum diset")?,
+            rajaongkir_api_key: std::env::var("RAJAONGKIR_API_KEY").ok().filter(|k| !k.trim().is_empty()),
+            rajaongkir_base: std::env::var("RAJAONGKIR_BASE").unwrap_or_else(|_| "https://rajaongkir.komerce.id/api/v1".into()),
             bind_addr: std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".into()),
             frontend_url: std::env::var("FRONTEND_URL").unwrap_or_else(|_| cors_origin.clone()),
             cors_origin,

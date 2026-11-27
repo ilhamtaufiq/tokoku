@@ -94,6 +94,7 @@ struct ProductRow {
     variant_count: i64,
     min_variant_price: Option<Decimal>,
     variant_stock: Option<Decimal>,
+    weight_grams: u32,
     store_id: u64,
     store_name: Option<String>,
     store_slug: Option<String>,
@@ -126,6 +127,7 @@ pub struct ProductView {
     pub store_id: u64,
     pub store_name: Option<String>,
     pub store_slug: Option<String>,
+    pub weight_grams: u32,
 }
 
 fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
@@ -152,6 +154,7 @@ fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
         store_id: row.store_id,
         store_name: row.store_name,
         store_slug: row.store_slug,
+        weight_grams: row.weight_grams,
     }
 }
 
@@ -159,6 +162,7 @@ const PRODUCT_COLUMNS: &str = "id, category_id, sku, name, description, price, i
     (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_count,
     (SELECT MIN(v.price) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS min_variant_price,
     (SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_stock,
+    weight_grams,
     store_id,
     (SELECT name FROM stores WHERE stores.id = products.store_id) AS store_name,
     (SELECT slug FROM stores WHERE stores.id = products.store_id) AS store_slug,
@@ -260,11 +264,23 @@ pub struct ProductReq {
     pub price: Decimal,
     pub is_taxable: Option<bool>,
     pub stock: Option<u32>,
+    /// Berat untuk cek ongkir, dalam gram (1–100000). Default 1000.
+    pub weight_grams: Option<u32>,
+}
+
+/// Berat produk dalam gram. Default 1000 gram bila tidak diisi.
+fn weight_of(req: &ProductReq) -> u32 {
+    req.weight_grams.unwrap_or(1000)
 }
 
 fn validate_product(req: &ProductReq) -> AppResult<()> {
     if req.sku.trim().is_empty() || req.name.trim().is_empty() {
         return Err(AppError::BadRequest("sku dan name wajib diisi".into()));
+    }
+    if let Some(w) = req.weight_grams {
+        if !(1..=100_000).contains(&w) {
+            return Err(AppError::BadRequest("berat produk harus 1–100000 gram".into()));
+        }
     }
     if req.price <= Decimal::ZERO {
         return Err(AppError::BadRequest("harga harus lebih dari 0".into()));
@@ -335,8 +351,8 @@ async fn create_product(
     validate_product(&req)?;
     let ppn = settings::ppn_percent(&state.pool).await?;
     let done = sqlx::query(
-        "INSERT INTO products (store_id, category_id, sku, name, description, price, tax_rate, is_taxable, stock)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (store_id, category_id, sku, name, description, price, tax_rate, is_taxable, stock, weight_grams)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(scope.create_store_id())
     .bind(req.category_id)
@@ -347,6 +363,7 @@ async fn create_product(
     .bind(ppn)
     .bind(req.is_taxable.unwrap_or(true))
     .bind(req.stock.unwrap_or(0))
+    .bind(weight_of(&req))
     .execute(&state.pool)
     .await
     .map_err(map_unique("SKU sudah dipakai"))?;
@@ -366,7 +383,7 @@ async fn update_product(
     let ppn = settings::ppn_percent(&state.pool).await?;
     sqlx::query(
         "UPDATE products SET category_id = ?, sku = ?, name = ?, description = ?, price = ?,
-                             is_taxable = ?, stock = ?
+                             is_taxable = ?, stock = ?, weight_grams = ?
          WHERE id = ?",
     )
     .bind(req.category_id)
@@ -376,6 +393,7 @@ async fn update_product(
     .bind(req.price)
     .bind(req.is_taxable.unwrap_or(true))
     .bind(req.stock.unwrap_or(0))
+    .bind(weight_of(&req))
     .bind(id)
     .execute(&state.pool)
     .await

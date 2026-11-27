@@ -13,6 +13,7 @@ mod reviews;
 mod promo;
 mod routes;
 mod settings;
+mod shipping;
 mod stores;
 mod tenant;
 mod state;
@@ -57,9 +58,17 @@ async fn main() -> Result<()> {
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
         .allow_credentials(true);
 
-    let http = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()?;
+    // CA tambahan (opsional), mis. untuk proxy jaringan yang melakukan inspeksi TLS.
+    // Verifikasi TLS tetap aktif; file ini hanya menambah otoritas yang dipercaya.
+    let mut http_builder = reqwest::Client::builder().timeout(std::time::Duration::from_secs(30));
+    if let Ok(path) = std::env::var("EXTRA_CA_CERT") {
+        let pem = std::fs::read(&path).map_err(|e| anyhow::anyhow!("EXTRA_CA_CERT {path}: {e}"))?;
+        for cert in reqwest::Certificate::from_pem_bundle(&pem)? {
+            http_builder = http_builder.add_root_certificate(cert);
+        }
+        tracing::info!(path = %path, "CA tambahan dimuat untuk permintaan keluar");
+    }
+    let http = http_builder.build()?;
     let state = AppState { pool, cfg: Arc::new(cfg.clone()), http };
     payments::spawn_jobs(state.clone());
     let app = routes::router(state).layer(cors).layer(TraceLayer::new_for_http());

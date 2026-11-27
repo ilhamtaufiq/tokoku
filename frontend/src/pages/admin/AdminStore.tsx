@@ -5,12 +5,14 @@ import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 import type { StoreInfo } from '../../api/types';
 import { FORM_CARD, HINT, INPUT, LABEL, Notice, btn } from './adminUi';
+import { DestinationSearch } from '../../components/DestinationSearch';
+import type { ShippingDestination } from '../../api/types';
 
 export default function AdminStore() {
   const queryClient = useQueryClient();
   const store = useQuery({ queryKey: ['admin-store'], queryFn: api.adminStore });
   // Draft hanya terisi saat pengguna mengetik; sebelum itu nilai diambil langsung dari server.
-  const base: StoreInfo = store.data ?? { name: '', npwp: '', address: '', phone: '' };
+  const base: StoreInfo = store.data ?? { name: '', npwp: '', address: '', phone: '', origin_location_id: null, origin_label: null };
   const [draft, setDraft] = useState<StoreInfo | null>(null);
   const form = draft ?? base;
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -55,6 +57,16 @@ export default function AdminStore() {
         <label className={LABEL}>
           Telepon
           <input className={INPUT} value={form.phone} onChange={(e) => set('phone', e.target.value)} />
+        </label>
+        <label className={LABEL}>
+          <span>Lokasi asal pengiriman <span className={HINT}>(untuk cek ongkir)</span></span>
+          <DestinationSearch
+            id="origin-search"
+            value={form.origin_location_id && form.origin_label ? { id: form.origin_location_id, label: form.origin_label } : null}
+            onChange={(dest: ShippingDestination | null) =>
+              setDraft({ ...form, origin_location_id: dest?.id ?? null, origin_label: dest?.label ?? null })
+            }
+          />
         </label>
         {message && <Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice>}
         <button type="submit" className={btn('primary', 'md', 'w-full')} disabled={save.isPending}>

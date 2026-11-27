@@ -32,17 +32,31 @@ pub struct StoreInfo {
     pub npwp: String,
     pub address: String,
     pub phone: String,
+    /// Lokasi asal pengiriman (id RajaOngkir) untuk cek ongkir.
+    #[serde(default)]
+    pub origin_location_id: Option<u64>,
+    #[serde(default)]
+    pub origin_label: Option<String>,
 }
 
 /// Data toko default (dipakai sebagai cadangan bila toko tidak ditemukan).
 pub async fn read_store(pool: &MySqlPool, store_id: u64) -> AppResult<StoreInfo> {
-    let row: Option<(String, String, Option<String>, String)> =
-        sqlx::query_as("SELECT name, npwp, address, phone FROM stores WHERE id = ?")
-            .bind(store_id)
-            .fetch_optional(pool)
-            .await?;
-    let (name, npwp, address, phone) = row.ok_or_else(|| AppError::NotFound(format!("toko {store_id}")))?;
-    Ok(StoreInfo { name, npwp, address: address.unwrap_or_default(), phone })
+    let row: Option<(String, String, Option<String>, String, Option<u64>, Option<String>)> = sqlx::query_as(
+        "SELECT name, npwp, address, phone, origin_location_id, origin_label FROM stores WHERE id = ?",
+    )
+    .bind(store_id)
+    .fetch_optional(pool)
+    .await?;
+    let (name, npwp, address, phone, origin_location_id, origin_label) =
+        row.ok_or_else(|| AppError::NotFound(format!("toko {store_id}")))?;
+    Ok(StoreInfo {
+        name,
+        npwp,
+        address: address.unwrap_or_default(),
+        phone,
+        origin_location_id,
+        origin_label,
+    })
 }
 
 /// Data toko untuk admin/penjual: toko sesuai lingkup (admin platform: toko default).
@@ -69,11 +83,19 @@ pub async fn admin_update_store(
         return Err(AppError::BadRequest("nama toko wajib diisi (maks 120 karakter)".into()));
     }
     let store = scope.store_id.unwrap_or(DEFAULT_STORE_ID);
-    sqlx::query("UPDATE stores SET name = ?, npwp = ?, address = ?, phone = ? WHERE id = ?")
+    let origin_label = req.origin_label.as_deref().map(str::trim).filter(|l| !l.is_empty()).map(str::to_string);
+    if origin_label.as_deref().map(|l| l.chars().count() > 255).unwrap_or(false) {
+        return Err(AppError::BadRequest("label lokasi asal terlalu panjang".into()));
+    }
+    sqlx::query(
+        "UPDATE stores SET name = ?, npwp = ?, address = ?, phone = ?, origin_location_id = ?, origin_label = ? WHERE id = ?",
+    )
         .bind(name)
         .bind(npwp)
         .bind(req.address.trim())
         .bind(req.phone.trim())
+        .bind(req.origin_location_id)
+        .bind(origin_label)
         .bind(store)
         .execute(&state.pool)
         .await?;

@@ -1,5 +1,8 @@
 import { downloadFile, request } from './client';
 import type {
+  ShippingChoice,
+  ShippingDestination,
+  StoreShippingOptions,
   AdminStore,
   PublicStore,
   SellerStore,
@@ -64,11 +67,35 @@ export const api = {
   setAllCartSelected: (selected: boolean) => request<void>('/cart/select-all', { method: 'PUT', body: { selected } }),
 
   // Pratinjau harga
-  preview: (items: { product_id: number; variant_id: number; qty: number }[], promo_code?: string) =>
-    request<Breakdown>('/pricing/preview', { method: 'POST', body: { items, promo_code: promo_code || null } }),
+  preview: (
+    items: { product_id: number; variant_id: number; qty: number }[],
+    promo_code?: string,
+    shipping?: { destination_id: number; choices: ShippingChoice[] },
+  ) =>
+    request<Breakdown>('/pricing/preview', {
+      method: 'POST',
+      body: {
+        items,
+        promo_code: promo_code || null,
+        destination_id: shipping?.destination_id ?? null,
+        shipping: shipping?.choices ?? [],
+      },
+    }),
+  shippingStatus: () => request<{ enabled: boolean }>('/shipping/status'),
+  shippingSearch: (q: string) => request<ShippingDestination[]>(`/shipping/destinations?q=${encodeURIComponent(q)}`),
+  shippingOptions: (destination_id: number) =>
+    request<StoreShippingOptions[]>('/shipping/options', { method: 'POST', body: { destination_id } }),
 
   // Pesanan
-  checkout: (body: { shipping_address: string; promo_code?: string; buyer_npwp?: string; payment_method?: string }) =>
+  checkout: (body: {
+    shipping_address: string;
+    promo_code?: string;
+    buyer_npwp?: string;
+    payment_method?: string;
+    destination_id?: number;
+    destination_label?: string;
+    shipping?: ShippingChoice[];
+  }) =>
     request<CheckoutResponse>('/orders', { method: 'POST', body }),
   orders: () => request<OrderView[]>('/orders'),
   order: (id: number) => request<OrderDetail>(`/orders/${id}`),
@@ -159,6 +186,7 @@ export interface ProductInput {
   price: string;
   is_taxable?: boolean;
   stock?: number;
+  weight_grams?: number;
 }
 
 export interface PromoInput {

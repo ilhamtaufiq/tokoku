@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{AssertSqlSafe, FromRow, MySql, MySqlPool, QueryBuilder, Transaction};
 
 use self::plan::{plan, StoreGroup};
+use crate::shipping::{quote_for_store, Choice, Quote};
 use crate::{
     audit,
     auth::AuthUser,
@@ -45,6 +46,7 @@ const ORDER_COLS: &str = "id, user_id, invoice_no, CAST(status AS CHAR) AS statu
     CAST(payment_status AS CHAR) AS payment_status, subtotal, discount_total, dpp, ppn_rate,
     ppn_total, shipping_fee, grand_total, shipping_address, buyer_npwp, promo_code,
     payment_url, created_at, tracking_number, refund_note, estimated_days, store_id,
+    destination_label, courier, courier_service, shipping_etd,
     (SELECT name FROM stores WHERE stores.id = orders.store_id) AS store_name,
     (SELECT npwp FROM stores WHERE stores.id = orders.store_id) AS store_npwp,
     (SELECT address FROM stores WHERE stores.id = orders.store_id) AS store_address,
@@ -81,6 +83,10 @@ pub struct OrderRow {
     pub store_npwp: Option<String>,
     pub store_address: Option<String>,
     pub store_phone: Option<String>,
+    pub destination_label: Option<String>,
+    pub courier: Option<String>,
+    pub courier_service: Option<String>,
+    pub shipping_etd: Option<String>,
     pub buyer_name: Option<String>,
     pub seconds_left: i64,
 }
@@ -134,6 +140,10 @@ pub struct OrderView {
     pub store_npwp: Option<String>,
     pub store_address: Option<String>,
     pub store_phone: Option<String>,
+    pub destination_label: Option<String>,
+    pub courier: Option<String>,
+    pub courier_service: Option<String>,
+    pub shipping_etd: Option<String>,
     pub buyer_name: Option<String>,
 }
 
@@ -185,6 +195,10 @@ fn to_view(o: OrderRow) -> OrderView {
         store_npwp: o.store_npwp,
         store_address: o.store_address,
         store_phone: o.store_phone,
+        destination_label: o.destination_label,
+        courier: o.courier,
+        courier_service: o.courier_service,
+        shipping_etd: o.shipping_etd,
         buyer_name: o.buyer_name,
     }
 }
@@ -264,6 +278,8 @@ struct CartLine {
     store_status: String,
     invoice_prefix: String,
     shipping_fee: Decimal,
+    weight_grams: u32,
+    origin_location_id: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -273,6 +289,14 @@ pub struct CheckoutReq {
     pub buyer_npwp: Option<String>,
     /// all | bank_transfer | qris | ewallet
     pub payment_method: Option<String>,
+    /// Tujuan pengiriman (id RajaOngkir) dan labelnya untuk ditampilkan di pesanan.
+    #[serde(default)]
+    pub destination_id: Option<u64>,
+    #[serde(default)]
+    pub destination_label: Option<String>,
+    /// Pilihan kurir per toko.
+    #[serde(default)]
+    pub shipping: Vec<Choice>,
 }
 
 fn sanitize_npwp(raw: &str) -> AppResult<Option<String>> {
@@ -317,7 +341,9 @@ async fn checkout(
             st.name AS store_name,
             st.status AS store_status,
             st.invoice_prefix,
-            st.shipping_flat_fee AS shipping_fee
+            st.shipping_flat_fee AS shipping_fee,
+            p.weight_grams,
+            st.origin_location_id
          FROM cart_items c
          JOIN products p ON p.id = c.product_id
          JOIN stores st ON st.id = p.store_id
@@ -357,16 +383,43 @@ async fn checkout(
             qty: c.qty,
             is_taxable: c.is_taxable,
         };
+        let added_weight = c.weight_grams.saturating_mul(c.qty);
         match groups.iter().position(|g| g.store_id == c.store_id) {
             Some(i) => {
                 groups[i].lines.push(line);
+                groups[i].weight_grams = groups[i].weight_grams.saturating_add(added_weight);
                 group_cart[i].push(idx);
             }
             None => {
-                groups.push(StoreGroup { store_id: c.store_id, shipping: c.shipping_fee, lines: vec![line] });
+                groups.push(StoreGroup {
+                    store_id: c.store_id,
+                    shipping: c.shipping_fee,
+                    weight_grams: added_weight,
+                    lines: vec![line],
+                });
                 group_cart.push(vec![idx]);
             }
         }
+    }
+
+    // Ongkir per toko: hasil cek ongkir (jika aktif) atau ongkir flat. Dihitung ulang di server.
+    let mut quotes: Vec<Option<Quote>> = Vec::with_capacity(groups.len());
+    for (i, group) in groups.iter_mut().enumerate() {
+        let cart_line = &cart[group_cart[i][0]];
+        let choice = req.shipping.iter().find(|c| c.store_id == group.store_id);
+        let quote = quote_for_store(
+            &state,
+            &cart_line.store_name,
+            cart_line.origin_location_id,
+            req.destination_id,
+            group.weight_grams,
+            choice,
+        )
+        .await?;
+        if let Some(q) = &quote {
+            group.shipping = q.option.cost;
+        }
+        quotes.push(quote);
     }
 
     // Promo: kode dicocokkan ke toko-toko di keranjang. Setiap promo yang dipakai dikunci dan dihitung kuotanya.
@@ -423,6 +476,20 @@ async fn checkout(
         .execute(&mut *tx)
         .await?;
         let order_id = done.last_insert_id();
+        if let Some(quote) = &quotes[pi] {
+            sqlx::query(
+                "UPDATE orders SET destination_id = ?, destination_label = ?, courier = ?, courier_service = ?, shipping_etd = ?
+                 WHERE id = ?",
+            )
+            .bind(req.destination_id)
+            .bind(req.destination_label.as_deref().map(|l| l.chars().take(255).collect::<String>()))
+            .bind(&quote.option.code)
+            .bind(&quote.option.service)
+            .bind(&quote.option.etd)
+            .bind(order_id)
+            .execute(&mut *tx)
+            .await?;
+        }
 
         // Urutan baris breakdown sama dengan urutan baris keranjang toko ini
         for (line, &cart_idx) in breakdown.lines.iter().zip(group_cart[pi].iter()) {
