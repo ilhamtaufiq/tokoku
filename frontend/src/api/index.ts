@@ -100,8 +100,12 @@ export const api = {
     request<CheckoutResponse>('/orders', { method: 'POST', body }),
   orders: () => request<OrderView[]>('/orders'),
   bast: (orderId: number) => request<Bast | null>(`/orders/${orderId}/bast`),
-  createBast: (orderId: number, body: { received_by: string; note: string; items: { order_item_id: number; qty_good: number; qty_damaged: number }[] }) =>
-    request<Bast>(`/orders/${orderId}/bast`, { method: 'POST', body }),
+  createBast: (
+    orderId: number,
+    body: { received_by: string; note: string; signature_png: string; items: { order_item_id: number; qty_good: number; qty_damaged: number }[] },
+  ) => request<Bast>(`/orders/${orderId}/bast`, { method: 'POST', body }),
+  sellerBastResponse: (orderId: number, note: string) =>
+    request<Bast>(`/orders/${orderId}/bast/response`, { method: 'POST', body: { note } }),
   order: (id: number) => request<OrderDetail>(`/orders/${id}`),
   payOrder: (id: number) => request<{ payment_url: string }>(`/orders/${id}/pay`, { method: 'POST' }),
 

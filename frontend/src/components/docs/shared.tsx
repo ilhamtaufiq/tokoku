@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { OrderDetail } from '../../api/types';
 import { formatDate } from '../../lib/money';
+import { useAuth } from '../../auth/AuthContext';
 
 /** Kertas dokumen: selalu putih dan berwarna gelap, termasuk mode gelap, agar aman dicetak. */
 export function Paper({ accent, children }: { accent: string; children: ReactNode }) {
@@ -17,6 +18,8 @@ export function Paper({ accent, children }: { accent: string; children: ReactNod
 
 /** Bilah aksi di atas dokumen. Tidak ikut tercetak. */
 export function DocToolbar({ orderId, active }: { orderId: number; active: 'invoice' | 'sp' | 'sj' | 'bast' }) {
+  const { user } = useAuth();
+  const back = user?.role === 'seller' ? `/admin/orders/${orderId}` : `/orders/${orderId}`;
   const tabs: { key: typeof active; to: string; label: string }[] = [
     { key: 'invoice', to: `/orders/${orderId}/invoice`, label: 'Invoice' },
     { key: 'sp', to: `/orders/${orderId}/surat-pesanan`, label: 'Surat pesanan' },
@@ -25,7 +28,7 @@ export function DocToolbar({ orderId, active }: { orderId: number; active: 'invo
   ];
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
-      <Link to={`/orders/${orderId}`} className="text-sm font-semibold text-primary no-underline hover:underline">← Kembali ke pesanan</Link>
+      <Link to={back} className="text-sm font-semibold text-primary no-underline hover:underline">← Kembali ke pesanan</Link>
       <nav className="flex flex-wrap gap-1.5" aria-label="Dokumen">
         {tabs.map((t) => (
           <Link

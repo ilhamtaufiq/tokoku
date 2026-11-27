@@ -193,6 +193,9 @@ export interface Bast {
   received_by: string;
   note: string;
   created_at: string;
+  signature_png: string | null;
+  seller_note: string | null;
+  seller_responded_at: string | null;
   items: BastItem[];
 }
 

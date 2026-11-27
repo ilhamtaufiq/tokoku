@@ -44,6 +44,7 @@ export default function AdminOrderDetail() {
   return (
     <section className="flex flex-col gap-4">
       <Link to="/admin/orders" className={BACK_LINK}>← Semua pesanan</Link>
+      <div className="mb-2 print:hidden"><Link to={`/orders/${orderId}/bast`} className="text-sm font-semibold text-primary">Lihat BAST</Link></div>
       <PageHeader
         title={o.invoice_no}
         subtitle={`Dibuat ${formatDate(o.created_at)}`}
