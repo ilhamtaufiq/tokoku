@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, MySqlPool};
 
 use crate::{
-    auth::AdminUser,
+    tenant::{ensure_product_in_scope, ensure_variant_in_scope, Scope},
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -110,10 +110,11 @@ async fn fetch(pool: &MySqlPool, id: u64) -> AppResult<VariantView> {
 }
 
 async fn list_for_product(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(id): Path<u64>,
 ) -> AppResult<Json<Vec<VariantView>>> {
+    ensure_product_in_scope(&state.pool, id, scope).await?;
     let rows = sqlx::query_as::<_, VariantRow>(sqlx::AssertSqlSafe(format!(
         "SELECT {COLS} FROM product_variants WHERE product_id = ? ORDER BY sort_order, id"
     )))
@@ -131,19 +132,13 @@ fn map_unique(e: sqlx::Error) -> AppError {
 }
 
 async fn create(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(product_id): Path<u64>,
     Json(req): Json<VariantReq>,
 ) -> AppResult<(StatusCode, Json<VariantView>)> {
     validate(&req)?;
-    let exists: Option<(u64,)> = sqlx::query_as("SELECT id FROM products WHERE id = ?")
-        .bind(product_id)
-        .fetch_optional(&state.pool)
-        .await?;
-    if exists.is_none() {
-        return Err(AppError::NotFound(format!("produk {product_id}")));
-    }
+    ensure_product_in_scope(&state.pool, product_id, scope).await?;
     let done = sqlx::query(
         "INSERT INTO product_variants (product_id, name, sku, price, stock, is_active, sort_order)
          VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -162,12 +157,12 @@ async fn create(
 }
 
 async fn update(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(id): Path<u64>,
     Json(req): Json<VariantReq>,
 ) -> AppResult<Json<VariantView>> {
-    fetch(&state.pool, id).await?;
+    ensure_variant_in_scope(&state.pool, id, scope).await?;
     validate(&req)?;
     sqlx::query(
         "UPDATE product_variants SET name = ?, sku = ?, price = ?, stock = ?, is_active = ?, sort_order = ? WHERE id = ?",
@@ -186,7 +181,8 @@ async fn update(
 }
 
 /// Hapus varian = nonaktifkan (varian bisa sudah ada di keranjang atau riwayat pesanan).
-async fn deactivate(_admin: AdminUser, State(state): State<AppState>, Path(id): Path<u64>) -> AppResult<StatusCode> {
+async fn deactivate(scope: Scope, State(state): State<AppState>, Path(id): Path<u64>) -> AppResult<StatusCode> {
+    ensure_variant_in_scope(&state.pool, id, scope).await?;
     let done = sqlx::query("UPDATE product_variants SET is_active = FALSE WHERE id = ?")
         .bind(id)
         .execute(&state.pool)

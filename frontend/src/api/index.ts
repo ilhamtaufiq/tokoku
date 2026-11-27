@@ -1,5 +1,8 @@
 import { downloadFile, request } from './client';
 import type {
+  AdminStore,
+  PublicStore,
+  SellerStore,
   AuthResponse,
   Breakdown,
   CartItem,
@@ -108,6 +111,20 @@ export const api = {
     request<void>(`/admin/reviews/${id}`, { method: 'PATCH', body: { is_visible } }),
   adminAudit: () => request<AuditEntry[]>('/admin/audit?limit=200'),
   adminUpdateStore: (body: StoreInfo) => request<StoreInfo>('/admin/store', { method: 'PUT', body }),
+  adminStore: () => request<StoreInfo>('/admin/store'),
+  adminProducts: (params: { q?: string; per_page?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set('q', params.q);
+    if (params.per_page) qs.set('per_page', String(params.per_page));
+    return request<Page<Product>>(`/admin/products?${qs.toString()}`);
+  },
+  stores: () => request<PublicStore[]>('/stores'),
+  applySeller: (body: { store_name: string; npwp: string; address: string; phone: string }) =>
+    request<SellerStore>('/seller/apply', { method: 'POST', body }),
+  mySellerStore: () => request<SellerStore>('/seller/store'),
+  adminStores: (status?: string) => request<AdminStore[]>(`/admin/stores${status ? `?status=${status}` : ''}`),
+  adminSetStoreStatus: (id: number, status: 'active' | 'suspended') =>
+    request<SellerStore>(`/admin/stores/${id}`, { method: 'PATCH', body: { status } }),
   banners: () => request<Banner[]>('/banners'),
   adminBanners: () => request<Banner[]>('/admin/banners'),
   adminCreateBanner: (body: BannerInput) => request<Banner>('/admin/banners', { method: 'POST', body }),

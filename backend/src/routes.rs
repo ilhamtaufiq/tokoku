@@ -10,12 +10,14 @@ use serde_json::{json, Value};
 
 use tower_http::services::ServeDir;
 
-use crate::{audit, auth, banners, cart, catalog, orders, payments, pricing, promo, reviews, settings, state::AppState, users, variants};
+use crate::{audit, auth, banners, cart, catalog, orders, payments, pricing, promo, reviews, settings, state::AppState, stores, users, variants};
 
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
         .nest("/auth", auth::router())
         .merge(catalog::public_router())
+        .merge(stores::public_router())
+        .nest("/seller", stores::seller_router())
         .merge(reviews::public_router())
         .merge(banners::public_router())
         .route("/store", get(settings::store_info))
@@ -33,7 +35,8 @@ pub fn router(state: AppState) -> Router {
                 .merge(orders::admin_router())
                 .merge(reviews::admin_router())
                 .merge(audit::admin_router())
-                .route("/store", axum::routing::put(settings::admin_update_store)),
+                .merge(stores::admin_router())
+                .route("/store", get(settings::admin_store).put(settings::admin_update_store)),
         );
 
     Router::new()

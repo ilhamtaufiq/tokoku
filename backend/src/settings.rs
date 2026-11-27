@@ -1,7 +1,10 @@
 use rust_decimal::Decimal;
 use sqlx::MySqlPool;
 
-use crate::error::{AppError, AppResult};
+use crate::{
+    error::{AppError, AppResult},
+    tenant::{Scope, DEFAULT_STORE_ID},
+};
 
 pub async fn get(pool: &MySqlPool, key: &str) -> AppResult<Option<String>> {
     let row: Option<(String,)> = sqlx::query_as("SELECT setting_value FROM app_settings WHERE setting_key = ?")
@@ -23,18 +26,6 @@ pub async fn ppn_percent(pool: &MySqlPool) -> AppResult<Decimal> {
         .unwrap_or_else(|| Decimal::from(11)))
 }
 
-/// Ongkir flat (tidak kena PPN). Dihitung server, tidak dipercaya dari client.
-pub async fn shipping_flat_fee(pool: &MySqlPool) -> AppResult<Decimal> {
-    Ok(get(pool, "shipping_flat_fee")
-        .await?
-        .and_then(|v| v.parse::<Decimal>().ok())
-        .unwrap_or(Decimal::ZERO))
-}
-
-pub async fn invoice_prefix(pool: &MySqlPool) -> AppResult<String> {
-    Ok(get(pool, "invoice_prefix").await?.unwrap_or_else(|| "INV".into()))
-}
-
 #[derive(Debug, serde::Serialize, serde::Deserialize, Default)]
 pub struct StoreInfo {
     pub name: String,
@@ -43,25 +34,29 @@ pub struct StoreInfo {
     pub phone: String,
 }
 
-/// Data toko untuk invoice. Publik karena dipakai di halaman invoice pembeli.
-pub async fn store_info(
+/// Data toko default (dipakai sebagai cadangan bila toko tidak ditemukan).
+pub async fn read_store(pool: &MySqlPool, store_id: u64) -> AppResult<StoreInfo> {
+    let row: Option<(String, String, Option<String>, String)> =
+        sqlx::query_as("SELECT name, npwp, address, phone FROM stores WHERE id = ?")
+            .bind(store_id)
+            .fetch_optional(pool)
+            .await?;
+    let (name, npwp, address, phone) = row.ok_or_else(|| AppError::NotFound(format!("toko {store_id}")))?;
+    Ok(StoreInfo { name, npwp, address: address.unwrap_or_default(), phone })
+}
+
+/// Data toko untuk admin/penjual: toko sesuai lingkup (admin platform: toko default).
+pub async fn admin_store(
+    scope: Scope,
     axum::extract::State(state): axum::extract::State<crate::state::AppState>,
 ) -> AppResult<axum::Json<StoreInfo>> {
-    Ok(axum::Json(read_store(&state.pool).await?))
+    let store = scope.store_id.unwrap_or(DEFAULT_STORE_ID);
+    Ok(axum::Json(read_store(&state.pool, store).await?))
 }
 
-pub async fn read_store(pool: &MySqlPool) -> AppResult<StoreInfo> {
-    Ok(StoreInfo {
-        name: get(pool, "store_name").await?.unwrap_or_default(),
-        npwp: get(pool, "store_npwp").await?.unwrap_or_default(),
-        address: get(pool, "store_address").await?.unwrap_or_default(),
-        phone: get(pool, "store_phone").await?.unwrap_or_default(),
-    })
-}
-
-/// Admin: ubah data toko (nama, NPWP, alamat, telepon) yang tampil di invoice.
+/// Penjual mengubah data tokonya sendiri (nama, NPWP, alamat, telepon) yang tampil di invoice.
 pub async fn admin_update_store(
-    _admin: crate::auth::AdminUser,
+    scope: Scope,
     axum::extract::State(state): axum::extract::State<crate::state::AppState>,
     axum::Json(req): axum::Json<StoreInfo>,
 ) -> AppResult<axum::Json<StoreInfo>> {
@@ -69,21 +64,25 @@ pub async fn admin_update_store(
     if !npwp.is_empty() && npwp.len() != 15 && npwp.len() != 16 {
         return Err(AppError::BadRequest("NPWP toko harus 15 atau 16 digit".into()));
     }
-    let pairs = [
-        ("store_name", req.name.trim().to_string()),
-        ("store_npwp", npwp),
-        ("store_address", req.address.trim().to_string()),
-        ("store_phone", req.phone.trim().to_string()),
-    ];
-    for (key, value) in pairs {
-        sqlx::query(
-            "INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)
-             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
-        )
-        .bind(key)
-        .bind(value)
+    let name = req.name.trim();
+    if name.is_empty() || name.chars().count() > 120 {
+        return Err(AppError::BadRequest("nama toko wajib diisi (maks 120 karakter)".into()));
+    }
+    let store = scope.store_id.unwrap_or(DEFAULT_STORE_ID);
+    sqlx::query("UPDATE stores SET name = ?, npwp = ?, address = ?, phone = ? WHERE id = ?")
+        .bind(name)
+        .bind(npwp)
+        .bind(req.address.trim())
+        .bind(req.phone.trim())
+        .bind(store)
         .execute(&state.pool)
         .await?;
-    }
-    Ok(axum::Json(read_store(&state.pool).await?))
+    Ok(axum::Json(read_store(&state.pool, store).await?))
+}
+
+/// Data toko default untuk halaman publik (cadangan).
+pub async fn store_info(
+    axum::extract::State(state): axum::extract::State<crate::state::AppState>,
+) -> AppResult<axum::Json<StoreInfo>> {
+    Ok(axum::Json(read_store(&state.pool, DEFAULT_STORE_ID).await?))
 }

@@ -33,9 +33,13 @@ const CART_SELECT: &str = "SELECT c.product_id, c.variant_id,
     COALESCE(v.stock, p.stock) AS stock,
     p.image_url,
     c.selected,
-    c.qty
+    c.qty,
+    p.store_id,
+    st.name AS store_name,
+    st.slug AS store_slug
     FROM cart_items c
     JOIN products p ON p.id = c.product_id
+    JOIN stores st ON st.id = p.store_id
     LEFT JOIN product_variants v ON v.id = c.variant_id AND c.variant_id > 0";
 
 #[derive(Debug, Serialize, FromRow)]
@@ -52,6 +56,9 @@ pub struct CartItemRow {
     pub image_url: Option<String>,
     pub selected: bool,
     pub qty: u32,
+    pub store_id: u64,
+    pub store_name: String,
+    pub store_slug: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -67,6 +74,9 @@ pub struct CartItemView {
     pub qty: u32,
     pub image_url: Option<String>,
     pub selected: bool,
+    pub store_id: u64,
+    pub store_name: String,
+    pub store_slug: String,
 }
 
 impl From<CartItemRow> for CartItemView {
@@ -82,6 +92,9 @@ impl From<CartItemRow> for CartItemView {
             qty: r.qty,
             image_url: r.image_url,
             selected: r.selected,
+            store_id: r.store_id,
+            store_name: r.store_name,
+            store_slug: r.store_slug,
         }
     }
 }

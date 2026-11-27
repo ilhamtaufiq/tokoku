@@ -5,7 +5,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'seller' | 'admin';
 }
 
 export interface Category {
@@ -53,6 +53,9 @@ export interface CartItem {
   product_id: number;
   variant_id: number;
   name: string;
+  store_id: number;
+  store_name: string;
+  store_slug: string;
   image_url: string | null;
   price: Money;
   is_taxable: boolean;
@@ -91,6 +94,11 @@ export type PaymentStatus = 'unpaid' | 'paid' | 'expired' | 'refunded';
 export interface OrderView {
   id: number;
   invoice_no: string;
+  store_id: number;
+  store_name: string | null;
+  store_npwp: string | null;
+  store_address: string | null;
+  store_phone: string | null;
   status: OrderStatus;
   payment_status: PaymentStatus;
   subtotal: Money;
@@ -127,9 +135,41 @@ export interface OrderDetail extends OrderView {
   items: OrderItem[];
 }
 
-export interface CheckoutResponse {
+export interface CheckoutOrder {
   order: OrderDetail;
   payment_url: string | null;
+}
+
+/** Satu pesanan per toko di keranjang. */
+export interface CheckoutResponse {
+  orders: CheckoutOrder[];
+}
+
+export interface PublicStore {
+  slug: string;
+  name: string;
+}
+
+export interface SellerStore {
+  id: number;
+  slug: string;
+  name: string;
+  npwp: string;
+  address: string | null;
+  phone: string;
+  status: 'pending' | 'active' | 'suspended';
+  created_at: string;
+}
+
+export interface AdminStore {
+  id: number;
+  slug: string;
+  name: string;
+  npwp: string;
+  phone: string;
+  status: 'pending' | 'active' | 'suspended';
+  owner_email: string | null;
+  created_at: string;
 }
 
 export interface AuthResponse {
@@ -206,7 +246,7 @@ export interface AdminUser {
   id: number;
   email: string;
   name: string;
-  role: 'customer' | 'admin';
+  role: 'customer' | 'seller' | 'admin';
   is_active: boolean;
   created_at: string;
 }

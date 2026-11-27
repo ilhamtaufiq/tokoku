@@ -13,6 +13,8 @@ mod reviews;
 mod promo;
 mod routes;
 mod settings;
+mod stores;
+mod tenant;
 mod state;
 mod users;
 mod variants;

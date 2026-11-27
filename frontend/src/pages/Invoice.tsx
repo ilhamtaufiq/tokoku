@@ -17,7 +17,6 @@ export default function Invoice({ variant = 'invoice' }: { variant?: 'invoice' |
   const { id } = useParams();
   const orderId = Number(id);
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => api.order(orderId) });
-  const store = useQuery({ queryKey: ['store'], queryFn: api.store });
 
   if (order.isPending) {
     return (
@@ -38,7 +37,12 @@ export default function Invoice({ variant = 'invoice' }: { variant?: 'invoice' |
   }
 
   const o = order.data;
-  const s = store.data;
+  const s = {
+    name: o.store_name ?? '',
+    npwp: o.store_npwp ?? '',
+    address: o.store_address ?? '',
+    phone: o.store_phone ?? '',
+  };
   const unpaid = o.payment_status !== 'paid' && o.payment_status !== 'refunded';
 
   return (

@@ -3,9 +3,10 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-use super::{calculate, Breakdown, PricingLine};
+use super::{Breakdown, PricingLine};
 use crate::{
     error::{AppError, AppResult},
+    orders::plan::{aggregate, plan, StoreGroup},
     promo, settings,
     state::AppState,
 };
@@ -36,18 +37,16 @@ async fn preview(State(state): State<AppState>, Json(req): Json<PreviewReq>) -> 
     let ids: Vec<u64> = req.items.iter().map(|i| i.product_id).collect();
     let placeholders = vec!["?"; ids.len()].join(",");
     let sql = format!(
-        "SELECT id, name, price, is_taxable, is_active FROM products WHERE id IN ({placeholders})"
+        "SELECT id, name, price, is_taxable, is_active, store_id FROM products WHERE id IN ({placeholders})"
     );
-    let mut query = sqlx::query_as::<_, (u64, String, Decimal, bool, bool)>(sqlx::AssertSqlSafe(sql));
+    let mut query = sqlx::query_as::<_, (u64, String, Decimal, bool, bool, u64)>(sqlx::AssertSqlSafe(sql));
     for id in &ids {
         query = query.bind(id);
     }
-    let found: HashMap<u64, (String, Decimal, bool, bool)> = query
-        .fetch_all(&state.pool)
-        .await?
-        .into_iter()
-        .map(|(id, name, price, taxable, active)| (id, (name, price, taxable, active)))
-        .collect();
+    let mut found: HashMap<u64, (String, Decimal, bool, bool, u64)> = HashMap::new();
+    for (id, name, price, taxable, active, store) in query.fetch_all(&state.pool).await? {
+        found.insert(id, (name, price, taxable, active, store));
+    }
 
     // Varian yang dipilih (harga dan stok per varian)
     let variant_ids: Vec<u64> = req.items.iter().map(|i| i.variant_id).filter(|v| *v > 0).collect();
@@ -64,9 +63,9 @@ async fn preview(State(state): State<AppState>, Json(req): Json<PreviewReq>) -> 
         }
     }
 
-    let mut lines = Vec::with_capacity(req.items.len());
+    let mut groups: Vec<StoreGroup> = Vec::new();
     for item in &req.items {
-        let (name, price, taxable, active) = found
+        let (name, price, taxable, active, store_id) = found
             .get(&item.product_id)
             .cloned()
             .ok_or_else(|| AppError::NotFound(format!("produk {}", item.product_id)))?;
@@ -86,29 +85,50 @@ async fn preview(State(state): State<AppState>, Json(req): Json<PreviewReq>) -> 
         if !active {
             return Err(AppError::BadRequest(format!("produk {} tidak tersedia", item.product_id)));
         }
-        lines.push(PricingLine {
+        let line = PricingLine {
             product_id: item.product_id,
             name,
             unit_price: price,
             qty: item.qty,
             is_taxable: taxable,
-        });
+        };
+        match groups.iter_mut().find(|g| g.store_id == store_id) {
+            Some(group) => group.lines.push(line),
+            None => groups.push(StoreGroup { store_id, shipping: Decimal::ZERO, lines: vec![line] }),
+        }
+    }
+
+    // Ongkir flat dan status toko per toko
+    let store_ids: Vec<u64> = groups.iter().map(|g| g.store_id).collect();
+    let placeholders = vec!["?"; store_ids.len()].join(",");
+    let sql = format!("SELECT id, status, shipping_flat_fee FROM stores WHERE id IN ({placeholders})");
+    let mut sq = sqlx::query_as::<_, (u64, String, Decimal)>(sqlx::AssertSqlSafe(sql));
+    for id in &store_ids {
+        sq = sq.bind(id);
+    }
+    let stores: HashMap<u64, (String, Decimal)> = sq
+        .fetch_all(&state.pool)
+        .await?
+        .into_iter()
+        .map(|(id, status, fee)| (id, (status, fee)))
+        .collect();
+    for g in groups.iter_mut() {
+        let (status, fee) = stores
+            .get(&g.store_id)
+            .ok_or_else(|| AppError::NotFound(format!("toko {}", g.store_id)))?;
+        if status != "active" {
+            return Err(AppError::BadRequest("salah satu toko di keranjang sedang tidak aktif".into()));
+        }
+        g.shipping = *fee;
     }
 
     let ppn = settings::ppn_percent(&state.pool).await?;
-    let shipping = settings::shipping_flat_fee(&state.pool).await?;
-    let base = calculate(&lines, Decimal::ZERO, shipping, ppn)
-        .map_err(|e| AppError::BadRequest(e.to_string()))?;
-
-    let discount = match req.promo_code.as_deref().map(str::trim).filter(|c| !c.is_empty()) {
-        Some(code) => {
-            let p = promo::find(&state.pool, code).await?;
-            promo::discount_amount(&p, base.subtotal)?
-        }
-        None => Decimal::ZERO,
+    let promos = match req.promo_code.as_deref().map(str::trim).filter(|c| !c.is_empty()) {
+        Some(code) => promo::find_for_stores(&state.pool, code, &store_ids).await?,
+        None => Vec::new(),
     };
-
-    let breakdown = calculate(&lines, discount, shipping, ppn)
-        .map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let plans = plan(&groups, &promos, ppn)?;
+    let breakdown = aggregate(&plans)
+        .ok_or_else(|| AppError::BadRequest("keranjang kosong".into()))?;
     Ok(Json(breakdown))
 }

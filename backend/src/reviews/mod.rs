@@ -14,7 +14,8 @@ use sqlx::{FromRow, MySqlPool};
 
 use crate::{
     audit,
-    auth::{AdminUser, AuthUser},
+    auth::AuthUser,
+    tenant::{ensure_product_in_scope, Scope},
     error::{AppError, AppResult},
     state::AppState,
 };
@@ -215,7 +216,7 @@ pub struct AdminReviewQuery {
 }
 
 async fn admin_list_reviews(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     axum::extract::Query(q): axum::extract::Query<AdminReviewQuery>,
 ) -> AppResult<Json<Vec<AdminReview>>> {
@@ -227,10 +228,12 @@ async fn admin_list_reviews(
          FROM product_reviews r
          JOIN products p ON p.id = r.product_id
          JOIN users u ON u.id = r.user_id
-         WHERE (? = FALSE OR r.is_visible = FALSE)
+         WHERE (? = FALSE OR r.is_visible = FALSE) AND (? = TRUE OR p.store_id = ?)
          ORDER BY r.id DESC LIMIT 200",
     )
     .bind(only_hidden)
+    .bind(scope.store_id.is_none())
+    .bind(scope.store_id.unwrap_or(0))
     .fetch_all(&state.pool)
     .await?;
     Ok(Json(rows))
@@ -242,11 +245,17 @@ pub struct VisibilityReq {
 }
 
 async fn admin_set_visible(
-    admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(id): Path<u64>,
     Json(req): Json<VisibilityReq>,
 ) -> AppResult<StatusCode> {
+    let product: Option<(u64,)> = sqlx::query_as("SELECT product_id FROM product_reviews WHERE id = ?")
+        .bind(id)
+        .fetch_optional(&state.pool)
+        .await?;
+    let (product_id,) = product.ok_or_else(|| AppError::NotFound("ulasan".into()))?;
+    ensure_product_in_scope(&state.pool, product_id, scope).await?;
     let res = sqlx::query("UPDATE product_reviews SET is_visible = ? WHERE id = ?")
         .bind(req.is_visible)
         .bind(id)
@@ -256,6 +265,6 @@ async fn admin_set_visible(
         return Err(AppError::NotFound("ulasan".into()));
     }
     let detail = if req.is_visible { "ditampilkan" } else { "disembunyikan" };
-    audit::record(&state.pool, Some(admin.id), "review.visibility", "review", Some(id), detail).await;
+    audit::record(&state.pool, Some(scope.user_id), "review.visibility", "review", Some(id), detail).await;
     Ok(StatusCode::NO_CONTENT)
 }

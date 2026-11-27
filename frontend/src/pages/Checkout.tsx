@@ -39,10 +39,15 @@ export default function Checkout() {
       }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      if (res.payment_url) {
-        window.location.assign(res.payment_url);
+      // Satu pesanan per toko. Jika hanya satu toko dan pembayaran siap, langsung ke Midtrans.
+      const first = res.orders[0];
+      if (res.orders.length === 1 && first.payment_url) {
+        window.location.assign(first.payment_url);
+      } else if (res.orders.length === 1) {
+        navigate(`/orders/${first.order.id}`, { state: { paymentFailed: true } });
       } else {
-        navigate(`/orders/${res.order.id}`, { state: { paymentFailed: true } });
+        // Beberapa toko: pembeli membayar tiap pesanan dari daftar pesanan.
+        navigate('/orders', { state: { created: res.orders.length } });
       }
     },
     onError: (e) => setError(e instanceof ApiError ? e.message : 'Checkout gagal. Coba lagi.'),

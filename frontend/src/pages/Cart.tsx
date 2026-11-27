@@ -127,6 +127,7 @@ export default function Cart() {
                         className="font-display text-base font-semibold leading-6 text-ink no-underline hover:text-primary"
                       >
                         {item.name}
+                        <span className="block text-xs font-normal text-muted">dari {item.store_name}</span>
                       </Link>
                       <p className="text-[13px] text-muted">
                         {rp(item.price)} / buah {item.is_taxable ? '· termasuk PPN' : '· tidak kena PPN'}

@@ -20,6 +20,8 @@ import AdminUsers from './pages/admin/AdminUsers';
 import Account from './pages/Account';
 import Invoice from './pages/Invoice';
 import Help from './pages/Help';
+import Sell from './pages/Sell';
+import AdminStores from './pages/admin/AdminStores';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminAudit from './pages/admin/AdminAudit';
 import AdminOrderDetail from './pages/admin/AdminOrderDetail';
@@ -46,6 +48,7 @@ export default function App() {
           <Route path="orders/:id/invoice" element={<Invoice />} />
           <Route path="orders/:id/surat-pesanan" element={<Invoice variant="sp" />} />
           <Route path="account" element={<Account />} />
+          <Route path="jual" element={<Sell />} />
         </Route>
 
         <Route path="*" element={<p className="error">Halaman tidak ditemukan.</p>} />
@@ -62,6 +65,7 @@ export default function App() {
           <Route path="promos" element={<AdminPromos />} />
           <Route path="store" element={<AdminStore />} />
           <Route path="reviews" element={<AdminReviews />} />
+          <Route path="stores" element={<AdminStores />} />
           <Route path="aktivitas" element={<AdminAudit />} />
         </Route>
       </Route>

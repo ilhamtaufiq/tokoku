@@ -8,7 +8,7 @@ import { FORM_CARD, HINT, INPUT, LABEL, Notice, btn } from './adminUi';
 
 export default function AdminStore() {
   const queryClient = useQueryClient();
-  const store = useQuery({ queryKey: ['store'], queryFn: api.store });
+  const store = useQuery({ queryKey: ['admin-store'], queryFn: api.adminStore });
   // Draft hanya terisi saat pengguna mengetik; sebelum itu nilai diambil langsung dari server.
   const base: StoreInfo = store.data ?? { name: '', npwp: '', address: '', phone: '' };
   const [draft, setDraft] = useState<StoreInfo | null>(null);

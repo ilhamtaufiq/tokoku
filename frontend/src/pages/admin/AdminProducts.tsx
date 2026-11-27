@@ -51,7 +51,7 @@ export default function AdminProducts() {
   const categories = useQuery({ queryKey: ['categories'], queryFn: api.categories });
   const products = useQuery({
     queryKey: ['admin-products', search],
-    queryFn: () => api.products({ q: search, per_page: 100 }),
+    queryFn: () => api.adminProducts({ q: search, per_page: 100 }),
   });
 
   const fail = (e: unknown) => setMessage({ kind: 'error', text: e instanceof ApiError ? e.message : 'Terjadi kesalahan.' });

@@ -11,6 +11,7 @@ use sqlx::{AssertSqlSafe, FromRow, MySql, MySqlPool, QueryBuilder};
 
 use crate::{
     auth::AdminUser,
+    tenant::Scope,
     error::{AppError, AppResult},
     pricing::ppn_included_in_price,
     settings,
@@ -28,7 +29,7 @@ pub fn public_router() -> Router<AppState> {
 pub fn admin_router() -> Router<AppState> {
     Router::new()
         .route("/categories", post(create_category))
-        .route("/products", post(create_product))
+        .route("/products", axum::routing::get(admin_list_products).post(create_product))
         .route("/products/{id}", axum::routing::put(update_product).delete(deactivate_product))
         .route("/products/{id}/image", post(upload_image).layer(DefaultBodyLimit::max(3 * 1024 * 1024)))
 }
@@ -93,6 +94,10 @@ struct ProductRow {
     variant_count: i64,
     min_variant_price: Option<Decimal>,
     variant_stock: Option<Decimal>,
+    store_id: u64,
+    store_name: Option<String>,
+    store_slug: Option<String>,
+    store_status: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -118,6 +123,9 @@ pub struct ProductView {
     pub has_variants: bool,
     /// Daftar varian aktif (hanya diisi di halaman detail).
     pub variants: Vec<crate::variants::VariantView>,
+    pub store_id: u64,
+    pub store_name: Option<String>,
+    pub store_slug: Option<String>,
 }
 
 fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
@@ -141,13 +149,20 @@ fn to_view(row: ProductRow, ppn_percent: Decimal) -> ProductView {
         image_url: row.image_url,
         has_variants,
         variants: Vec::new(),
+        store_id: row.store_id,
+        store_name: row.store_name,
+        store_slug: row.store_slug,
     }
 }
 
 const PRODUCT_COLUMNS: &str = "id, category_id, sku, name, description, price, is_taxable, stock, is_active, image_url,
     (SELECT COUNT(*) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_count,
     (SELECT MIN(v.price) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS min_variant_price,
-    (SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_stock";
+    (SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = products.id AND v.is_active = TRUE) AS variant_stock,
+    store_id,
+    (SELECT name FROM stores WHERE stores.id = products.store_id) AS store_name,
+    (SELECT slug FROM stores WHERE stores.id = products.store_id) AS store_slug,
+    (SELECT status FROM stores WHERE stores.id = products.store_id) AS store_status";
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
@@ -155,6 +170,8 @@ pub struct ListQuery {
     /// newest (default) | price_asc | price_desc | name
     pub sort: Option<String>,
     pub category_id: Option<u64>,
+    /// Slug toko (opsional): hanya produk dari toko ini.
+    pub store: Option<String>,
     pub page: Option<u32>,
     pub per_page: Option<u32>,
 }
@@ -177,9 +194,9 @@ async fn list_products(
     let ppn = settings::ppn_percent(&state.pool).await?;
 
     let mut data = QueryBuilder::<MySql>::new(format!(
-        "SELECT {PRODUCT_COLUMNS} FROM products WHERE is_active = TRUE"
+        "SELECT {PRODUCT_COLUMNS} FROM products WHERE is_active = TRUE AND store_id IN (SELECT id FROM stores WHERE status = 'active')"
     ));
-    let mut count = QueryBuilder::<MySql>::new("SELECT COUNT(*) FROM products WHERE is_active = TRUE");
+    let mut count = QueryBuilder::<MySql>::new("SELECT COUNT(*) FROM products WHERE is_active = TRUE AND store_id IN (SELECT id FROM stores WHERE status = 'active')");
 
     for builder in [&mut data, &mut count] {
         if let Some(search) = q.q.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
@@ -188,6 +205,9 @@ async fn list_products(
         }
         if let Some(cat) = q.category_id {
             builder.push(" AND category_id = ").push_bind(cat);
+        }
+        if let Some(slug) = q.store.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            builder.push(" AND store_id = (SELECT id FROM stores WHERE slug = ").push_bind(slug.to_string()).push(")");
         }
     }
 
@@ -220,7 +240,7 @@ async fn fetch_product(pool: &MySqlPool, id: u64) -> AppResult<ProductRow> {
 
 async fn get_product(State(state): State<AppState>, Path(id): Path<u64>) -> AppResult<Json<ProductView>> {
     let row = fetch_product(&state.pool, id).await?;
-    if !row.is_active {
+    if !row.is_active || row.store_status.as_deref() != Some("active") {
         return Err(AppError::NotFound(format!("produk {id}")));
     }
     let ppn = settings::ppn_percent(&state.pool).await?;
@@ -256,17 +276,69 @@ fn validate_product(req: &ProductReq) -> AppResult<()> {
     Ok(())
 }
 
+/// Pastikan produk ada dan milik toko yang boleh diakses (admin platform: semua toko).
+async fn ensure_scope(pool: &MySqlPool, id: u64, scope: Scope) -> AppResult<ProductRow> {
+    let row = fetch_product(pool, id).await?;
+    if let Some(store) = scope.store_id {
+        if row.store_id != store {
+            return Err(AppError::NotFound(format!("produk {id}")));
+        }
+    }
+    Ok(row)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AdminProductQuery {
+    pub q: Option<String>,
+    pub page: Option<u32>,
+    pub per_page: Option<u32>,
+}
+
+/// Daftar produk untuk admin/penjual: termasuk produk nonaktif, dibatasi ke toko sesuai lingkup.
+async fn admin_list_products(
+    scope: Scope,
+    State(state): State<AppState>,
+    Query(q): Query<AdminProductQuery>,
+) -> AppResult<Json<Page<ProductView>>> {
+    let page = q.page.unwrap_or(1).max(1);
+    let per_page = q.per_page.unwrap_or(100).clamp(1, 200);
+    let offset = (page - 1) as i64 * per_page as i64;
+    let ppn = settings::ppn_percent(&state.pool).await?;
+
+    let mut data = QueryBuilder::<MySql>::new(format!("SELECT {PRODUCT_COLUMNS} FROM products WHERE 1=1"));
+    let mut count = QueryBuilder::<MySql>::new("SELECT COUNT(*) FROM products WHERE 1=1");
+    for builder in [&mut data, &mut count] {
+        if let Some(store) = scope.store_id {
+            builder.push(" AND store_id = ").push_bind(store);
+        }
+        if let Some(search) = q.q.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            builder.push(" AND (name LIKE ").push_bind(format!("%{search}%"))
+                .push(" OR sku LIKE ").push_bind(format!("%{search}%")).push(")");
+        }
+    }
+    let total: i64 = count.build_query_scalar().fetch_one(&state.pool).await?;
+    data.push(" ORDER BY id DESC LIMIT ").push_bind(per_page as i64).push(" OFFSET ").push_bind(offset);
+    let rows: Vec<ProductRow> = data.build_query_as().fetch_all(&state.pool).await?;
+    Ok(Json(Page {
+        items: rows.into_iter().map(|r| to_view(r, ppn)).collect(),
+        page,
+        per_page,
+        total,
+    }))
+}
+
 async fn create_product(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Json(req): Json<ProductReq>,
 ) -> AppResult<impl IntoResponse> {
     validate_product(&req)?;
     let ppn = settings::ppn_percent(&state.pool).await?;
     let done = sqlx::query(
-        "INSERT INTO products (category_id, sku, name, description, price, tax_rate, is_taxable, stock)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO products (store_id, category_id, sku, name, description, price, tax_rate, is_taxable, stock)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
+    .bind(scope.create_store_id())
     .bind(req.category_id)
     .bind(req.sku.trim())
     .bind(req.name.trim())
@@ -284,13 +356,13 @@ async fn create_product(
 }
 
 async fn update_product(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(id): Path<u64>,
     Json(req): Json<ProductReq>,
 ) -> AppResult<Json<ProductView>> {
     validate_product(&req)?;
-    fetch_product(&state.pool, id).await?;
+    ensure_scope(&state.pool, id, scope).await?;
     let ppn = settings::ppn_percent(&state.pool).await?;
     sqlx::query(
         "UPDATE products SET category_id = ?, sku = ?, name = ?, description = ?, price = ?,
@@ -315,10 +387,11 @@ async fn update_product(
 
 /// Hapus produk = nonaktifkan (riwayat pesanan tetap aman).
 async fn deactivate_product(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(id): Path<u64>,
 ) -> AppResult<StatusCode> {
+    ensure_scope(&state.pool, id, scope).await?;
     let done = sqlx::query("UPDATE products SET is_active = FALSE WHERE id = ?")
         .bind(id)
         .execute(&state.pool)
@@ -359,12 +432,12 @@ pub(crate) fn random_hex(bytes: usize) -> String {
 
 /// Unggah gambar produk (JPEG/PNG/WebP, maks 2 MB). Format dicek dari isi file, bukan dari nama.
 async fn upload_image(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Path(id): Path<u64>,
     mut multipart: Multipart,
 ) -> AppResult<Json<ProductView>> {
-    fetch_product(&state.pool, id).await?;
+    ensure_scope(&state.pool, id, scope).await?;
     let field = multipart
         .next_field()
         .await
@@ -427,7 +500,7 @@ async fn suggest(State(state): State<AppState>, Query(params): Query<SuggestQuer
     let pattern = format!("%{escaped}%");
     let rows = sqlx::query_as::<_, Suggestion>(
         "SELECT id, name, sku, price, image_url FROM products
-         WHERE is_active = TRUE AND (name LIKE ? OR sku LIKE ?)
+         WHERE is_active = TRUE AND store_id IN (SELECT id FROM stores WHERE status = 'active') AND (name LIKE ? OR sku LIKE ?)
          ORDER BY name LIMIT 6",
     )
     .bind(&pattern)

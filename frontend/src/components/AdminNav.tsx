@@ -4,12 +4,13 @@ import { useAuth } from '../auth/AuthContext';
 import { useSeo } from '../lib/seo';
 import { btn, cx } from '../pages/admin/adminUi';
 
-const ITEMS: { to: string; label: string; icon: string; end?: boolean }[] = [
+const ITEMS: { to: string; label: string; icon: string; end?: boolean; platformOnly?: boolean }[] = [
   { to: '/admin', label: 'Ringkasan', icon: 'dashboard', end: true },
   { to: '/admin/orders', label: 'Pesanan', icon: 'receipt_long' },
   { to: '/admin/products', label: 'Produk', icon: 'inventory_2' },
-  { to: '/admin/banners', label: 'Banner', icon: 'view_carousel' },
-  { to: '/admin/users', label: 'Pengguna', icon: 'group' },
+  { to: '/admin/banners', label: 'Banner', icon: 'view_carousel', platformOnly: true },
+  { to: '/admin/stores', label: 'Toko', icon: 'storefront', platformOnly: true },
+  { to: '/admin/users', label: 'Pengguna', icon: 'group', platformOnly: true },
   { to: '/admin/promos', label: 'Promo', icon: 'sell' },
   { to: '/admin/reviews', label: 'Ulasan', icon: 'rate_review' },
   { to: '/admin/aktivitas', label: 'Aktivitas', icon: 'history' },
@@ -81,7 +82,7 @@ export function AdminLayout() {
         </div>
 
         <nav aria-label="Menu admin" className="flex flex-col gap-1">
-          {ITEMS.map((it) => (
+          {ITEMS.filter((it) => !it.platformOnly || user?.role === 'admin').map((it) => (
             <NavLink
               key={it.to}
               to={it.to}

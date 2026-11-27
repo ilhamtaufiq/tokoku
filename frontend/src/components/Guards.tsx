@@ -28,8 +28,8 @@ export function RequireAdmin() {
   const { user, loading } = useAuth();
   if (loading) return <SessionLoading />;
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== 'admin') {
-    return <p className={`${alertError} mx-auto mt-16 max-w-md text-center`}>Halaman ini hanya untuk admin.</p>;
+  if (user.role !== 'admin' && user.role !== 'seller') {
+    return <p className={`${alertError} mx-auto mt-16 max-w-md text-center`}>Halaman ini hanya untuk penjual atau admin.</p>;
   }
   return <Outlet />;
 }

@@ -142,6 +142,7 @@ export function Layout() {
             <Link to="/privasi" className={footerLink}>Privasi</Link>
             <Link to="/pengembalian" className={footerLink}>Pengembalian Dana</Link>
             <Link to="/bantuan" className={footerLink}>Bantuan</Link>
+            <Link to="/jual" className={footerLink}>Jual di Tokoku</Link>
           </nav>
         </div>
       </footer>

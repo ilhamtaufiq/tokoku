@@ -10,7 +10,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::MySqlPool;
 
-use crate::{auth::AdminUser, error::AppResult, state::AppState};
+use crate::{error::AppResult, state::AppState, tenant::Scope};
 
 pub async fn record(
     pool: &MySqlPool,
@@ -59,16 +59,25 @@ pub struct AuditEntry {
 }
 
 async fn list_audit(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     Query(q): Query<AuditQuery>,
 ) -> AppResult<Json<Vec<AuditEntry>>> {
     let limit = q.limit.unwrap_or(100).clamp(1, 300) as i64;
+    let all = scope.store_id.is_none();
+    let store = scope.store_id.unwrap_or(0);
     let rows = sqlx::query_as::<_, AuditEntry>(
         "SELECT a.id, u.name AS actor_name, a.action, a.entity, a.entity_id, a.detail, a.created_at
          FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id
+         WHERE ? = TRUE
+            OR (a.entity = 'order' AND a.entity_id IN (SELECT id FROM orders WHERE store_id = ?))
+            OR (a.entity = 'review' AND a.entity_id IN
+                (SELECT r.id FROM product_reviews r JOIN products p ON p.id = r.product_id WHERE p.store_id = ?))
          ORDER BY a.id DESC LIMIT ?",
     )
+    .bind(all)
+    .bind(store)
+    .bind(store)
     .bind(limit)
     .fetch_all(&state.pool)
     .await?;
@@ -77,7 +86,7 @@ async fn list_audit(
 
 /// Riwayat aktivitas satu pesanan (urut dari yang terbaru).
 async fn order_activity(
-    _admin: AdminUser,
+    scope: Scope,
     State(state): State<AppState>,
     axum::extract::Path(id): axum::extract::Path<u64>,
 ) -> AppResult<Json<Vec<AuditEntry>>> {
@@ -85,8 +94,12 @@ async fn order_activity(
         "SELECT a.id, u.name AS actor_name, a.action, a.entity, a.entity_id, a.detail, a.created_at
          FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_id
          WHERE a.entity = 'order' AND a.entity_id = ?
+           AND (? = TRUE OR ? IN (SELECT store_id FROM orders WHERE orders.id = ?))
          ORDER BY a.id DESC LIMIT 200",
     )
+    .bind(id)
+    .bind(scope.store_id.is_none())
+    .bind(scope.store_id.unwrap_or(0))
     .bind(id)
     .fetch_all(&state.pool)
     .await?;
