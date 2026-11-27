@@ -30,6 +30,7 @@ pub fn customer_router() -> Router<AppState> {
         .route("/", post(checkout).get(list_orders))
         .route("/{id}", get(get_order))
         .route("/{id}/pay", post(pay_order))
+        .route("/{id}/bast", get(crate::bast::get_bast).post(crate::bast::create_bast))
 }
 
 pub fn admin_router() -> Router<AppState> {
@@ -93,6 +94,7 @@ pub struct OrderRow {
 
 #[derive(Debug, Serialize, FromRow)]
 pub struct OrderItemView {
+    pub id: u64,
     pub product_id: u64,
     pub product_name: String,
     #[serde(with = "rust_decimal::serde::str")]
@@ -203,7 +205,7 @@ fn to_view(o: OrderRow) -> OrderView {
     }
 }
 
-async fn fetch_order(pool: &MySqlPool, id: u64) -> AppResult<OrderRow> {
+pub(crate) async fn fetch_order(pool: &MySqlPool, id: u64) -> AppResult<OrderRow> {
     sqlx::query_as::<_, OrderRow>(AssertSqlSafe(format!("SELECT {ORDER_COLS} FROM orders WHERE id = ?")))
         .bind(id)
         .fetch_optional(pool)
@@ -211,7 +213,7 @@ async fn fetch_order(pool: &MySqlPool, id: u64) -> AppResult<OrderRow> {
         .ok_or_else(|| AppError::NotFound(format!("pesanan {id}")))
 }
 
-async fn fetch_owned_order(pool: &MySqlPool, id: u64, user: &AuthUser) -> AppResult<OrderRow> {
+pub(crate) async fn fetch_owned_order(pool: &MySqlPool, id: u64, user: &AuthUser) -> AppResult<OrderRow> {
     let order = fetch_order(pool, id).await?;
     if order.user_id != user.id && user.role != "admin" {
         // 404 agar keberadaan pesanan orang lain tidak bocor
@@ -222,7 +224,7 @@ async fn fetch_owned_order(pool: &MySqlPool, id: u64, user: &AuthUser) -> AppRes
 
 async fn fetch_items(pool: &MySqlPool, order_id: u64) -> AppResult<Vec<OrderItemView>> {
     let items = sqlx::query_as::<_, OrderItemView>(
-        "SELECT product_id, product_name, unit_price, qty, is_taxable, line_subtotal, line_discount
+        "SELECT id, product_id, product_name, unit_price, qty, is_taxable, line_subtotal, line_discount
          FROM order_items WHERE order_id = ? ORDER BY id",
     )
     .bind(order_id)

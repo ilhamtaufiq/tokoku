@@ -1,4 +1,5 @@
 mod audit;
+mod bast;
 mod auth;
 mod banners;
 mod cart;
