@@ -96,7 +96,7 @@ export default function AdminBanners() {
           <tbody className={TBODY}>
             {banners.data?.map((b) => (
               <tr key={b.id} className={b.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                <td data-label="Gambar" className={TD}>
+                <td data-label="" className={cx(TD, 'max-md:block!')}>
                   <span className="flex h-[45px] w-20 items-center justify-center overflow-hidden rounded-field bg-surface-high text-muted sm:h-[54px] sm:w-24">
                     {b.image_url ? <img src={b.image_url} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined" aria-hidden>image</span>}
                   </span>

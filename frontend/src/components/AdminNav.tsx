@@ -4,17 +4,18 @@ import { useAuth } from '../auth/AuthContext';
 import { useSeo } from '../lib/seo';
 import { btn, cx } from '../pages/admin/adminUi';
 
-const ITEMS: { to: string; label: string; icon: string; end?: boolean; platformOnly?: boolean }[] = [
+/** Item menu; `divider` menaruh garis pemisah sebelum item (pengelompokan visual). */
+const ITEMS: { to: string; label: string; icon: string; end?: boolean; platformOnly?: boolean; divider?: boolean }[] = [
   { to: '/admin', label: 'Ringkasan', icon: 'dashboard', end: true },
   { to: '/admin/orders', label: 'Pesanan', icon: 'receipt_long' },
   { to: '/admin/products', label: 'Produk', icon: 'inventory_2' },
-  { to: '/admin/banners', label: 'Banner', icon: 'view_carousel', platformOnly: true },
+  { to: '/admin/banners', label: 'Banner', icon: 'view_carousel', platformOnly: true, divider: true },
   { to: '/admin/stores', label: 'Toko', icon: 'storefront', platformOnly: true },
   { to: '/admin/users', label: 'Pengguna', icon: 'group', platformOnly: true },
   { to: '/admin/promos', label: 'Promo', icon: 'sell' },
   { to: '/admin/reviews', label: 'Ulasan', icon: 'rate_review' },
   { to: '/admin/aktivitas', label: 'Aktivitas', icon: 'history' },
-  { to: '/admin/store', label: 'Data toko', icon: 'store' },
+  { to: '/admin/store', label: 'Data toko', icon: 'store', divider: true },
 ];
 
 /**
@@ -39,11 +40,11 @@ export function AdminLayout() {
   }, [open]);
 
   return (
-    <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-outline-soft bg-surface px-4 py-3 lg:hidden">
+    <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
+      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-outline-soft bg-surface px-4 py-2.5 lg:hidden">
         <button
           type="button"
-          className={btn('default', 'sm')}
+          className={btn('default', 'sm', '!h-11 !px-4')}
           aria-controls="admin-side"
           aria-expanded={open}
           onClick={() => setOpen(true)}
@@ -51,7 +52,7 @@ export function AdminLayout() {
           <span className="material-symbols-outlined" aria-hidden>menu</span>
           Menu
         </button>
-        <span className="material-symbols-outlined ml-auto text-[22px] text-primary" aria-hidden>storefront</span>
+        <span className="material-symbols-outlined ml-auto flex h-9 w-9 items-center justify-center rounded-field bg-primary text-[20px] text-on-primary" aria-hidden>storefront</span>
       </header>
 
       {open && (
@@ -66,53 +67,57 @@ export function AdminLayout() {
       <aside
         id="admin-side"
         className={cx(
-          'fixed inset-y-0 left-0 z-50 flex w-[264px] max-w-[85vw] flex-col gap-5 overflow-y-auto border-r border-outline-soft bg-surface p-4 transition-[transform,visibility] duration-200 ease-out',
+          'fixed inset-y-0 left-0 z-50 flex w-[272px] max-w-[85vw] flex-col gap-5 overflow-y-auto border-r border-outline-soft bg-surface p-4 transition-[transform,visibility] duration-200 ease-out',
           open ? 'translate-x-0 visible' : '-translate-x-full invisible',
           'lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-auto lg:max-w-none lg:translate-x-0 lg:visible lg:py-6 lg:transition-none',
         )}
       >
-        <div className="flex items-center gap-3 px-2">
-          <span className="material-symbols-outlined flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-primary text-[20px] text-on-primary" aria-hidden>
+        <div className="flex items-center gap-3 rounded-card bg-surface-low p-3">
+          <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-primary text-[22px] text-on-primary" aria-hidden>
             storefront
           </span>
           <div className="min-w-0">
             <strong className="block font-display text-[17px] leading-[22px] text-ink">Tokoku</strong>
-            <span className="block text-xs font-semibold text-muted">Portal penjual</span>
+            <span className="block truncate text-xs font-semibold text-muted">Portal penjual</span>
           </div>
         </div>
 
         <nav aria-label="Menu admin" className="flex flex-col gap-1">
           {ITEMS.filter((it) => !it.platformOnly || user?.role === 'admin').map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              end={it.end}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                cx(
-                  'flex h-[42px] items-center gap-3 rounded-field px-3 text-sm font-semibold no-underline transition-colors hover:bg-surface-low hover:text-ink hover:no-underline',
-                  isActive ? 'bg-secondary-container/60 text-primary' : 'text-ink-2',
-                )
-              }
-            >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden>{it.icon}</span>
-              {it.label}
-            </NavLink>
+            <div key={it.to} className="contents">
+              {it.divider && <div className="my-2 h-px bg-outline-soft" role="presentation" />}
+              <NavLink
+                to={it.to}
+                end={it.end}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  cx(
+                    'flex h-11 items-center gap-3 rounded-field px-3 text-sm font-semibold no-underline transition-colors hover:no-underline',
+                    isActive
+                      ? 'bg-primary text-on-primary shadow-cta'
+                      : 'text-ink-2 hover:bg-surface-low hover:text-ink',
+                  )
+                }
+              >
+                <span className="material-symbols-outlined text-[20px]" aria-hidden>{it.icon}</span>
+                {it.label}
+              </NavLink>
+            </div>
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-2 border-t border-outline-soft pt-3">
-          <NavLink to="/" onClick={() => setOpen(false)} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary no-underline hover:underline">
+        <div className="mt-auto flex flex-col gap-1 border-t border-outline-soft pt-3">
+          <NavLink to="/" onClick={() => setOpen(false)} className="flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-primary no-underline hover:bg-surface-low hover:no-underline">
             <span className="material-symbols-outlined text-[18px]" aria-hidden>arrow_back</span>
             Ke toko
           </NavLink>
-          <NavLink to="/account" onClick={() => setOpen(false)} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary no-underline hover:underline">
+          <NavLink to="/account" onClick={() => setOpen(false)} className="flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-primary no-underline hover:bg-surface-low hover:no-underline">
             <span className="material-symbols-outlined text-[18px]" aria-hidden>manage_accounts</span>
-            {user?.name ?? 'Akun saya'}
+            <span className="truncate">{user?.name ?? 'Akun saya'}</span>
           </NavLink>
           <button
             type="button"
-            className={btn('ghost', 'sm', 'self-start')}
+            className={btn('ghost', 'md', 'mt-1 justify-start px-3 text-ink-2')}
             onClick={async () => {
               setOpen(false);
               await logout();

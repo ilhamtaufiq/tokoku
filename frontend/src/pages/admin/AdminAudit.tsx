@@ -30,7 +30,7 @@ export default function AdminAudit() {
           <tbody className={TBODY}>
             {(log.data ?? []).map((e) => (
               <tr key={e.id}>
-                <td data-label="Waktu" className={cx(TD, 'whitespace-nowrap text-muted')}>{formatDate(e.created_at)}</td>
+                <td data-label="" className={cx(TD, 'whitespace-nowrap text-muted max-md:block!')}>{formatDate(e.created_at)}</td>
                 <td data-label="Aksi" className={cx(TD, 'font-medium')}>{ACTION_LABEL[e.action] ?? e.action}</td>
                 <td data-label="Oleh" className={cx(TD, HIDE_SM)}>{e.actor_name ?? 'Sistem'}</td>
                 <td data-label="Objek" className={cx(TD, HIDE_MD, 'whitespace-nowrap')}>{e.entity} #{e.entity_id ?? '-'}</td>

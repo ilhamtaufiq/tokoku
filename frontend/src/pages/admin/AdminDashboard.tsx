@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api';
 import { ORDER_STATUS_LABEL, formatDate, rp } from '../../lib/money';
 import type { OrderStatus, PaymentStatus } from '../../api/types';
-import { CARD, HIDE_MD, MUTED_SMALL, SKU, StatusBadge, TABLE, TBODY, TD, TD_NUM, TH, TH_NUM, btn, cx, type Tone } from './adminUi';
+import { PageHeader } from '../../components/PageHeader';
+import { CARD, HIDE_MD, MONEY, MUTED_SMALL, SKU, StatusBadge, TABLE_STACK, TBODY, TD, TD_MONEY, TH, TH_NUM, btn, cx, type Tone } from './adminUi';
 
 const DAY = new Intl.DateTimeFormat('id-ID', { weekday: 'short' });
 
@@ -18,9 +19,10 @@ function statusInfo(status: OrderStatus, payment: PaymentStatus): { label: strin
 
 const KPI_TOP = 'flex items-center justify-between gap-2 text-sm font-semibold text-ink-2';
 const KPI_ICON = 'material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field bg-secondary-container text-[20px] text-on-secondary-container';
-const KPI_VALUE = 'font-display text-xl font-bold leading-7 tabular-nums tracking-[-0.3px] text-ink sm:text-[26px] sm:leading-8';
+/** Angka KPI memakai font mono agar lebar digit sama dan sejajar antar kartu. */
+const KPI_VALUE = cx(MONEY, 'text-xl font-bold leading-7 text-ink sm:text-[26px] sm:leading-8');
 const SECTION_TITLE = 'font-display text-lg font-semibold leading-7 text-ink sm:text-xl';
-const LINK_SMALL = 'text-xs font-semibold text-primary hover:underline';
+const LINK_SMALL = 'inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0';
 
 export default function AdminDashboard() {
   const dash = useQuery({ queryKey: ['admin-dashboard'], queryFn: api.adminDashboard, refetchInterval: 60_000 });
@@ -33,16 +35,16 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="mb-1 text-[26px] font-bold leading-9 tracking-[-0.4px] sm:text-[28px]">Ringkasan penjualan</h1>
-          <p className={MUTED_SMALL}>Pendapatan dari pesanan yang sudah dibayar · diperbarui otomatis</p>
-        </div>
-        <Link to="/admin/products" className={btn('primary')}>
-          <span className="material-symbols-outlined" aria-hidden>add</span>
-          Kelola produk
-        </Link>
-      </header>
+      <PageHeader
+        title="Ringkasan penjualan"
+        subtitle="Pendapatan dari pesanan yang sudah dibayar · diperbarui otomatis"
+        actions={
+          <Link to="/admin/products" className={btn('primary')}>
+            <span className="material-symbols-outlined" aria-hidden>add</span>
+            Kelola produk
+          </Link>
+        }
+      />
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
@@ -82,7 +84,7 @@ export default function AdminDashboard() {
               const dayLabel = DAY.format(new Date(`${x.day}T00:00:00Z`));
               return (
                 <div className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5" key={x.day}>
-                  <span className="h-4 text-[11px] tabular-nums text-muted">{value > 0 ? Math.round(value / 1000).toLocaleString('id-ID') : ''}</span>
+                  <span className={cx('h-4 text-[11px] text-muted', MONEY)}>{value > 0 ? Math.round(value / 1000).toLocaleString('id-ID') : ''}</span>
                   <div className="flex w-full flex-1 items-end">
                     <div
                       className={cx('w-full rounded-t-lg', isToday ? 'bg-primary' : 'bg-secondary-container')}
@@ -127,33 +129,31 @@ export default function AdminDashboard() {
           <h2 className={SECTION_TITLE}>Pesanan terbaru</h2>
           <Link to="/admin/orders" className={LINK_SMALL}>Kelola pesanan</Link>
         </div>
-        <div className="overflow-x-auto">
-          <table className={TABLE}>
-            <thead>
-              <tr>
-                <th className={TH}>Invoice</th>
-                <th className={TH}>Pembeli</th>
-                <th className={cx(TH, HIDE_MD)}>Waktu</th>
-                <th className={TH}>Status</th>
-                <th className={TH_NUM}>Total</th>
-              </tr>
-            </thead>
-            <tbody className={TBODY}>
-              {d.recent_orders.map((o) => {
-                const s = statusInfo(o.status, o.payment_status);
-                return (
-                  <tr key={o.id}>
-                    <td className={cx(TD, SKU)}>{o.invoice_no}</td>
-                    <td className={TD}>{o.buyer_name ?? '-'}</td>
-                    <td className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
-                    <td className={TD}><StatusBadge tone={s.tone}>{s.label}</StatusBadge></td>
-                    <td className={TD_NUM}>{rp(o.grand_total)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <table className={TABLE_STACK}>
+          <thead>
+            <tr>
+              <th className={TH}>Invoice</th>
+              <th className={TH}>Pembeli</th>
+              <th className={cx(TH, HIDE_MD)}>Waktu</th>
+              <th className={TH}>Status</th>
+              <th className={TH_NUM}>Total</th>
+            </tr>
+          </thead>
+          <tbody className={TBODY}>
+            {d.recent_orders.map((o) => {
+              const s = statusInfo(o.status, o.payment_status);
+              return (
+                <tr key={o.id}>
+                  <td data-label="" className={cx(TD, SKU, 'max-md:block!')}>{o.invoice_no}</td>
+                  <td data-label="Pembeli" className={TD}>{o.buyer_name ?? '-'}</td>
+                  <td data-label="Waktu" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
+                  <td data-label="Status" className={TD}><StatusBadge tone={s.tone}>{s.label}</StatusBadge></td>
+                  <td data-label="Total" className={TD_MONEY}>{rp(o.grand_total)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </section>
     </div>
   );

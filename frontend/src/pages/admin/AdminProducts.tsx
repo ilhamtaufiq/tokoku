@@ -27,12 +27,14 @@ import {
   TABLE_WRAP,
   TBODY,
   TD,
+  TD_MONEY,
   TD_NUM,
   TH,
   TH_NUM,
   btn,
   cx,
   TABLE_STACK,
+  MONEY,
 } from './adminUi';
 
 const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0, weight_grams: 1000 };
@@ -130,9 +132,9 @@ export default function AdminProducts() {
                   </div>
                 </td>
                 <td data-label="SKU" className={cx(TD, SKU)}>{p.sku}</td>
-                <td data-label="Harga" className={TD_NUM}>{rp(p.price)}</td>
-                <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums')}>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>
-                <td data-label="Stok" className={TD_NUM}>{p.stock}</td>
+                <td data-label="Harga" className={TD_MONEY}>{rp(p.price)}</td>
+                <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right', MONEY)}>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>
+                <td data-label="Stok" className={cx(TD_NUM, MONEY)}>{p.stock}</td>
                 <td data-label="Status" className={TD}>
                   <StatusBadge tone={p.is_active ? 'ok' : 'neutral'}>{p.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
                 </td>

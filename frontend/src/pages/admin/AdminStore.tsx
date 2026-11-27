@@ -32,7 +32,7 @@ export default function AdminStore() {
   if (store.isPending) return <p className="text-muted">Memuat data toko…</p>;
 
   return (
-    <section className="mx-auto max-w-[480px]">
+    <section className="max-w-[560px]">
       <PageHeader title="Data toko" subtitle="Data ini dicetak di invoice. Isi NPWP dan alamat sesuai dokumen perpajakan toko." />
       <form
         className={FORM_CARD}

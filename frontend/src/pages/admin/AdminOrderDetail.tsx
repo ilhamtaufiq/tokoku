@@ -4,20 +4,21 @@ import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp, sisaWaktu } from '../../lib/money';
 import { useSeo } from '../../lib/seo';
-import { CARD, MUTED_SMALL, Notice, StatusBadge, TABLE, TABLE_WRAP, TBODY, TD, TD_NUM, TH, TH_NUM, cx } from './adminUi';
+import { CARD, MONEY, MUTED_SMALL, Notice, StatusBadge, TABLE_STACK, TABLE_WRAP, TBODY, TD, TD_MONEY, TD_NUM, TH, TH_NUM, cx } from './adminUi';
 
 const ACTION_LABEL: Record<string, string> = {
   'order.status': 'Ubah status',
   'order.refund_cancel': 'Batalkan + catat refund',
 };
 
-const BACK_LINK = 'inline-flex items-center gap-1 text-sm font-semibold text-muted no-underline hover:text-primary';
+const BACK_LINK = 'inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-muted no-underline hover:text-primary md:min-h-0';
 const CARD_TITLE = 'm-0 mb-1 text-base font-semibold text-ink';
 /** Baris ringkasan: label di kiri, nilai di kanan. */
 const KV = 'm-0 flex min-w-0 flex-col gap-2';
 const KV_ROW = 'flex min-w-0 justify-between gap-3 text-sm';
 const KV_KEY = 'text-muted';
 const KV_VAL = 'm-0 min-w-0 break-words text-right text-ink';
+const KV_MONEY = cx(KV_VAL, 'whitespace-nowrap', MONEY);
 
 /** Detail satu pesanan untuk admin: ringkasan biaya, pembeli, pengiriman, barang, dan riwayat aktivitas. */
 export default function AdminOrderDetail() {
@@ -44,7 +45,7 @@ export default function AdminOrderDetail() {
   return (
     <section className="flex flex-col gap-4">
       <Link to="/admin/orders" className={BACK_LINK}>← Semua pesanan</Link>
-      <div className="mb-2 print:hidden"><Link to={`/orders/${orderId}/bast`} className="text-sm font-semibold text-primary">Lihat BAST</Link></div>
+      <div className="mb-2 print:hidden"><Link to={`/orders/${orderId}/bast`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primary md:min-h-0">Lihat BAST</Link></div>
       <PageHeader
         title={o.invoice_no}
         subtitle={`Dibuat ${formatDate(o.created_at)}`}
@@ -59,12 +60,12 @@ export default function AdminOrderDetail() {
         <div className={cx(CARD, 'flex min-w-0 flex-col gap-2.5 p-4 sm:p-5')}>
           <h2 className={CARD_TITLE}>Ringkasan biaya</h2>
           <dl className={KV}>
-            <div className={KV_ROW}><dt className={KV_KEY}>Subtotal</dt><dd className={KV_VAL}>{rp(o.subtotal)}</dd></div>
-            {discount && <div className={KV_ROW}><dt className={KV_KEY}>Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt><dd className={KV_VAL}>−{rp(o.discount_total)}</dd></div>}
-            {hasDpp && <div className={KV_ROW}><dt className={KV_KEY}>DPP</dt><dd className={KV_VAL}>{rp(o.dpp)}</dd></div>}
-            {hasDpp && <div className={KV_ROW}><dt className={KV_KEY}>PPN {percent(o.ppn_rate)}</dt><dd className={KV_VAL}>{rp(o.ppn_total)}</dd></div>}
-            <div className={KV_ROW}><dt className={KV_KEY}>Ongkos kirim (tanpa PPN)</dt><dd className={KV_VAL}>{rp(o.shipping_fee)}</dd></div>
-            <div className={cx(KV_ROW, 'border-t border-outline-soft pt-2 font-bold')}><dt>Total</dt><dd className={KV_VAL}>{rp(o.grand_total)}</dd></div>
+            <div className={KV_ROW}><dt className={KV_KEY}>Subtotal</dt><dd className={KV_MONEY}>{rp(o.subtotal)}</dd></div>
+            {discount && <div className={KV_ROW}><dt className={KV_KEY}>Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt><dd className={KV_MONEY}>−{rp(o.discount_total)}</dd></div>}
+            {hasDpp && <div className={KV_ROW}><dt className={KV_KEY}>DPP</dt><dd className={KV_MONEY}>{rp(o.dpp)}</dd></div>}
+            {hasDpp && <div className={KV_ROW}><dt className={KV_KEY}>PPN {percent(o.ppn_rate)}</dt><dd className={KV_MONEY}>{rp(o.ppn_total)}</dd></div>}
+            <div className={KV_ROW}><dt className={KV_KEY}>Ongkos kirim (tanpa PPN)</dt><dd className={KV_MONEY}>{rp(o.shipping_fee)}</dd></div>
+            <div className={cx(KV_ROW, 'border-t border-outline-soft pt-2 font-bold')}><dt>Total</dt><dd className={KV_MONEY}>{rp(o.grand_total)}</dd></div>
           </dl>
         </div>
 
@@ -95,7 +96,7 @@ export default function AdminOrderDetail() {
 
       <div className={cx(TABLE_WRAP, 'overflow-x-auto')}>
         <h2 className="px-4 pb-2 pt-4 text-base font-semibold text-ink sm:px-5">Barang</h2>
-        <table className={TABLE}>
+        <table className={TABLE_STACK}>
           <thead>
             <tr>
               <th className={TH}>Produk</th>
@@ -107,13 +108,13 @@ export default function AdminOrderDetail() {
           <tbody className={TBODY}>
             {o.items.map((i) => (
               <tr key={`${i.product_id}-${i.product_name}`}>
-                <td className={TD}>
+                <td data-label="" className={cx(TD, 'max-md:block!')}>
                   {i.product_name}
                   {!i.is_taxable && <span className={cx(MUTED_SMALL, 'ml-1')}>(tanpa PPN)</span>}
                 </td>
-                <td className={TD_NUM}>{i.qty}</td>
-                <td className={TD_NUM}>{rp(i.unit_price)}</td>
-                <td className={TD_NUM}>{rp(i.line_subtotal)}</td>
+                <td data-label="Qty" className={cx(TD_NUM, MONEY)}>{i.qty}</td>
+                <td data-label="Harga" className={TD_MONEY}>{rp(i.unit_price)}</td>
+                <td data-label="Jumlah" className={TD_MONEY}>{rp(i.line_subtotal)}</td>
               </tr>
             ))}
           </tbody>

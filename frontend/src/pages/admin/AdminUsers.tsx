@@ -36,8 +36,9 @@ const STATUS_OPTIONS = [
   { v: 'inactive', l: 'Nonaktif' },
 ];
 
+/* `select` di styles.css tanpa layer memberi width:100%, jadi lebar memakai !w-auto. */
 const ROLE_SELECT =
-  'h-9 w-auto min-w-[140px] rounded-field border border-outline bg-surface px-2.5 text-[13px] text-ink focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-45';
+  'h-11 md:h-9 !w-auto min-w-[140px] rounded-field border border-outline bg-surface px-2.5 text-[13px] text-ink focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-45';
 
 export default function AdminUsers() {
   const { user: me } = useAuth();
@@ -140,14 +141,14 @@ export default function AdminUsers() {
                   <td data-label="Status" className={TD}>
                     <label
                       className={cx(
-                        'relative inline-flex cursor-pointer items-center gap-2.5 whitespace-nowrap text-[13px] font-semibold text-ink-2',
+                        'relative !inline-flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap text-[13px] font-semibold text-ink-2 md:min-h-0',
                         (isMe || lastAdmin) && 'cursor-not-allowed',
                       )}
                       title={isMe ? 'Tidak bisa menonaktifkan akun sendiri' : ''}
                     >
                       <input
                         type="checkbox"
-                        className="peer sr-only"
+                        className="peer sr-only !h-px !w-px !min-h-0"
                         checked={u.is_active}
                         disabled={isMe || lastAdmin || update.isPending}
                         onChange={(e) => update.mutate({ id: u.id, body: { is_active: e.target.checked } })}

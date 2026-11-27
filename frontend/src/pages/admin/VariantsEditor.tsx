@@ -17,9 +17,10 @@ import {
   ROW,
   SKU,
   StatusBadge,
-  TABLE,
+  TABLE_STACK,
   TBODY,
   TD,
+  TD_MONEY,
   TD_NUM,
   TH,
   TH_NUM,
@@ -91,7 +92,7 @@ export function VariantsEditor({ productId }: { productId: number }) {
 
       {variants.data && variants.data.length > 0 && (
         <div className="overflow-x-auto rounded-field border border-outline-soft">
-          <table className={TABLE}>
+          <table className={TABLE_STACK}>
             <thead>
               <tr>
                 <th className={TH}>Varian</th>
@@ -105,14 +106,14 @@ export function VariantsEditor({ productId }: { productId: number }) {
             <tbody className={TBODY}>
               {variants.data.map((v) => (
                 <tr key={v.id} className={v.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                  <td className={TD}>{v.name}</td>
-                  <td className={cx(TD, HIDE_SM, SKU)}>{v.sku}</td>
-                  <td className={TD_NUM}>{rp(v.price)}</td>
-                  <td className={TD_NUM}>{v.stock}</td>
-                  <td className={TD}>
+                  <td data-label="" className={cx(TD, 'font-medium max-md:block!')}>{v.name}</td>
+                  <td data-label="SKU" className={cx(TD, HIDE_SM, SKU)}>{v.sku}</td>
+                  <td data-label="Harga" className={TD_MONEY}>{rp(v.price)}</td>
+                  <td data-label="Stok" className={TD_NUM}>{v.stock}</td>
+                  <td data-label="Status" className={TD}>
                     <StatusBadge tone={v.is_active ? 'ok' : 'neutral'}>{v.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
                   </td>
-                  <td className={cx(TD, 'whitespace-nowrap')}>
+                  <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
                     <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
                       <button type="button" className={btn('link', 'link')} onClick={() => startEdit(v)}>Ubah</button>
                       {v.is_active && (

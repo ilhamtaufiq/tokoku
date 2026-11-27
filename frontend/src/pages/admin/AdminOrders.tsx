@@ -24,12 +24,14 @@ import {
   TABLE_WRAP,
   TBODY,
   TD,
+  TD_MONEY,
   TH,
   btn,
   chipClass,
   cx,
   type Tone,
   TABLE_STACK,
+  MONEY,
 } from './adminUi';
 
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
@@ -174,11 +176,11 @@ export default function AdminOrders() {
                 <Fragment key={o.id}>
                   <tr>
                     <td data-label="Invoice" className={cx(TD, 'min-w-[120px]')}>
-                      <Link to={`/admin/orders/${o.id}`} className="font-semibold text-primary hover:underline">{o.invoice_no}</Link>
+                      <Link to={`/admin/orders/${o.id}`} className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline md:min-h-0">{o.invoice_no}</Link>
                     </td>
                     <td data-label="Tanggal" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
-                    <td data-label="Total" className={cx(TD, 'whitespace-nowrap text-right tabular-nums')}>{rp(o.grand_total)}</td>
-                    <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right tabular-nums text-muted')}>{rp(o.ppn_total)}</td>
+                    <td data-label="Total" className={TD_MONEY}>{rp(o.grand_total)}</td>
+                    <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right text-muted', MONEY)}>{rp(o.ppn_total)}</td>
                     <td data-label="Status" className={TD}>
                       <StatusBadge tone={TONE_BY_STATUS[o.status] ?? 'neutral'}>{ORDER_STATUS_LABEL[o.status]}</StatusBadge>
                       {o.estimated_days && <div className={cx(MUTED_SMALL, 'mt-1.5')}>Estimasi {o.estimated_days} hari</div>}

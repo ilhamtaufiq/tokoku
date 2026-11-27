@@ -33,7 +33,7 @@ export default function AdminPromos() {
   });
 
   return (
-    <section className="mx-auto max-w-[480px]">
+    <section className="max-w-[560px]">
       <PageHeader title="Kode promo" subtitle="Buat kode diskon persen atau nominal, lengkap dengan minimum belanja dan kuota." />
       <form
         className={FORM_CARD}

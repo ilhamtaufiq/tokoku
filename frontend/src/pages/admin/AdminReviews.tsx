@@ -55,7 +55,7 @@ export default function AdminReviews() {
           <tbody className={TBODY}>
             {(reviews.data ?? []).map((r) => (
               <tr key={r.id}>
-                <td data-label="Produk" className={cx(TD, 'font-medium')}>{r.product_name}</td>
+                <td data-label="" className={cx(TD, 'font-medium max-md:block!')}>{r.product_name}</td>
                 <td data-label="Rating" className={TD}><Stars value={r.rating} /></td>
                 <td data-label="Ulasan" className={cx(TD, 'max-w-[320px] whitespace-normal break-words')}>
                   {r.comment || <span className={MUTED_SMALL}>(tanpa komentar)</span>}
