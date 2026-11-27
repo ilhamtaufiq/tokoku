@@ -20,17 +20,17 @@
   --c-error-soft: #ffdad6;
   --c-on-error-soft: #93000a;
 
-  --bg: #fbf8ff;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-low: #f4f2fc;
-  --surface-mid: #eeedf7;
-  --surface-high: #e8e7f1;
-  --surface-highest: #e3e1eb;
-  --text: #1a1b22;
+  --surface-low: #f1f5f9;
+  --surface-mid: #eef2f7;
+  --surface-high: #e2e8f0;
+  --surface-highest: #cbd5e1;
+  --text: #0b1c30;
   --text-2: #444653;
   --muted: #757684;
-  --outline: #c4c5d5;
-  --outline-soft: #e4e3ee;
+  --outline: #cbd5e1;
+  --outline-soft: #e2e8f0;
 
   --r-sm: 4px;
   --r: 8px;
@@ -43,26 +43,26 @@
   --t-state: 120ms;
   --t-surface: 200ms;
 
-  --font-display: 'Wix Madefor Display', system-ui, sans-serif;
-  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Red Hat Mono', ui-monospace, monospace;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #12131a;
-    --surface: #1e1f26;
-    --surface-low: #1a1b22;
-    --surface-mid: #1e1f26;
-    --surface-high: #282a31;
-    --surface-highest: #33343c;
-    --text: #e3e1eb;
-    --text-2: #c4c5d5;
-    --muted: #8e909f;
-    --outline: #444653;
-    --outline-soft: #2a2c36;
+    --bg: #0b0f19;
+    --surface: #111827;
+    --surface-low: #0f172a;
+    --surface-mid: #111827;
+    --surface-high: #1f2937;
+    --surface-highest: #374151;
+    --text: #f8fafc;
+    --text-2: #cbd5e1;
+    --muted: #94a3b8;
+    --outline: #374151;
+    --outline-soft: #1f2937;
     --c-primary: #b8c4ff;
     --c-on-primary: #002584;
     --c-secondary-container: #3b446e;
@@ -82,17 +82,17 @@
   }
 }
 :root[data-theme='dark'] {
-  --bg: #12131a;
-  --surface: #1e1f26;
-  --surface-low: #1a1b22;
-  --surface-mid: #1e1f26;
-  --surface-high: #282a31;
-  --surface-highest: #33343c;
-  --text: #e3e1eb;
-  --text-2: #c4c5d5;
-  --muted: #8e909f;
-  --outline: #444653;
-  --outline-soft: #2a2c36;
+  --bg: #0b0f19;
+  --surface: #111827;
+  --surface-low: #0f172a;
+  --surface-mid: #111827;
+  --surface-high: #1f2937;
+  --surface-highest: #374151;
+  --text: #f8fafc;
+  --text-2: #cbd5e1;
+  --muted: #94a3b8;
+  --outline: #374151;
+  --outline-soft: #1f2937;
   --c-primary: #b8c4ff;
   --c-on-primary: #002584;
   --c-secondary-container: #3b446e;

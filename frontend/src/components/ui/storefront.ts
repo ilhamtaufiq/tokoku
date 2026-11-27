@@ -5,7 +5,7 @@
 
 /** Ukuran, tipografi, dan state dasar tombol. Tanpa warna border/latar agar bisa dikombinasikan. */
 export const btnBase =
-  'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-field px-4 text-sm font-semibold no-underline cursor-pointer transition-[background-color,border-color,color,filter,opacity,transform,box-shadow] duration-150 ease-out active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:opacity-85 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 [&_.material-symbols-outlined]:text-xl';
+  'inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill px-5 text-sm font-semibold no-underline cursor-pointer transition-[background-color,border-color,color,filter,opacity,transform,box-shadow] duration-150 ease-out active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:opacity-85 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45 [&_.material-symbols-outlined]:text-xl';
 
 export const btnDefault = 'border border-outline bg-surface text-ink hover:border-primary hover:text-primary';
 export const btnPrimary = 'border border-primary bg-primary text-on-primary shadow-cta hover:brightness-110 hover:shadow-pop';
