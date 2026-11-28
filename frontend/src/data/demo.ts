@@ -340,3 +340,45 @@ export const DEMO_RELATED = {
   body: 'Produk pelengkap yang sering dibeli bersamaan oleh sekolah dan instansi PKP sejenis.',
   more: 'Lihat semua katalog',
 };
+
+// --- Dummy tambahan untuk dokumen resmi (hanya tampilan cetak). ---
+
+/** Satuan barang default untuk dokumen (satuan tidak ada di data pesanan). */
+export const DEMO_DOC_UNIT = 'Unit';
+
+/** Keterangan KPP dan pengukuhan PKP pada kepala faktur. */
+export const DEMO_DOC_KPP = 'KPP Pratama Jakarta Kebayoran Baru Satu • Pengukuhan PKP: S-192PKP/WPJ.06/KP.0103/2021';
+
+/** Skema pajak untuk rincian jasa ekspedisi. */
+export const DEMO_DOC_TAX_SCHEME = 'Skema PMK-71/PMK.03/2022 (bebas PPN pengiriman)';
+
+/** Tanda tangan elektronik penerbit faktur. */
+export const DEMO_DOC_SIGN = { ca: 'TOKOKU CA ROOT 2025', role: 'Kepala Divisi Keuangan & Pajak' };
+
+/** Nilai meterai elektronik di kolom penerima faktur. */
+export const DEMO_DOC_METERAI = '10000';
+
+/** Kode KBLI dan spesifikasi singkat untuk surat pesanan. */
+export const DEMO_DOC_KBLI = 'KBLI 47411';
+export const DEMO_DOC_SPEC = 'Spesifikasi teknis sesuai katalog produk';
+
+/** Pihak pada surat pesanan (KPA dan penyelenggara pengadaan). */
+export const DEMO_DOC_SP_SIGN = {
+  kpaRole: 'Kuasa Pengguna Anggaran (KPA)',
+  kpaName: 'Budi Santoso, M.Pd.',
+  kpaNip: '19740815 199903 1 002',
+  penyelenggaraRole: 'Direktur Layanan Institusi & BOS',
+  penyelenggaraName: 'Hendra Kusuma, S.Kom.',
+  token: 'TKK-AUTH-99214-BOS',
+};
+
+/** Berat dummy per baris surat jalan (urutan baris, dipakai bila ada). */
+export const DEMO_DOC_ITEM_WEIGHT_GRAM = [2400, 350, 150];
+
+/** Pejabat yang mengetahui pada BAST. */
+export const DEMO_DOC_BAST_KPA = {
+  title: 'Mengetahui',
+  role: 'Kepala Sekolah selaku KPA',
+  name: 'Drs. H. Mulyono, M.Pd.',
+  nip: '19780415 200501 1 008',
+};

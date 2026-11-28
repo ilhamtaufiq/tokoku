@@ -1,11 +1,24 @@
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
-import { DocToolbar, MiniLabel, Paper, StoreBlock, docDate } from '../components/docs/shared';
-import { rp } from '../lib/money';
+import { BrandMark, DocBadge, DocBanner, DocToolbar, MiniLabel, Paper, SignatureBox, Stamp, docDate, formatNpwp, terbilang } from '../components/docs/shared';
+import {
+  DEMO_BUDGET,
+  DEMO_DOC_KBLI,
+  DEMO_DOC_SP_SIGN,
+  DEMO_DOC_SPEC,
+  DEMO_DOC_VA,
+  DEMO_INSTANSI,
+  DEMO_DOC_HASH,
+  demoSpkNumber,
+} from '../data/demo';
+import { percent, rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
-/** Surat pesanan: dokumen sebelum bayar. Bukan bukti pembayaran, dan tidak merinci PPN. Identitas warna: oranye. */
+/**
+ * Surat pesanan: dokumen sebelum bayar, bukan bukti pembayaran. Memuat rincian pajak (DPP dan PPN) seperti pada Stitch.
+ * Identitas warna: oranye.
+ */
 export default function PurchaseOrder() {
   useSeo({ title: 'Surat pesanan', noindex: true });
   const { id } = useParams();
@@ -22,100 +35,283 @@ export default function PurchaseOrder() {
   return (
     <section>
       <DocToolbar orderId={o.id} active="sp" />
+      <DocBanner
+        icon="shield_locked"
+        title="Dokumen Komitmen Pengadaan BOS / SiPLah Resmi"
+        subtitle="Format standar A4 cetak legalitas transaksi sekolah"
+        badges={
+          <>
+            <DocBadge className={unpaid ? 'bg-[#ffedd5] text-[#9a3412]' : 'bg-[#dcfce7] text-[#166534]'}>
+              {unpaid ? 'Menunggu pembayaran' : 'Sudah dibayar'}
+            </DocBadge>
+          </>
+        }
+        actions={
+          <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-4 text-sm font-semibold text-on-primary" onClick={() => window.print()}>
+            <span className="material-symbols-outlined text-[16px]" aria-hidden="true">print</span>
+            Cetak Lembar Kerja (A4)
+          </button>
+        }
+      />
+
       <Paper accent="#ea580c">
-        <header className="flex flex-wrap items-start justify-between gap-6 border-b border-[#fed7aa] pb-6">
+        {/* Peringatan: ini bukan bukti pembayaran */}
+        <div className="mb-6 flex gap-3 rounded-field border-2 border-[#ea580c] bg-[#fff7ed] p-4 text-sm text-[#7c2d12]" role="note">
+          <span className="material-symbols-outlined !text-[22px] text-[#ea580c]" aria-hidden="true">warning</span>
           <div>
-            <p className="m-0 font-display text-xs font-bold uppercase tracking-[0.2em] text-[#c2410c]">Dokumen pemesanan</p>
-            <h1 className="mt-1 font-display text-[30px] font-bold leading-none tracking-tight text-[#1a1b22] sm:text-[34px]">Surat Pesanan</h1>
-            <p className="mt-3 text-sm">No. pesanan <span className="font-mono font-semibold">{o.invoice_no}</span></p>
-            <p className="m-0 text-xs text-[#5b5e6e]">Dibuat {docDate(o.created_at)}</p>
+            <p className="m-0 font-display text-sm font-black uppercase tracking-wide text-[#9a3412]">
+              Perhatian: dokumen ini adalah surat pesanan / SPK sah sebelum pembayaran
+            </p>
+            <p className="m-0 mt-1">
+              <strong className="font-display text-[15px] font-bold uppercase tracking-wide">Ini bukan bukti pembayaran.</strong>{' '}
+              {unpaid
+                ? deadline && `Bayar sebelum ${docDate(deadline.toISOString())} agar pesanan diproses. Setelah lunas, invoice akan tersedia.`
+                : 'Bukti pembayaran tersedia di invoice.'}
+            </p>
           </div>
-          <StoreBlock order={o} />
+        </div>
+
+        {/* Kepala: penerbit dan nomor SPK */}
+        <header className="flex flex-col items-start justify-between gap-6 pb-6 md:flex-row">
+          <div className="max-w-[460px] flex-1">
+            <BrandMark letter="T" name="Tokoku Pengadaan" badge="Mitra resmi BOS" badgeClass="bg-[#ffedd5] text-[#9a3412]" />
+            {/* DEMO */}
+            <p className="m-0 mt-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-[#c2410c]">Mitra resmi pasar daring BOS / SiPLah Kemendikbudristek</p>
+            <div className="mt-2 space-y-0.5 text-sm">
+              <p className="m-0 font-semibold">{o.store_name || 'Nama toko belum diatur'}</p>
+              {o.store_npwp && <p className="m-0 text-xs text-[#5b5e6e]">NPWP: <span className="font-mono">{formatNpwp(o.store_npwp)}</span></p>}
+              {o.store_address && <p className="m-0 whitespace-pre-line text-xs text-[#5b5e6e]">{o.store_address}</p>}
+              {o.store_phone && <p className="m-0 text-xs text-[#5b5e6e]">Layanan mitra: {o.store_phone}</p>}
+            </div>
+          </div>
+          <div className="w-full rounded-card border border-[#fed7aa] bg-[#fff7ed] p-4 text-sm md:w-[280px]">
+            {/* DEMO */}
+            <p className="m-0 font-display text-[10px] font-bold uppercase tracking-wider text-[#c2410c]">No. Surat Perintah Kerja (SPK)</p>
+            <p className="m-0 mt-0.5 font-mono text-base font-black text-[#9a3412]">{demoSpkNumber(o.id)}</p>
+            <dl className="m-0 mt-2 space-y-0.5 text-xs">
+              <div className="flex justify-between gap-2"><dt className="text-[#5b5e6e]">Tanggal pesanan</dt><dd className="m-0 font-semibold">{docDate(o.created_at)}</dd></div>
+              {deadline && (
+                <div className="flex justify-between gap-2"><dt className="text-[#5b5e6e]">Jatuh tempo</dt><dd className="m-0 font-semibold text-[#c2410c]">{docDate(deadline.toISOString())}</dd></div>
+              )}
+              {/* DEMO */}
+              <div className="flex justify-between gap-2"><dt className="text-[#5b5e6e]">ID komitmen</dt><dd className="m-0 font-mono">{DEMO_BUDGET.id}</dd></div>
+            </dl>
+          </div>
         </header>
 
-        <div className="mt-6 flex gap-3 rounded-field border-2 border-[#ea580c] bg-[#fff7ed] p-4 text-sm text-[#7c2d12]" role="note">
-          <span className="material-symbols-outlined !text-[22px] text-[#ea580c]" aria-hidden="true">warning</span>
-          <p className="m-0">
-            <strong className="font-display text-[15px] font-bold uppercase tracking-wide">Ini bukan bukti pembayaran.</strong>{' '}
-            {unpaid
-              ? deadline && `Bayar sebelum ${docDate(deadline.toISOString())} agar pesanan diproses. Setelah lunas, invoice akan tersedia.`
-              : 'Bukti pembayaran tersedia di invoice.'}
-          </p>
+        {/* Judul bagian dokumen dan kode anggaran */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#ea580c] pb-2">
+          <h1 className="m-0 font-display text-lg font-black uppercase tracking-tight text-[#1a1b22]">Surat pesanan resmi pengadaan (SPK)</h1>
+          {/* DEMO */}
+          <span className="font-mono text-[11px] font-semibold uppercase text-[#9a3412]">Kode anggaran: {DEMO_BUDGET.kodeAnggaran}</span>
         </div>
 
-        <section className="mt-6">
-          <h2 className="m-0 mb-2 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">Dikirim ke</h2>
-          <p className="m-0 font-display font-bold">{o.buyer_name ?? '-'}</p>
-          <p className="m-0 whitespace-pre-line text-sm">{o.shipping_address}</p>
-          {o.destination_label && <p className="m-0 text-sm text-[#5b5e6e]">Kecamatan: {o.destination_label}</p>}
-        </section>
-
-        <table className="mt-6 hidden w-full border-collapse text-sm sm:table print:table">
-          <thead>
-            <tr className="border-b-2 border-[#ea580c] text-left text-[11px] font-bold uppercase tracking-wider [&_th]:bg-[#fff7ed] [&_th]:text-[#9a3412]">
-              <th className="px-2 py-2 font-bold">#</th>
-              <th className="px-2 py-2 font-bold">Barang</th>
-              <th className="px-2 py-2 text-right font-bold">Jumlah</th>
-              <th className="px-2 py-2 text-right font-bold">Harga satuan</th>
-              <th className="px-2 py-2 text-right font-bold">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {o.items.map((i, idx) => (
-              <tr key={i.id} className="border-b border-dashed border-[#fdba74] print:break-inside-avoid">
-                <td className="px-2 py-2.5">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#ffedd5] font-mono text-xs font-semibold text-[#9a3412]">{idx + 1}</span>
-                </td>
-                <td className="px-2 py-2.5">{i.product_name}</td>
-                <td className="px-2 py-2.5 text-right font-mono tabular-nums">{i.qty}</td>
-                <td className="px-2 py-2.5 text-right font-mono tabular-nums">{rp(i.unit_price)}</td>
-                <td className="px-2 py-2.5 text-right font-mono font-semibold tabular-nums">{rp(i.line_subtotal)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <ul className="m-0 mt-6 flex list-none flex-col gap-2.5 p-0 sm:hidden print:hidden">
-          {o.items.map((i, idx) => (
-            <li key={i.id} className="flex gap-3 rounded-field border border-dashed border-[#fdba74] p-3 text-sm">
-              <span className="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#ffedd5] font-mono text-xs font-semibold text-[#9a3412]">{idx + 1}</span>
-              <div className="min-w-0 flex-1">
-                <p className="m-0 font-semibold">{i.product_name}</p>
-                <dl className="m-0 mt-2 grid grid-cols-3 gap-2 text-right">
-                  <div>
-                    <dt><MiniLabel>Jumlah</MiniLabel></dt>
-                    <dd className="m-0 font-mono tabular-nums">{i.qty}</dd>
-                  </div>
-                  <div>
-                    <dt><MiniLabel>Harga satuan</MiniLabel></dt>
-                    <dd className="m-0 font-mono tabular-nums">{rp(i.unit_price)}</dd>
-                  </div>
-                  <div>
-                    <dt><MiniLabel>Subtotal</MiniLabel></dt>
-                    <dd className="m-0 font-mono font-semibold tabular-nums">{rp(i.line_subtotal)}</dd>
-                  </div>
-                </dl>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-6 ml-auto max-w-sm space-y-1.5 text-sm">
-          <div className="flex justify-between gap-4"><span>Total barang ({totalQty} item)</span><span className="font-mono tabular-nums">{rp(o.subtotal)}</span></div>
-          {Number(o.discount_total) > 0 && (
-            <div className="flex justify-between gap-4"><span>Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</span><span className="font-mono tabular-nums">−{rp(o.discount_total)}</span></div>
-          )}
-          <div className="flex justify-between gap-4"><span>Ongkos kirim</span><span className="font-mono tabular-nums">{rp(o.shipping_fee)}</span></div>
-          <div className="mt-2 flex items-center justify-between gap-4 rounded-field bg-[#ea580c] px-4 py-3 text-white">
-            <span className="font-display text-base font-bold">Total bayar</span>
-            <span className="font-mono text-lg font-bold tabular-nums">{rp(o.grand_total)}</span>
+        {/* Dua kartu: data satuan pendidikan dan alamat pengiriman */}
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-card bg-[#fff7ed] p-4">
+            <p className="m-0 mb-2 flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">school</span>
+              Data satuan pendidikan (pembeli)
+            </p>
+            <h2 className="m-0 font-display text-base font-bold">{o.buyer_name ?? '-'}</h2>
+            <dl className="m-0 mt-2 space-y-1 text-sm">
+              {/* DEMO */}
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPSN</dt><dd className="m-0 font-mono">: {DEMO_INSTANSI.npsn}</dd></div>
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPWP sekolah</dt><dd className="m-0 font-mono">: {o.buyer_npwp ?? '-'}</dd></div>
+              {/* DEMO */}
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">KPA / Kepala</dt><dd className="m-0">: {DEMO_INSTANSI.pic}</dd></div>
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Kontak</dt><dd className="m-0 font-mono">: {DEMO_INSTANSI.phone}</dd></div>
+            </dl>
           </div>
-          <p className="m-0 pt-1 text-right text-xs text-[#5b5e6e]">Harga sudah termasuk PPN.</p>
+          <div className="rounded-card bg-[#fff7ed] p-4">
+            <p className="m-0 mb-2 flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">local_shipping</span>
+              Alamat pengiriman &amp; penerima
+            </p>
+            <p className="m-0 whitespace-pre-line text-sm">{o.shipping_address}</p>
+            {o.destination_label && <p className="m-0 mt-1 text-sm text-[#5b5e6e]">Kecamatan: {o.destination_label}</p>}
+            <dl className="m-0 mt-2 space-y-1 text-sm">
+              {/* DEMO */}
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Petugas lapangan</dt><dd className="m-0">: {DEMO_INSTANSI.pic}</dd></div>
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Instruksi bongkar</dt><dd className="m-0 font-semibold text-[#c2410c]">: Wajib jam kerja (08:00 - 15:00 WIB)</dd></div>
+            </dl>
+          </div>
         </div>
 
-        <p className="mt-10 border-t border-[#e4e3ee] pt-3 text-[11px] text-[#5b5e6e]">
-          Surat pesanan ini dibuat otomatis dari data pesanan dan tidak memerlukan tanda tangan.
-        </p>
+        {/* Tabel item: tabel di layar lebar, kartu di layar sempit */}
+        <div className="mb-6">
+          <table className="hidden w-full border-collapse text-xs md:table print:table">
+            <thead>
+              <tr className="bg-[#00288e] text-left text-[10px] font-bold uppercase tracking-wider text-white">
+                <th className="px-2 py-2.5 text-center">No</th>
+                <th className="px-2 py-2.5">Rincian barang &amp; spesifikasi teknis</th>
+                <th className="px-2 py-2.5">Toko penyedia</th>
+                <th className="px-2 py-2.5 text-center">Jumlah</th>
+                <th className="px-2 py-2.5">Estimasi logistik</th>
+                <th className="px-2 py-2.5 text-right">Harga satuan (inc. PPN)</th>
+                <th className="px-2 py-2.5 text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {o.items.map((i, idx) => (
+                <tr key={i.id} className="border-b border-[#fed7aa] align-top print:break-inside-avoid">
+                  <td className="px-2 py-3 text-center font-mono font-semibold text-[#9a3412]">{String(idx + 1).padStart(2, '0')}</td>
+                  <td className="px-2 py-3">
+                    <p className="m-0 font-display text-sm font-bold leading-snug">{i.product_name}</p>
+                    {/* DEMO */}
+                    <p className="m-0 mt-0.5 text-[11px] text-[#5b5e6e]">{DEMO_DOC_SPEC}</p>
+                    {/* DEMO */}
+                    <p className="m-0 mt-0.5 font-mono text-[10px] font-bold text-[#c2410c]">{DEMO_DOC_KBLI} • #{i.product_id}</p>
+                  </td>
+                  <td className="px-2 py-3 text-[#5b5e6e]">{o.store_name ?? 'Penjual'}</td>
+                  <td className="px-2 py-3 text-center font-mono font-bold">{i.qty} unit</td>
+                  <td className="px-2 py-3 text-[#5b5e6e]">
+                    {o.courier ? `${o.courier.toUpperCase()} ${o.courier_service ?? ''}` : 'Kurir toko'}
+                    {o.estimated_days ? <span className="block font-mono text-[11px]">{o.estimated_days} hari kerja</span> : o.shipping_etd ? <span className="block font-mono text-[11px]">{o.shipping_etd}</span> : null}
+                  </td>
+                  <td className="px-2 py-3 text-right font-mono tabular-nums">{rp(i.unit_price)}</td>
+                  <td className="px-2 py-3 text-right font-mono font-bold tabular-nums">{rp(i.line_subtotal)}</td>
+                </tr>
+              ))}
+              {/* Biaya pengiriman dan proteksi (data dari ongkos kirim pesanan) */}
+              <tr className="bg-[#fff7ed] align-top print:break-inside-avoid">
+                <td className="px-2 py-3 text-center font-mono font-semibold text-[#9a3412]">{String(o.items.length + 1).padStart(2, '0')}</td>
+                <td className="px-2 py-3">
+                  <p className="m-0 font-display text-sm font-bold leading-snug">Biaya pengiriman terpadu &amp; proteksi pengadaan BOS</p>
+                  <p className="m-0 mt-0.5 text-[11px] text-[#5b5e6e]">Layanan antar sampai ruang sekolah, bebas PPN</p>
+                </td>
+                <td className="px-2 py-3 text-[#5b5e6e]">-</td>
+                <td className="px-2 py-3 text-center font-mono">1 paket</td>
+                <td className="px-2 py-3 text-[#5b5e6e]">Non-PPN</td>
+                <td className="px-2 py-3 text-right font-mono tabular-nums">{rp(o.shipping_fee)}</td>
+                <td className="px-2 py-3 text-right font-mono font-bold tabular-nums">{rp(o.shipping_fee)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <ul className="m-0 flex list-none flex-col gap-2.5 p-0 md:hidden print:hidden">
+            {o.items.map((i, idx) => (
+              <li key={i.id} className="flex gap-3 rounded-field border border-dashed border-[#fdba74] p-3 text-sm">
+                <span className="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#ffedd5] font-mono text-xs font-semibold text-[#9a3412]">{idx + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 font-semibold">{i.product_name}</p>
+                  <dl className="m-0 mt-2 grid grid-cols-3 gap-2 text-right">
+                    <div>
+                      <dt><MiniLabel>Jumlah</MiniLabel></dt>
+                      <dd className="m-0 font-mono tabular-nums">{i.qty}</dd>
+                    </div>
+                    <div>
+                      <dt><MiniLabel>Harga satuan</MiniLabel></dt>
+                      <dd className="m-0 font-mono tabular-nums">{rp(i.unit_price)}</dd>
+                    </div>
+                    <div>
+                      <dt><MiniLabel>Subtotal</MiniLabel></dt>
+                      <dd className="m-0 font-mono font-semibold tabular-nums">{rp(i.line_subtotal)}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Rekap: escrow (kiri) dan rekapitulasi tagihan (kanan) */}
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-card bg-[#fff7ed] p-4">
+            <p className="m-0 mb-2 flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance</span>
+              Instruksi rekening escrow BOS
+            </p>
+            <p className="m-0 text-xs text-[#5b5e6e]">Pembayaran wajib disetor melalui Virtual Account resmi yang terikat langsung dengan verifikasi otomatis sistem belanja BOS.</p>
+            {/* DEMO */}
+            <dl className="m-0 mt-3 space-y-1.5 rounded-field bg-white p-3 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Bank penampungan</dt><dd className="m-0 text-right font-semibold">{DEMO_DOC_VA.bank}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Nomor VA escrow</dt><dd className="m-0 font-mono text-base font-black text-[#9a3412]">{DEMO_DOC_VA.number}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Atas nama rekening</dt><dd className="m-0 text-right">{DEMO_DOC_VA.holder}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Metode penyetoran</dt><dd className="m-0 text-right">{DEMO_DOC_VA.method}</dd></div>
+            </dl>
+            {/* DEMO */}
+            <p className="m-0 mt-2 text-xs text-[#5b5e6e]">Verifikasi pelunasan diterbitkan instan (&lt; 3 menit) setelah transfer berhasil masuk.</p>
+          </div>
+
+          <div className="flex flex-col justify-between rounded-card bg-[#fff7ed] p-4">
+            <p className="m-0 mb-2 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">Rekapitulasi tagihan belanja</p>
+            <dl className="m-0 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Dasar pengenaan pajak (DPP)</dt><dd className="m-0 font-mono tabular-nums">{rp(o.dpp)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">PPN terutang {percent(o.ppn_rate)} (ditanggung PKP)</dt><dd className="m-0 font-mono tabular-nums">{rp(o.ppn_total)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Total barang ({totalQty} item)</dt><dd className="m-0 font-mono tabular-nums">{rp(o.subtotal)}</dd></div>
+              {Number(o.discount_total) > 0 && (
+                <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt><dd className="m-0 font-mono tabular-nums">−{rp(o.discount_total)}</dd></div>
+              )}
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Ongkos angkut &amp; perlindungan</dt><dd className="m-0 font-mono tabular-nums">{rp(o.shipping_fee)}</dd></div>
+              {/* DEMO */}
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Biaya administrasi escrow</dt><dd className="m-0 font-mono font-semibold text-[#15803d]">GRATIS (Rp 0)</dd></div>
+            </dl>
+            <div className="mt-4 rounded-card bg-[#ea580c] px-4 py-3 text-white">
+              <div className="flex items-center justify-between gap-4">
+                <span className="font-display text-sm font-bold uppercase">Total tagihan SPK</span>
+                <span className="font-mono text-xl font-black tabular-nums">{rp(o.grand_total)}</span>
+              </div>
+              <p className="m-0 mt-1 text-right text-[11px] italic text-[#ffedd5]">Terbilang: {terbilang(o.grand_total)}</p>
+            </div>
+            <p className="m-0 pt-2 text-right text-xs text-[#5b5e6e]">Harga sudah termasuk PPN.</p>
+          </div>
+        </div>
+
+        {/* Klausul hukum dan ketentuan */}
+        <div className="mb-6 rounded-card border border-[#fed7aa] p-4 text-xs leading-relaxed text-[#1a1b22]">
+          <p className="m-0 mb-2 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">Klausul hukum &amp; ketentuan komitmen belanja (SPK)</p>
+          <ul className="m-0 list-disc space-y-1 pl-4">
+            <li>
+              <strong>Batas validitas komitmen:</strong> dokumen pesanan ini berlaku {unpaid && deadline ? `sampai ${docDate(deadline.toISOString())}` : 'sesuai batas waktu yang tertera'}. Apabila dana tidak efektif diterima pada rekening penampungan escrow, surat pesanan dinyatakan batal demi hukum.
+            </li>
+            <li><strong>Kewajiban pemeriksaan fisik:</strong> pihak sekolah berhak menolak serah terima barang jika spesifikasi tidak sesuai dengan nomor seri, cacat fisik, atau segel terbuka rusak saat kirim tiba.</li>
+            {/* DEMO */}
+            <li><strong>Dokumen lanjutan:</strong> setelah pembayaran terkonfirmasi, sistem akan otomatis merilis kuitansi, faktur pajak elektronik (e-Faktur PPN 11%), dan berita acara serah terima (BAST) untuk pelaporan LPJ.</li>
+          </ul>
+        </div>
+
+        {/* Tanda tangan: pemesan dan penyelenggara pengadaan */}
+        <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 print:break-inside-avoid">
+          <SignatureBox
+            title="Pihak pemesan (satuan pendidikan)"
+            name={DEMO_DOC_SP_SIGN.kpaName}
+            sub={DEMO_DOC_SP_SIGN.kpaRole}
+            tone="orange"
+            signature={
+              /* DEMO */
+              <span className="flex flex-col items-center gap-0.5 rounded-field bg-[#eff4ff] px-3 py-1.5 text-center text-[#00288e]">
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">workspace_premium</span>
+                <span className="font-mono text-[9px] font-bold uppercase">Meterai elektronik • disetujui digital</span>
+              </span>
+            }
+          />
+          <SignatureBox
+            title="Pihak penyelenggara pengadaan"
+            name={o.store_name || 'Penjual'}
+            sub={DEMO_DOC_SP_SIGN.penyelenggaraRole}
+            tone="orange"
+            signature={
+              /* DEMO */
+              <span className="flex flex-col items-center gap-0.5 text-center">
+                <Stamp color="#15803d" className="!text-[11px] !tracking-wider">Sistem tervalidasi</Stamp>
+                <span className="font-mono text-[9px] text-[#5b5e6e]">Token: {DEMO_DOC_SP_SIGN.token}</span>
+              </span>
+            }
+          />
+        </div>
+
+        <div className="flex flex-col gap-1 border-t border-[#e4e3ee] pt-3 text-[11px] text-[#5b5e6e] md:flex-row md:justify-between">
+          <span>
+            Surat pesanan ini dibuat otomatis dari data pesanan dan tidak memerlukan tanda tangan basah.
+          </span>
+          {/* DEMO */}
+          <span className="font-mono">DOC-HASH {DEMO_DOC_HASH.slice(0, 16)}… • Halaman 1 dari 1</span>
+        </div>
       </Paper>
+
+      <p className="mt-6 text-center text-sm text-[#5b5e6e] print:hidden">
+        Butuh bantuan penyesuaian RKAS? Hubungi tim pendamping Dana BOS Tokoku.
+      </p>
     </section>
   );
 }

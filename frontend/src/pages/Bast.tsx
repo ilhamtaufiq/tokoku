@@ -5,7 +5,17 @@ import { api } from '../api';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { SignaturePad } from '../components/SignaturePad';
-import { DocToolbar, MiniLabel, Paper, SignatureBox, docDate } from '../components/docs/shared';
+import { DemoQr, DocBadge, DocBanner, DocToolbar, MiniLabel, Paper, SignatureBox, docDate } from '../components/docs/shared';
+import {
+  DEMO_BUDGET,
+  DEMO_DOC_BAST_KPA,
+  DEMO_DOC_HASH,
+  DEMO_INSTANSI,
+  DEMO_PRODUCT_STORE,
+  DEMO_QR_CODE,
+  demoSerialNo,
+  demoSpkNumber,
+} from '../data/demo';
 import { formatDate } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
@@ -64,15 +74,75 @@ export default function Bast() {
   const doc = bast.data;
   const shipped = o.status === 'shipped' || o.status === 'completed';
   const damaged = doc?.items.some((i) => i.qty_damaged > 0) ?? false;
+  const totalDamaged = doc?.items.reduce((sum, i) => sum + i.qty_damaged, 0) ?? 0;
+  const totalPhysical = doc?.items.reduce((sum, i) => sum + i.qty, 0) ?? 0;
+  const bastNo = doc ? `BAST-${String(doc.id).padStart(5, '0')}` : '';
 
   return (
     <section>
       <DocToolbar orderId={o.id} active="bast" />
+      <DocBanner
+        icon="verified_user"
+        title="Format resmi serah terima Dana BOS"
+        badges={<DocBadge className="bg-[#dcfce7] text-[#166534]">Siap audit BPK / BPKP</DocBadge>}
+        subtitle="Format baku berita acara pelaporan belanja sekolah"
+        actions={
+          <>
+            {doc && (
+              <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-4 text-sm font-semibold text-on-primary" onClick={() => window.print()}>
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">print</span>
+                Cetak lembar BAST
+              </button>
+            )}
+            {doc && (
+              <button
+                type="button"
+                className="inline-flex h-9 items-center gap-1.5 rounded-pill bg-[#dce9ff] px-4 text-sm font-semibold text-[#1a1b22]"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(bastNo).catch(() => undefined);
+                }}
+              >
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">content_copy</span>
+                Salin no. BAST
+              </button>
+            )}
+          </>
+        }
+      />
+
       <Paper accent="#15803d">
-        <header className="border-b border-[#bbf7d0] pb-6 text-center">
-          <p className="m-0 font-display text-xs font-bold uppercase tracking-[0.25em] text-[#15803d]">Berita Acara</p>
-          <h1 className="mt-1 font-display text-[24px] font-bold leading-tight tracking-tight text-[#1a1b22] sm:text-[28px]">Serah Terima Barang</h1>
-          <p className="m-0 font-mono text-sm font-semibold">{o.invoice_no}</p>
+        {/* Kepala: penerbit dan judul berita acara */}
+        <header className="border-b border-[#bbf7d0] pb-6">
+          <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-[#15803d] text-white" aria-hidden="true">
+                <span className="material-symbols-outlined text-[24px]">shield</span>
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* DEMO */}
+                  <span className="font-display text-base font-black uppercase text-[#14532d]">Tokoku Pendidikan</span>
+                  <DocBadge className="bg-[#dcfce7] text-[#166534]">Mitra SiPLah / LPJ BOS</DocBadge>
+                </div>
+                {/* DEMO */}
+                <p className="m-0 mt-0.5 text-xs text-[#5b5e6e]">PT Tokoku Niaga Nusantara • Pengadaan elektronik &amp; sarpras sekolah</p>
+              </div>
+            </div>
+            <div className="text-left md:text-right">
+              {/* DEMO */}
+              <span className="inline-block rounded-pill bg-[#dcfce7] px-3 py-1 font-display text-[11px] font-bold uppercase tracking-wider text-[#166534]">Format baku LPJ BOS</span>
+              <p className="m-0 mt-1 font-mono text-[10px] text-[#5b5e6e]">Tahun anggaran 2025 • Tokoku Fiscal Engine v4.2</p>
+            </div>
+          </div>
+          <div className="mt-6 text-center">
+            <p className="m-0 font-display text-xs font-bold uppercase tracking-[0.25em] text-[#15803d]">Berita acara</p>
+            <h1 className="mt-1 font-display text-[22px] font-black leading-tight tracking-tight text-[#1a1b22] sm:text-[26px]">
+              Berita Acara Serah Terima Barang (BAST)
+            </h1>
+            {/* DEMO */}
+            <p className="m-0 mx-auto mt-1 max-w-xl text-xs text-[#5b5e6e]">Standar lampiran laporan pertanggungjawaban (LPJ) Dana Bantuan Operasional Sekolah (BOS)</p>
+            <p className="m-0 mt-2 font-mono text-sm font-semibold">{o.invoice_no}</p>
+          </div>
         </header>
 
         {!doc && !shipped && (
@@ -81,93 +151,203 @@ export default function Bast() {
 
         {doc ? (
           <>
-            <p className="mt-8 text-sm leading-relaxed">
+            {/* Dua kartu identitas: administrasi dan satuan pendidikan penerima */}
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-card bg-[#f0fdf4] p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-[#14532d]">
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">description</span>
+                    Identitas administrasi
+                  </span>
+                  {/* DEMO */}
+                  <DocBadge className="bg-white text-[#166534]">Arsip BOS-01</DocBadge>
+                </div>
+                <dl className="m-0 space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Nomor dokumen</dt><dd className="m-0 font-mono font-semibold">{bastNo}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Tanggal pemeriksaan</dt><dd className="m-0 text-right font-semibold">{docDate(doc.created_at)}</dd></div>
+                  {/* DEMO */}
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Surat pesanan (SPK)</dt><dd className="m-0 font-mono">{demoSpkNumber(o.id)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Faktur pajak PPN 11%</dt><dd className="m-0 font-mono">{o.invoice_no}</dd></div>
+                </dl>
+              </div>
+              <div className="rounded-card bg-[#f0fdf4] p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-[#14532d]">
+                    <span className="material-symbols-outlined text-[18px]" aria-hidden="true">school</span>
+                    Satuan pendidikan penerima
+                  </span>
+                  {/* DEMO */}
+                  <DocBadge className="bg-white text-[#166534]">NPSN {DEMO_INSTANSI.npsn}</DocBadge>
+                </div>
+                <dl className="m-0 space-y-1.5 text-sm">
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Nama lembaga</dt><dd className="m-0 text-right font-semibold">{o.buyer_name ?? '-'}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Alamat pengiriman</dt><dd className="m-0 max-w-[60%] text-right">{o.shipping_address}</dd></div>
+                  {/* DEMO */}
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Sumber dana</dt><dd className="m-0 text-right font-semibold">{DEMO_BUDGET.source}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Penyedia terpilih</dt><dd className="m-0 text-right">{o.store_name || '-'}</dd></div>
+                </dl>
+              </div>
+            </div>
+
+            <p className="mt-6 text-sm leading-relaxed">
               Pada tanggal <strong>{docDate(doc.created_at)}</strong>, pihak penerima <strong>{doc.received_by}</strong> menyatakan telah
               menerima barang dari penjual <strong>{o.store_name || '-'}</strong> dengan rincian sebagai berikut:
             </p>
-            <table className="mt-5 hidden w-full border-collapse text-sm sm:table print:table">
-              <thead>
-                <tr className="text-left text-[11px] font-bold uppercase tracking-wider [&_th]:bg-[#15803d] [&_th]:text-white">
-                  <th className="px-2 py-2.5 font-bold">No</th>
-                  <th className="px-2 py-2.5 font-bold">Barang</th>
-                  <th className="px-2 py-2.5 text-right font-bold">Dipesan</th>
-                  <th className="px-2 py-2.5 text-right font-bold">Diterima baik</th>
-                  <th className="px-2 py-2.5 text-right font-bold">Rusak</th>
-                </tr>
-              </thead>
-              <tbody>
-                {doc.items.map((i, idx) => (
-                  <tr key={i.order_item_id} className={`border-b border-[#dcfce7] print:break-inside-avoid ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
-                    <td className="px-2 py-2.5 font-mono">{idx + 1}</td>
-                    <td className="px-2 py-2.5">{i.product_name}</td>
-                    <td className="px-2 py-2.5 text-right font-mono tabular-nums">{i.qty}</td>
-                    <td className="px-2 py-2.5 text-right font-mono tabular-nums">{i.qty_good}</td>
-                    <td className="px-2 py-2.5 text-right font-mono font-bold tabular-nums">{i.qty_damaged}</td>
+
+            {/* Tabel barang: tabel di layar lebar, kartu di layar sempit */}
+            <div className="mt-4">
+              <table className="hidden w-full border-collapse text-xs md:table print:table">
+                <thead>
+                  <tr className="bg-[#14532d] text-left text-[10px] font-bold uppercase tracking-wider text-white">
+                    <th className="px-2 py-2.5 font-bold">No</th>
+                    <th className="px-2 py-2.5 font-bold">Nama barang &amp; spesifikasi teknis</th>
+                    <th className="px-2 py-2.5 text-right font-bold">Qty dipesan</th>
+                    <th className="bg-[#166534] px-2 py-2.5 text-right font-bold">Qty baik (diterima)</th>
+                    <th className="px-2 py-2.5 text-right font-bold">Qty rusak</th>
+                    <th className="px-2 py-2.5 font-bold">Status uji fungsi</th>
+                    <th className="px-2 py-2.5 font-bold">Keterangan garansi</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {doc.items.map((i, idx) => (
+                    <tr key={i.order_item_id} className={`border-b border-[#dcfce7] align-top print:break-inside-avoid ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
+                      <td className="px-2 py-3 font-mono">{String(idx + 1).padStart(2, '0')}</td>
+                      <td className="px-2 py-3">
+                        <p className="m-0 font-display text-sm font-bold leading-snug">{i.product_name}</p>
+                        {/* DEMO */}
+                        <p className="m-0 mt-1 font-mono text-[10px] text-[#166534]">SN: {demoSerialNo(i.order_item_id)}</p>
+                      </td>
+                      <td className="px-2 py-3 text-right font-mono tabular-nums">{i.qty} unit</td>
+                      <td className="bg-[#f0fdf4] px-2 py-3 text-right font-mono font-bold tabular-nums">{i.qty_good} unit</td>
+                      <td className="px-2 py-3 text-right font-mono font-bold tabular-nums">{i.qty_damaged} unit</td>
+                      <td className="px-2 py-3">
+                        <span className={`inline-block rounded-pill px-2 py-1 text-[11px] font-semibold ${i.qty_damaged > 0 ? 'bg-[#fee2e2] text-[#991b1b]' : 'bg-[#dcfce7] text-[#166534]'}`}>
+                          {i.qty_damaged > 0 ? 'Ada barang rusak' : 'Lolos uji fungsi'}
+                        </span>
+                      </td>
+                      {/* DEMO */}
+                      <td className="px-2 py-3 text-[11px] text-[#5b5e6e]">{DEMO_PRODUCT_STORE.warranty}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <ul className="m-0 flex list-none flex-col gap-2.5 p-0 md:hidden print:hidden">
+                {doc.items.map((i, idx) => (
+                  <li key={i.order_item_id} className={`rounded-field border border-[#dcfce7] p-3 text-sm ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
+                    <p className="m-0 font-semibold">
+                      <span className="font-mono text-xs text-[#5b5e6e]">{idx + 1}.</span> {i.product_name}
+                    </p>
+                    <dl className="m-0 mt-2 grid grid-cols-3 gap-2 text-right">
+                      <div>
+                        <dt><MiniLabel>Dipesan</MiniLabel></dt>
+                        <dd className="m-0 font-mono tabular-nums">{i.qty}</dd>
+                      </div>
+                      <div>
+                        <dt><MiniLabel>Diterima baik</MiniLabel></dt>
+                        <dd className="m-0 font-mono tabular-nums">{i.qty_good}</dd>
+                      </div>
+                      <div>
+                        <dt><MiniLabel>Rusak</MiniLabel></dt>
+                        <dd className="m-0 font-mono font-bold tabular-nums">{i.qty_damaged}</dd>
+                      </div>
+                    </dl>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-            <ul className="m-0 mt-5 flex list-none flex-col gap-2.5 p-0 sm:hidden print:hidden">
-              {doc.items.map((i, idx) => (
-                <li key={i.order_item_id} className={`rounded-field border border-[#dcfce7] p-3 text-sm ${i.qty_damaged > 0 ? 'bg-[#fef2f2]' : ''}`}>
-                  <p className="m-0 font-semibold">
-                    <span className="font-mono text-xs text-[#5b5e6e]">{idx + 1}.</span> {i.product_name}
-                  </p>
-                  <dl className="m-0 mt-2 grid grid-cols-3 gap-2 text-right">
-                    <div>
-                      <dt><MiniLabel>Dipesan</MiniLabel></dt>
-                      <dd className="m-0 font-mono tabular-nums">{i.qty}</dd>
-                    </div>
-                    <div>
-                      <dt><MiniLabel>Diterima baik</MiniLabel></dt>
-                      <dd className="m-0 font-mono tabular-nums">{i.qty_good}</dd>
-                    </div>
-                    <div>
-                      <dt><MiniLabel>Rusak</MiniLabel></dt>
-                      <dd className="m-0 font-mono font-bold tabular-nums">{i.qty_damaged}</dd>
-                    </div>
-                  </dl>
-                </li>
-              ))}
-            </ul>
+              </ul>
+              <div className="flex flex-col gap-1 rounded-b-card bg-[#f0fdf4] p-3 text-xs text-[#14532d] md:flex-row md:justify-between">
+                <span>
+                  Hasil pemeriksaan fisik: {totalDamaged > 0 ? `terdapat ${totalDamaged} unit rusak.` : '100% lengkap, baru, tanpa cacat atau malfungsi.'}
+                </span>
+                <span className="font-mono text-[#5b5e6e]">Total item: {doc.items.length} kelompok barang ({totalPhysical} kuantitas fisik)</span>
+              </div>
+            </div>
+
             {doc.note && <p className="mt-4 text-sm"><span className="font-semibold">Catatan penerima:</span> {doc.note}</p>}
             <p className="mt-5 text-sm">Penerima menyatakan transaksi serah terima ini sah sesuai rincian di atas.</p>
 
-            {damaged && (
-              <div className="mt-6 rounded-field border border-[#fecaca] bg-[#fef2f2] p-4 text-sm">
-                <p className="m-0 mb-1 font-semibold text-[#991b1b]">Tindak lanjut penjual atas barang rusak</p>
-                {doc.seller_note ? (
-                  <p className="m-0">
-                    {doc.seller_note}
-                    {doc.seller_responded_at && <span className="block text-xs text-[#5b5e6e]">Ditanggapi {formatDate(doc.seller_responded_at)}</span>}
-                  </p>
-                ) : isSeller ? (
-                  <form
-                    className="flex flex-col gap-2"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      setError(null);
-                      respond.mutate();
-                    }}
-                  >
-                    <textarea rows={3} minLength={5} maxLength={500} required className="rounded-field border border-outline bg-white px-3 py-2 text-[#1a1b22]"
-                      value={sellerNote} onChange={(e) => setSellerNote(e.target.value)} placeholder="Misalnya: barang pengganti dikirim hari ini" />
-                    <button className="h-9 self-start rounded-pill bg-[#991b1b] px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={respond.isPending}>
-                      {respond.isPending ? 'Menyimpan…' : 'Simpan tanggapan'}
-                    </button>
-                  </form>
-                ) : (
-                  <p className="m-0 text-[#5b5e6e]">Belum ada tanggapan dari penjual.</p>
+            {/* Tanggapan penjual dan komitmen garansi */}
+            <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto]">
+              <div className="rounded-card bg-[#f0fdf4] p-4 text-sm">
+                <p className="m-0 mb-1 font-display text-[11px] font-bold uppercase tracking-wider text-[#14532d]">Tanggapan penjual &amp; komitmen garansi purna jual</p>
+                {damaged && (
+                  <div className="mt-2 rounded-field border border-[#fecaca] bg-[#fef2f2] p-3">
+                    <p className="m-0 mb-1 font-semibold text-[#991b1b]">Tindak lanjut penjual atas barang rusak</p>
+                    {doc.seller_note ? (
+                      <p className="m-0">
+                        {doc.seller_note}
+                        {doc.seller_responded_at && <span className="block text-xs text-[#5b5e6e]">Ditanggapi {formatDate(doc.seller_responded_at)}</span>}
+                      </p>
+                    ) : isSeller ? (
+                      <form
+                        className="flex flex-col gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          setError(null);
+                          respond.mutate();
+                        }}
+                      >
+                        <textarea rows={3} minLength={5} maxLength={500} required className="rounded-field border border-outline bg-white px-3 py-2 text-[#1a1b22]"
+                          value={sellerNote} onChange={(e) => setSellerNote(e.target.value)} placeholder="Misalnya: barang pengganti dikirim hari ini" />
+                        <button className="h-9 self-start rounded-pill bg-[#991b1b] px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={respond.isPending}>
+                          {respond.isPending ? 'Menyimpan…' : 'Simpan tanggapan'}
+                        </button>
+                      </form>
+                    ) : (
+                      <p className="m-0 text-[#5b5e6e]">Belum ada tanggapan dari penjual.</p>
+                    )}
+                    {error && <p className="m-0 mt-2 text-sm text-[#991b1b]">{error}</p>}
+                  </div>
                 )}
-                {error && <p className="m-0 mt-2 text-sm text-[#991b1b]">{error}</p>}
+                {/* DEMO */}
+                <p className="m-0 mt-2 text-[#14532d]">
+                  Pihak penjual menjamin keaslian 100% barang, tersedia tukar unit baru dalam 14 hari kerja bila terjadi cacat pabrik tersembunyi, serta dukungan technical service center resmi.
+                </p>
               </div>
-            )}
+              {/* DEMO */}
+              <div className="flex items-center gap-2 self-start rounded-card border border-[#bbf7d0] bg-white px-4 py-3 text-sm">
+                <span className="material-symbols-outlined text-[#15803d]" aria-hidden="true">verified</span>
+                <div>
+                  <p className="m-0 font-semibold">Jaminan 100% original</p>
+                  <p className="m-0 text-[11px] text-[#5b5e6e]">SLA ganti baru: 14 hari</p>
+                </div>
+              </div>
+            </div>
 
-            <div className="mt-12 grid gap-8 sm:grid-cols-2 print:break-inside-avoid">
-              <SignatureBox title="Pihak penjual" name={o.store_name || 'Penjual'} tone="green" />
+            {/* Validasi kelayakan arsip dan QR verifikasi */}
+            {/* DEMO */}
+            <div className="mt-6 grid gap-4 rounded-card bg-[#f0fdf4] p-4 md:grid-cols-[auto_1fr_auto] md:items-center">
+              <div className="mx-auto flex h-24 w-24 flex-none flex-col items-center justify-center rounded-full border-2 border-dashed border-[#15803d] text-center text-[#15803d]">
+                <span className="material-symbols-outlined text-[22px]" aria-hidden="true">verified_user</span>
+                <span className="font-mono text-[8px] font-bold uppercase leading-tight">Terverifikasi<br />audit ready</span>
+              </div>
+              <div className="text-sm">
+                <p className="m-0 flex flex-wrap items-center gap-2 font-display text-sm font-bold">
+                  Validasi kelayakan arsip inspektorat
+                  <DocBadge className="bg-[#bbf7d0] text-[#14532d]">Terkunci</DocBadge>
+                </p>
+                <p className="m-0 mt-1 text-xs text-[#5b5e6e]">
+                  Dokumen berita acara ini telah terverifikasi secara elektronik dan memenuhi instrumen pemeriksaan LPJ BOS reguler, serta kompatibel dengan audit BPK &amp; BPKP tahun anggaran 2025.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 rounded-field bg-white p-3">
+                <DemoQr value={DEMO_QR_CODE} label="QR keaslian berkas (dummy)" size={56} />
+                <div className="text-[11px]">
+                  <p className="m-0 font-semibold text-[#14532d]">BSrE bersertifikasi</p>
+                  <p className="m-0 font-semibold">Integritas TTE sah</p>
+                  <p className="m-0 truncate font-mono text-[#5b5e6e]">SHA256: {DEMO_DOC_HASH.slice(0, 14)}…</p>
+                  <span className="underline text-[#15803d]">Cek keaslian berkas</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tanda tangan: penjual, penerima, dan pejabat yang mengetahui */}
+            <p className="mb-4 mt-8 text-center font-display text-sm font-bold uppercase tracking-wider text-[#14532d]">Pengesahan berita acara serah terima fisik barang</p>
+            <div className="grid gap-6 md:grid-cols-3 print:break-inside-avoid">
+              <SignatureBox title="Pihak penjual" name={o.store_name || 'Penjual'} sub="Penyedia pengadaan barang" tone="green" />
               <SignatureBox
                 title="Pihak penerima"
                 name={doc.received_by}
+                sub="Penerima hasil pengadaan"
                 dateLabel={docDate(doc.created_at)}
                 tone="green"
                 signature={
@@ -176,6 +356,24 @@ export default function Bast() {
                   ) : null
                 }
               />
+              {/* DEMO */}
+              <SignatureBox
+                title={DEMO_DOC_BAST_KPA.title}
+                name={DEMO_DOC_BAST_KPA.name}
+                sub={`${DEMO_DOC_BAST_KPA.role} • NIP ${DEMO_DOC_BAST_KPA.nip}`}
+                tone="green"
+                signature={
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#15803d] text-center font-mono text-[8px] font-bold uppercase leading-tight text-[#15803d]">
+                    Disahkan<br />KPA BOS
+                  </span>
+                }
+              />
+            </div>
+
+            <div className="mt-8 flex flex-col gap-1 border-t border-[#e4e3ee] pt-3 text-[11px] text-[#5b5e6e] md:flex-row md:justify-between">
+              {/* DEMO */}
+              <span>Berita acara ini dibuat dalam rangkap 3 (tiga) asli dengan kekuatan hukum yang sama untuk kelengkapan berkas SPJ/LPJ BOS.</span>
+              <span className="font-mono">Hal 1 dari 1 (dokumen sah)</span>
             </div>
           </>
         ) : shipped && isBuyer ? (

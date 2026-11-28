@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api';
 import { ORDER_STATUS_LABEL, formatDate, rp } from '../../lib/money';
 import type { OrderStatus, PaymentStatus } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
-import { CARD, HIDE_MD, MONEY, MUTED_SMALL, SKU, StatusBadge, TABLE_STACK, TBODY, TD, TD_MONEY, TH, TH_NUM, btn, cx, type Tone } from './adminUi';
+import { DEMO_KPI_TREND, DEMO_MONTHLY_SALES, DEMO_URGENT_TASKS } from '../../data/demo';
+import { CARD, DEMO_TAG, HIDE_MD, MONEY, MUTED_SMALL, SKU, Sparkline, StatusBadge, TABLE_STACK, TBODY, TD, TD_MONEY, TH, TH_NUM, Trend, btn, cx, type Tone } from './adminUi';
 
 const DAY = new Intl.DateTimeFormat('id-ID', { weekday: 'short' });
 
@@ -23,44 +25,82 @@ const KPI_ICON = 'material-symbols-outlined flex h-9 w-9 flex-none items-center 
 const KPI_VALUE = cx(MONEY, 'text-xl font-bold leading-7 text-ink sm:text-[26px] sm:leading-8');
 const SECTION_TITLE = 'font-display text-lg font-semibold leading-7 text-ink sm:text-xl';
 const LINK_SMALL = 'inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0';
+const TASK_TONE: Record<'danger' | 'warn' | 'info', string> = {
+  danger: 'bg-error-soft text-on-error-soft',
+  warn: 'bg-warning-soft text-on-warning-soft',
+  info: 'bg-secondary-container text-on-secondary-container',
+};
+const SEG_BTN = 'inline-flex min-h-11 items-center rounded-pill px-3.5 text-xs font-semibold transition-colors md:min-h-8';
+
+type Series = '7d' | '6m';
 
 export default function AdminDashboard() {
   const dash = useQuery({ queryKey: ['admin-dashboard'], queryFn: api.adminDashboard, refetchInterval: 60_000 });
+  const [series, setSeries] = useState<Series>('7d');
 
   if (dash.isPending) return <p className="text-muted">Memuat ringkasan…</p>;
   if (dash.isError || !dash.data) return <p className="rounded-field bg-error-soft px-3.5 py-2.5 text-sm text-on-error-soft">Gagal memuat ringkasan.</p>;
   const d = dash.data;
   const max = Math.max(1, ...d.sales_7d.map((x) => Number(x.total)));
   const todayIso = d.sales_7d[d.sales_7d.length - 1]?.day;
+  const monthMax = Math.max(1, ...DEMO_MONTHLY_SALES.map((m) => m.value));
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        crumbs={['Portal penjual', 'Operasional bisnis', 'Ringkasan']}
         title="Ringkasan penjualan"
         subtitle="Pendapatan dari pesanan yang sudah dibayar · diperbarui otomatis"
         actions={
-          <Link to="/admin/products" className={btn('primary')}>
-            <span className="material-symbols-outlined" aria-hidden>add</span>
-            Kelola produk
-          </Link>
+          <>
+            {/* DEMO: tombol unduh rekap belum punya API, jadi dinonaktifkan. */}
+            <button type="button" className={btn('default')} disabled title="Belum tersedia">
+              <span className="material-symbols-outlined" aria-hidden>download</span>
+              Unduh rekap
+              <span className={DEMO_TAG}>Demo</span>
+            </button>
+            <Link to="/admin/products" className={btn('primary')}>
+              <span className="material-symbols-outlined" aria-hidden>add</span>
+              Kelola produk
+            </Link>
+          </>
         }
       />
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
           <div className={KPI_TOP}><span>Total pendapatan</span><span className={KPI_ICON} aria-hidden>payments</span></div>
-          <strong className={cx(KPI_VALUE, 'break-words')}>{rp(d.revenue_total)}</strong>
+          <strong className={cx(KPI_VALUE, 'whitespace-nowrap text-base sm:text-xl lg:text-[22px]')}>{rp(d.revenue_total)}</strong>
           <span className={MUTED_SMALL}>{d.orders_total} pesanan lunas</span>
+          {/* DEMO: tren persentase dan sparkline bulanan dummy. */}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Trend {...DEMO_KPI_TREND.revenue} />
+            <span className={DEMO_TAG}>Demo</span>
+          </div>
+          <div className="text-primary">
+            {/* DEMO */}
+            <Sparkline values={DEMO_MONTHLY_SALES.map((m) => m.value)} />
+          </div>
         </article>
         <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
           <div className={KPI_TOP}><span>Perlu dikirim</span><span className={KPI_ICON} aria-hidden>local_shipping</span></div>
           <strong className={KPI_VALUE}>{d.orders_to_ship}</strong>
           <span className={MUTED_SMALL}>pesanan menunggu proses</span>
+          {/* DEMO: tren pesanan baru dummy. */}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Trend {...DEMO_KPI_TREND.toShip} />
+            <span className={DEMO_TAG}>Demo</span>
+          </div>
         </article>
         <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
           <div className={KPI_TOP}><span>Produk aktif</span><span className={KPI_ICON} aria-hidden>inventory_2</span></div>
           <strong className={KPI_VALUE}>{d.active_products}</strong>
           <span className={MUTED_SMALL}>produk tampil di katalog</span>
+          {/* DEMO: tren produk baru dummy. */}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Trend {...DEMO_KPI_TREND.products} />
+            <span className={DEMO_TAG}>Demo</span>
+          </div>
         </article>
         <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
           <div className={KPI_TOP}><span>Stok menipis</span><span className={cx(KPI_ICON, 'text-accent')} aria-hidden>warning</span></div>
@@ -68,60 +108,123 @@ export default function AdminDashboard() {
           <span className={d.low_stock_count > 0 ? 'text-xs font-semibold text-accent' : MUTED_SMALL}>
             {d.low_stock_count > 0 ? 'Perlu restok (≤ 5 unit)' : 'Semua stok aman'}
           </span>
+          {/* DEMO: tren stok menipis dummy. */}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Trend {...DEMO_KPI_TREND.lowStock} />
+            <span className={DEMO_TAG}>Demo</span>
+          </div>
         </article>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <article className={cx(CARD, 'flex flex-col p-4 sm:p-5')}>
-          <div className="mb-1 flex flex-wrap items-end justify-between gap-2">
-            <h2 className={SECTION_TITLE}>Penjualan 7 hari terakhir</h2>
-            <span className={MUTED_SMALL}>Dalam ribu rupiah</span>
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <article className={cx(CARD, 'flex min-w-0 flex-col p-4 sm:p-5')}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className={SECTION_TITLE}>Tren penjualan</h2>
+              <span className={MUTED_SMALL}>{series === '7d' ? 'Dalam ribu rupiah · 7 hari terakhir' : 'Dalam juta rupiah · 6 bulan'}</span>
+            </div>
+            {/* DEMO: pilihan 6 bulan memakai data bulanan dummy. */}
+            <div className="inline-flex rounded-pill bg-surface-low p-1" role="group" aria-label="Rentang grafik">
+              <button type="button" className={cx(SEG_BTN, series === '7d' ? 'bg-primary text-on-primary' : 'text-ink-2')} aria-pressed={series === '7d'} onClick={() => setSeries('7d')}>
+                7 hari
+              </button>
+              <button type="button" className={cx(SEG_BTN, series === '6m' ? 'bg-primary text-on-primary' : 'text-ink-2')} aria-pressed={series === '6m'} onClick={() => setSeries('6m')}>
+                6 bulan
+                <span className={cx(DEMO_TAG, 'ml-1.5')}>Demo</span>
+              </button>
+            </div>
           </div>
-          <div className="mt-3 flex h-56 items-end gap-1.5 sm:gap-3" role="img" aria-label="Grafik penjualan 7 hari">
-            {d.sales_7d.map((x) => {
-              const value = Number(x.total);
-              const isToday = x.day === todayIso;
-              const dayLabel = DAY.format(new Date(`${x.day}T00:00:00Z`));
-              return (
-                <div className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5" key={x.day}>
-                  <span className={cx('h-4 text-[11px] text-muted', MONEY)}>{value > 0 ? Math.round(value / 1000).toLocaleString('id-ID') : ''}</span>
-                  <div className="flex w-full flex-1 items-end">
-                    <div
-                      className={cx('w-full rounded-t-lg', isToday ? 'bg-primary' : 'bg-secondary-container')}
-                      style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
-                    />
+
+          {series === '7d' ? (
+            <div className="mt-4 flex h-56 items-end gap-1.5 sm:gap-3" role="img" aria-label="Grafik penjualan 7 hari">
+              {d.sales_7d.map((x) => {
+                const value = Number(x.total);
+                const isToday = x.day === todayIso;
+                const dayLabel = DAY.format(new Date(`${x.day}T00:00:00Z`));
+                return (
+                  <div className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5" key={x.day}>
+                    <span className={cx('h-4 text-[11px] text-muted', MONEY)}>{value > 0 ? Math.round(value / 1000).toLocaleString('id-ID') : ''}</span>
+                    <div className="flex w-full flex-1 items-end">
+                      <div
+                        className={cx('w-full rounded-t-lg', isToday ? 'bg-primary' : 'bg-secondary-container')}
+                        style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
+                      />
+                    </div>
+                    <span className={cx('text-[11px] font-semibold', isToday ? 'font-bold text-primary' : 'text-muted')}>{dayLabel}</span>
                   </div>
-                  <span className={cx('text-[11px] font-semibold', isToday ? 'font-bold text-primary' : 'text-muted')}>{dayLabel}</span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 flex h-56 items-end gap-2 sm:gap-4" role="img" aria-label="Grafik penjualan 6 bulan (contoh)">
+              {/* DEMO */}
+              {DEMO_MONTHLY_SALES.map((m, i) => {
+                const isLast = i === DEMO_MONTHLY_SALES.length - 1;
+                return (
+                  <div className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5" key={m.label}>
+                    <span className={cx('h-4 text-[11px] text-muted', MONEY)}>{Math.round(m.value / 1_000_000)}</span>
+                    <div className="flex w-full flex-1 items-end">
+                      <div
+                        className={cx('w-full rounded-t-lg', isLast ? 'bg-primary' : 'bg-secondary-container')}
+                        style={{ height: `${Math.max(4, (m.value / monthMax) * 100)}%` }}
+                      />
+                    </div>
+                    <span className={cx('text-[11px] font-semibold', isLast ? 'font-bold text-primary' : 'text-muted')}>{m.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </article>
 
-        <article className={cx(CARD, 'p-4 sm:p-5')}>
-          <div className="flex items-end justify-between gap-2">
-            <h2 className={SECTION_TITLE}>Stok menipis</h2>
-            <Link to="/admin/products" className={LINK_SMALL}>Lihat semua</Link>
-          </div>
-          {d.low_stock.length === 0 && <p className={cx(MUTED_SMALL, 'mt-3')}>Tidak ada produk dengan stok menipis.</p>}
-          <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
-            {d.low_stock.map((p) => (
-              <li
-                key={p.id}
-                className={cx(
-                  'flex items-center justify-between gap-3 rounded-field p-3.5',
-                  p.stock <= 2 ? 'bg-warning-soft/70' : 'bg-surface-low',
-                )}
-              >
-                <div className="min-w-0 text-left">
-                  <strong className="block font-display text-[15px] font-semibold text-ink">{p.name}</strong>
-                  <span className={cx(SKU, 'mt-0.5 block truncate')}>{p.sku}</span>
-                </div>
-                <StatusBadge tone={p.stock <= 2 ? 'danger' : 'warn'}>Sisa {p.stock}</StatusBadge>
-              </li>
-            ))}
-          </ul>
-        </article>
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* DEMO: daftar tugas mendesak dummy. */}
+          <article className={cx(CARD, 'p-4 sm:p-5')}>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className={SECTION_TITLE}>Tugas mendesak</h2>
+              <span className={DEMO_TAG}>Demo</span>
+            </div>
+            <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
+              {DEMO_URGENT_TASKS.map((t) => (
+                <li key={t.title} className="flex items-start gap-3 rounded-field bg-surface-low p-3.5">
+                  <span className={cx('material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field text-[20px]', TASK_TONE[t.tone])} aria-hidden>
+                    {t.tone === 'danger' ? 'priority_high' : t.tone === 'warn' ? 'schedule' : 'verified_user'}
+                  </span>
+                  <div className="min-w-0 flex-1 text-left">
+                    <strong className="block font-display text-[15px] font-semibold text-ink">{t.title}</strong>
+                    <span className="mt-0.5 block text-xs text-muted">{t.detail}</span>
+                    <span className={cx('mt-1.5 inline-block text-xs font-semibold', t.tone === 'danger' ? 'text-error' : 'text-muted')}>{t.due}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className={cx(CARD, 'p-4 sm:p-5')}>
+            <div className="flex items-end justify-between gap-2">
+              <h2 className={SECTION_TITLE}>Stok menipis</h2>
+              <Link to="/admin/products" className={LINK_SMALL}>Lihat semua</Link>
+            </div>
+            {d.low_stock.length === 0 && <p className={cx(MUTED_SMALL, 'mt-3')}>Tidak ada produk dengan stok menipis.</p>}
+            <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
+              {d.low_stock.map((p) => (
+                <li
+                  key={p.id}
+                  className={cx(
+                    'flex items-center justify-between gap-3 rounded-field p-3.5',
+                    p.stock <= 2 ? 'bg-warning-soft/70' : 'bg-surface-low',
+                  )}
+                >
+                  <div className="min-w-0 text-left">
+                    <strong className="block font-display text-[15px] font-semibold text-ink">{p.name}</strong>
+                    <span className={cx(SKU, 'mt-0.5 block truncate')}>{p.sku}</span>
+                  </div>
+                  <StatusBadge tone={p.stock <= 2 ? 'danger' : 'warn'}>Sisa {p.stock}</StatusBadge>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </div>
       </section>
 
       <section className={cx(CARD, 'overflow-hidden')}>

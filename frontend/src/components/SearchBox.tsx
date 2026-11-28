@@ -97,8 +97,17 @@ export function SearchBox({ onNavigate }: { onNavigate?: () => void }) {
         aria-autocomplete="list"
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         aria-label="Cari produk"
-        className="h-11 w-full min-h-11 rounded-pill border-[1.5px] border-outline bg-surface-low pl-11 pr-4 text-sm text-ink shadow-none outline-none transition-[border-color,background-color] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:shadow-none"
+        className="h-11 w-full min-h-11 rounded-pill border-[1.5px] border-outline bg-surface-low pl-11 pr-14 text-sm text-ink shadow-none outline-none transition-[border-color,background-color] duration-150 placeholder:text-muted focus:border-primary focus:bg-surface focus:shadow-none"
       />
+      <button
+        type="submit"
+        aria-label="Cari"
+        className="absolute right-0 top-0 z-10 flex h-11 w-11 items-center justify-center rounded-pill text-white"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-pill bg-accent transition-[filter] duration-150 hover:brightness-110">
+          <span className="material-symbols-outlined !text-[18px]" aria-hidden>search</span>
+        </span>
+      </button>
 
       {showList && (
         <div

@@ -4,6 +4,13 @@ import { SearchBox } from './SearchBox';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api';
 import { btnBase, btnPrimary } from './ui/storefront';
+import {
+  DEMO_APP_STORES,
+  DEMO_LOGISTICS_CHIPS,
+  DEMO_NAV_CATEGORIES,
+  DEMO_NPWP,
+  DEMO_PAYMENT_METHODS,
+} from '../data/demo';
 
 const YEAR = new Date().getFullYear();
 
@@ -18,6 +25,8 @@ const mobileItem = ({ isActive }: { isActive: boolean }) =>
 const footerLink =
   'inline-flex min-h-11 items-center text-sm font-semibold text-ink-2 no-underline transition-colors hover:text-primary';
 
+const footerHeading = 'm-0 font-display text-base font-bold text-ink';
+
 export function Layout() {
   const location = useLocation();
   const { user } = useAuth();
@@ -26,9 +35,25 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg text-ink">
-      <div className="truncate bg-primary px-4 py-2 text-center text-[13px] font-semibold text-on-primary print:hidden max-[760px]:py-1.5 max-[760px]:text-xs">
-        Harga sudah termasuk PPN <span className="max-[760px]:hidden">· Ongkir bebas PPN · Invoice lengkap di setiap pesanan</span><span className="min-[761px]:hidden">· Ongkir bebas PPN</span>
+      {/* Strip atas: pengumuman PPN dan tautan cepat */}
+      <div className="bg-primary text-on-primary print:hidden">
+        <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-4 px-4 py-2 text-[13px] font-semibold min-[761px]:px-6 max-[760px]:py-1.5 max-[760px]:text-xs">
+          <span className="truncate">
+            Harga sudah termasuk PPN <span className="max-[760px]:hidden">· Ongkir bebas PPN · Invoice lengkap di setiap pesanan</span><span className="min-[761px]:hidden">· Ongkir bebas PPN</span>
+          </span>
+          <div className="hidden shrink-0 items-center gap-4 text-xs min-[761px]:flex">
+            <Link to="/jual" className="inline-flex min-h-11 items-center text-on-primary/90 no-underline hover:text-on-primary">Jual di Tokoku</Link>
+            <span className="text-on-primary/40" aria-hidden>|</span>
+            <Link to="/bantuan" className="inline-flex min-h-11 items-center text-on-primary/90 no-underline hover:text-on-primary">Bantuan</Link>
+            {/* DEMO */}
+            <span className="inline-flex items-center gap-1 rounded-pill bg-on-primary/10 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.05em]">
+              <span className="material-symbols-outlined !text-[14px]" aria-hidden>verified</span>
+              PPN 11% otomatis
+            </span>
+          </div>
+        </div>
       </div>
+
       <header className="sticky top-0 z-20 border-b border-outline-soft bg-surface shadow-[0_1px_3px_0_rgb(0_0_0/0.05)] print:hidden">
         <div className="mx-auto flex w-full max-w-[1280px] flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 min-[761px]:px-6 min-[1101px]:h-[76px] min-[1101px]:flex-nowrap min-[1101px]:gap-6 min-[1101px]:py-0">
           <Link
@@ -42,7 +67,11 @@ export function Layout() {
             >
               storefront
             </span>
-            <span>Tokoku</span>
+            <span className="flex flex-col leading-none">
+              <span>Tokoku</span>
+              {/* DEMO */}
+              <span className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted max-[760px]:hidden">Mitra Resmi Edukasi</span>
+            </span>
           </Link>
 
           <div className="order-3 flex basis-full justify-center min-[1101px]:order-none min-[1101px]:basis-auto min-[1101px]:flex-1">
@@ -84,6 +113,34 @@ export function Layout() {
             ) : (
               <Link to="/login" className={`${btnBase} ${btnPrimary} max-[760px]:hidden`}>Masuk</Link>
             )}
+          </div>
+        </div>
+
+        {/* Baris kategori (desktop): tautan pencarian per kategori */}
+        <div className="hidden border-t border-outline-soft bg-surface-low/70 min-[761px]:block">
+          <div className="mx-auto flex h-11 w-full max-w-[1280px] items-center justify-between gap-6 px-6">
+            <nav aria-label="Kategori belanja" className="flex min-w-0 items-center gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {/* DEMO */}
+              <span className="flex flex-none items-center gap-2 text-sm font-bold text-primary">
+                <span className="material-symbols-outlined text-xl" aria-hidden>menu</span>
+                Kategori Belanja
+              </span>
+              {/* DEMO */}
+              {DEMO_NAV_CATEGORIES.map((c) => (
+                <Link
+                  key={c.q}
+                  to={`/?q=${encodeURIComponent(c.q)}#katalog`}
+                  className="inline-flex min-h-11 flex-none items-center whitespace-nowrap text-[13px] font-semibold text-ink-2 no-underline hover:text-primary"
+                >
+                  {c.label}
+                </Link>
+              ))}
+            </nav>
+            {/* DEMO */}
+            <span className="hidden flex-none items-center gap-1.5 text-xs font-semibold text-ink-2 min-[1101px]:flex">
+              <span className="material-symbols-outlined text-base text-success" aria-hidden>verified_user</span>
+              Transaksi dijamin aman · DJP e-Faktur
+            </span>
           </div>
         </div>
       </header>
@@ -135,19 +192,89 @@ export function Layout() {
         )}
       </nav>
 
-      <footer className="mt-16 border-t border-outline-soft bg-surface py-8 max-[760px]:pb-20 print:hidden">
-        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 min-[761px]:flex-row min-[761px]:items-center min-[761px]:justify-between min-[761px]:px-6">
-          <div className="flex flex-col gap-1">
-            <span className="font-display text-base font-bold tracking-tight text-ink">Tokoku</span>
-            <span className="text-xs text-muted">© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
+      <footer className="mt-16 border-t border-outline-soft bg-surface pb-8 pt-10 max-[760px]:pb-20 print:hidden">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-4 min-[761px]:px-6">
+          <div className="grid grid-cols-1 gap-8 min-[761px]:grid-cols-2 min-[1101px]:grid-cols-5">
+            {/* Identitas dan kepatuhan PKP */}
+            <div className="flex flex-col gap-4 min-[761px]:col-span-2">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined flex h-9 w-9 items-center justify-center rounded-field bg-primary text-lg text-on-primary" aria-hidden>storefront</span>
+                <span className="font-display text-xl font-bold tracking-tight text-ink">Tokoku</span>
+              </div>
+              {/* DEMO */}
+              <p className="m-0 max-w-sm text-sm leading-6 text-ink-2">
+                Platform belanja resmi untuk kebutuhan sekolah, guru, siswa, dan pengadaan instansi. Harga transparan termasuk PPN 11%.
+              </p>
+              {/* DEMO */}
+              <div className="flex flex-col gap-2 rounded-card border border-outline-soft bg-surface-low p-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-success">
+                  <span className="material-symbols-outlined text-lg" aria-hidden>verified</span>
+                  Kepatuhan Fiskal &amp; Perpajakan Resmi (PKP)
+                </div>
+                <p className="m-0 text-xs leading-5 text-muted">NPWP: {DEMO_NPWP} (contoh) · Terhubung dengan e-Faktur DJP.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <h2 className={footerHeading}>Layanan Pelanggan</h2>
+              <nav className="flex flex-col" aria-label="Informasi">
+                <Link to="/bantuan" className={footerLink}>Bantuan</Link>
+                <Link to="/jual" className={footerLink}>Jual di Tokoku</Link>
+                <Link to="/pengembalian" className={footerLink}>Pengembalian Dana</Link>
+                <Link to="/syarat" className={footerLink}>Syarat &amp; Ketentuan</Link>
+                <Link to="/privasi" className={footerLink}>Privasi</Link>
+              </nav>
+            </div>
+
+            {/* DEMO */}
+            <div className="flex flex-col gap-2">
+              <h2 className={footerHeading}>Kategori Pilihan</h2>
+              <nav className="flex flex-col" aria-label="Kategori pilihan">
+                {DEMO_NAV_CATEGORIES.map((c) => (
+                  <Link key={c.q} to={`/?q=${encodeURIComponent(c.q)}#katalog`} className={footerLink}>
+                    {c.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* DEMO */}
+            <div className="flex flex-col gap-3">
+              <h2 className={footerHeading}>Download Aplikasi</h2>
+              <p className="m-0 text-xs leading-5 text-muted">Akses pesanan dan kelola faktur pajak langsung dari smartphone Anda.</p>
+              <div className="flex flex-col gap-2">
+                {DEMO_APP_STORES.map((s) => (
+                  <span key={s.label} className="flex min-h-11 items-center gap-3 rounded-field border border-outline-soft bg-surface px-3 py-2">
+                    <span className="material-symbols-outlined text-2xl text-primary" aria-hidden>{s.icon}</span>
+                    <span className="flex flex-col leading-tight">
+                      <span className="font-mono text-[10px] uppercase text-muted">{s.caption}</span>
+                      <span className="text-sm font-semibold text-ink">{s.label}</span>
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-          <nav className="flex flex-wrap gap-x-6 gap-y-1" aria-label="Informasi">
-            <Link to="/syarat" className={footerLink}>Syarat & Ketentuan</Link>
-            <Link to="/privasi" className={footerLink}>Privasi</Link>
-            <Link to="/pengembalian" className={footerLink}>Pengembalian Dana</Link>
-            <Link to="/bantuan" className={footerLink}>Bantuan</Link>
-            <Link to="/jual" className={footerLink}>Jual di Tokoku</Link>
-          </nav>
+
+          {/* DEMO: metode pembayaran dan logistik */}
+          <div className="flex flex-col gap-5 border-t border-outline-soft pt-6 min-[1101px]:flex-row min-[1101px]:items-center min-[1101px]:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-2 text-[11px] font-bold uppercase tracking-wider text-muted">Metode pembayaran resmi:</span>
+              {DEMO_PAYMENT_METHODS.map((m) => (
+                <span key={m} className="rounded-field border border-outline-soft bg-surface px-2.5 py-1 font-mono text-[11px] font-semibold text-ink-2">{m}</span>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-2 text-[11px] font-bold uppercase tracking-wider text-muted">Logistik terverifikasi:</span>
+              {DEMO_LOGISTICS_CHIPS.map((m) => (
+                <span key={m} className="rounded-field border border-outline-soft bg-surface px-2.5 py-1 font-mono text-[11px] font-semibold text-ink-2">{m}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 border-t border-outline-soft pt-5 text-xs text-muted min-[761px]:flex-row min-[761px]:items-center min-[761px]:justify-between">
+            <span>© {YEAR} Tokoku · Harga sudah termasuk PPN</span>
+          </div>
         </div>
       </footer>
     </div>

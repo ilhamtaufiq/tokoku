@@ -32,6 +32,7 @@ import {
   type Tone,
   TABLE_STACK,
   MONEY,
+  DEMO_TAG,
 } from './adminUi';
 
 const NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
@@ -115,6 +116,7 @@ export default function AdminOrders() {
   return (
     <section>
       <PageHeader
+        crumbs={['Portal penjual', 'Operasional bisnis', 'Pesanan']}
         title="Pesanan"
         subtitle={orders.data ? `${visible.length} pesanan${search.trim() ? ' cocok dengan pencarian' : ''}` : 'Memuat pesanan…'}
         actions={
@@ -138,6 +140,31 @@ export default function AdminOrders() {
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Cari pesanan"
           />
+        </div>
+        {/* DEMO: filter periode dan tipe transaksi belum punya parameter API, jadi nonaktif. */}
+        <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+          <div className="md:w-44">
+            <select className={INPUT} disabled aria-label="Periode (belum tersedia)" defaultValue="30">
+              <option value="30">30 hari terakhir</option>
+            </select>
+          </div>
+          <div className="md:w-52">
+            <select className={INPUT} disabled aria-label="Tipe transaksi (belum tersedia)" defaultValue="all">
+              <option value="all">Semua tipe transaksi</option>
+            </select>
+          </div>
+          <span className={DEMO_TAG}>Demo</span>
+          <button
+            type="button"
+            className={btn('default', 'md', 'max-md:w-full')}
+            onClick={() => {
+              setSearch('');
+              setStatus('');
+            }}
+          >
+            <span className="material-symbols-outlined" aria-hidden>restart_alt</span>
+            Reset
+          </button>
         </div>
         <div className={CHIP_GROUP} role="group" aria-label="Filter status">
           {STATUS_CHIPS.map((c) => (
@@ -267,6 +294,20 @@ export default function AdminOrders() {
           </tbody>
         </table>
         {orders.data?.length === 0 && <p className={EMPTY_ROW}>Belum ada pesanan.</p>}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <span className={MUTED_SMALL}>Menampilkan {visible.length} pesanan{search.trim() ? ' (hasil pencarian)' : ''}</span>
+        {/* DEMO: pagination belum ada di API, jadi tombol nonaktif. */}
+        <div className="flex items-center gap-1.5">
+          <button type="button" className={btn('default', 'sm', '!w-11 !px-0 max-md:!h-11')} disabled aria-label="Halaman sebelumnya">
+            <span className="material-symbols-outlined" aria-hidden>chevron_left</span>
+          </button>
+          <span className={btn('primary', 'sm', '!w-11 !px-0 max-md:!h-11')} aria-current="page">1</span>
+          <button type="button" className={btn('default', 'sm', '!w-11 !px-0 max-md:!h-11')} disabled aria-label="Halaman berikutnya">
+            <span className="material-symbols-outlined" aria-hidden>chevron_right</span>
+          </button>
+          <span className={cx(DEMO_TAG, 'ml-1')}>Demo</span>
+        </div>
       </div>
     </section>
   );

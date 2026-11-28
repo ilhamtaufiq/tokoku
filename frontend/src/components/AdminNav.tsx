@@ -140,7 +140,7 @@ export function AdminLayout() {
           </NavLink>
           <button
             type="button"
-            className="mt-1 flex h-11 items-center rounded-field px-3 text-left text-sm font-semibold text-[#cbd5e1] hover:bg-white/10 hover:text-white"
+            className="mt-1 flex h-11 items-center rounded-field border-0 bg-transparent px-3 text-left text-sm font-semibold text-[#cbd5e1] hover:bg-white/10 hover:text-white"
             onClick={async () => {
               setOpen(false);
               await logout();

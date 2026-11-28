@@ -35,6 +35,7 @@ import {
   cx,
   TABLE_STACK,
   MONEY,
+  DEMO_TAG,
 } from './adminUi';
 
 const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0, weight_grams: 1000 };
@@ -73,6 +74,7 @@ export default function AdminProducts() {
   return (
     <section>
       <PageHeader
+        crumbs={['Portal penjual', 'Operasional bisnis', 'Produk']}
         title="Produk"
         subtitle="Kelola katalog, harga, stok, dan varian. Produk yang dinonaktifkan tidak tampil di toko."
         actions={<button type="button" className={btn('primary')} onClick={() => setEditing('new')}>+ Produk baru</button>}
@@ -88,6 +90,15 @@ export default function AdminProducts() {
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Cari produk"
           />
+        </div>
+        {/* DEMO: filter status belum punya parameter API, jadi nonaktif. */}
+        <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+          <div className="md:w-44">
+            <select className={INPUT} disabled aria-label="Filter status (belum tersedia)" defaultValue="all">
+              <option value="all">Semua status</option>
+            </select>
+          </div>
+          <span className={DEMO_TAG}>Demo</span>
         </div>
       </div>
       {message && <div className="mb-4"><Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice></div>}
@@ -151,6 +162,20 @@ export default function AdminProducts() {
           </tbody>
         </table>
         {products.data?.items.length === 0 && <p className={EMPTY_ROW}>Belum ada produk.</p>}
+      </div>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <span className="text-xs text-muted">Menampilkan {products.data?.items.length ?? 0} produk</span>
+        {/* DEMO: pagination belum dipakai di layar ini, jadi tombol nonaktif. */}
+        <div className="flex items-center gap-1.5">
+          <button type="button" className={btn('default', 'sm', '!w-11 !px-0 max-md:!h-11')} disabled aria-label="Halaman sebelumnya">
+            <span className="material-symbols-outlined" aria-hidden>chevron_left</span>
+          </button>
+          <span className={btn('primary', 'sm', '!w-11 !px-0 max-md:!h-11')} aria-current="page">1</span>
+          <button type="button" className={btn('default', 'sm', '!w-11 !px-0 max-md:!h-11')} disabled aria-label="Halaman berikutnya">
+            <span className="material-symbols-outlined" aria-hidden>chevron_right</span>
+          </button>
+          <span className={cx(DEMO_TAG, 'ml-1')}>Demo</span>
+        </div>
       </div>
 
       <div className="mt-6">
