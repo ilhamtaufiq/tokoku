@@ -176,35 +176,36 @@ function AdminTopBar({ groups }: { groups: NavGroup[] }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:gap-3 sm:px-6">
+      <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b bg-background px-3 sm:px-4">
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-11 w-11 flex-none md:h-9 md:w-9"
+          className="h-9 w-9 text-muted-foreground hover:text-foreground"
           aria-expanded={expanded}
           aria-label="Buka atau tutup menu"
           onClick={toggleSidebar}
         >
-          <span className="material-symbols-outlined text-[20px]" aria-hidden>menu</span>
+          <span className="material-symbols-outlined text-[20px]" aria-hidden>left_panel_open</span>
         </Button>
+        <Separator orientation="vertical" className="mx-1 h-4" />
 
         <Button
-          variant="outline"
-          className="h-11 min-w-0 flex-1 justify-start gap-2 px-3 font-normal text-muted-foreground md:h-9 md:w-64 md:flex-none"
+          variant="ghost"
+          className="h-9 min-w-0 flex-1 justify-start gap-2 px-2 font-normal text-muted-foreground hover:text-foreground sm:flex-none sm:w-64"
           onClick={() => setSearchOpen(true)}
         >
-          <span className="material-symbols-outlined text-[20px]" aria-hidden>search</span>
-          <span className="sr-only md:not-sr-only md:truncate">Cari menu</span>
-          <kbd className="ml-auto hidden rounded border bg-secondary px-1.5 py-0.5 font-sans text-[11px] font-medium text-secondary-foreground md:inline-block">
+          <span className="material-symbols-outlined text-[18px]" aria-hidden>search</span>
+          <span className="truncate text-sm">Cari menu…</span>
+          <kbd className="ml-auto hidden rounded border px-1.5 py-0.5 font-sans text-[11px] font-medium text-muted-foreground sm:inline-block">
             ⌘K
           </kbd>
         </Button>
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="ml-auto flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="hidden text-foreground sm:inline-flex"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground"
             nativeButton={false}
             render={<NavLink to="/admin/store" />}
             aria-label="Pengaturan toko"
@@ -215,7 +216,7 @@ function AdminTopBar({ groups }: { groups: NavGroup[] }) {
           <Button
             variant="ghost"
             size="icon"
-            className="text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground"
             aria-label={theme === 'dark' ? 'Pakai tema terang' : 'Pakai tema gelap'}
             onClick={toggleTheme}
           >
@@ -229,7 +230,7 @@ function AdminTopBar({ groups }: { groups: NavGroup[] }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Repositori Tokoku di GitHub"
-            className="hidden h-8 w-8 items-center justify-center rounded-md text-foreground hover:bg-hover sm:inline-flex"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden>
               <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
@@ -239,10 +240,10 @@ function AdminTopBar({ groups }: { groups: NavGroup[] }) {
           <NavLink
             to="/account"
             aria-label="Akun saya"
-            className="ml-1 flex-none rounded-full no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="ml-2 flex-none rounded-full no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <Avatar className="size-8">
-              <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+              <AvatarFallback className="bg-foreground text-xs font-semibold text-background">
                 {initialsOf(user?.name ?? 'Admin')}
               </AvatarFallback>
             </Avatar>
