@@ -9,14 +9,9 @@ import { CheckoutSkeleton } from '../components/FlowSkeleton';
 import { alertError, btn, card, field, label, pageSub, pageTitle } from '../components/flowClasses';
 import type { CartItem, ShippingChoice, ShippingDestination, StoreShippingOptions } from '../api/types';
 import {
-  DEMO_BOS_DOCS,
   DEMO_CHECKOUT_ADDRESS,
   DEMO_CHECKOUT_INSURANCE,
-  DEMO_COMPLIANCE_BANNER,
   DEMO_HELP_CARD,
-  DEMO_PAYMENT_CARD,
-  DEMO_PAYMENT_CHIPS,
-  DEMO_STORE_TAGS,
   demoStoreLocation,
 } from '../data/demo';
 import { rp } from '../lib/money';
@@ -69,7 +64,6 @@ export default function Checkout() {
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [bosDocs] = useState(true); // DEMO: opsi dokumen BOS (hanya tampilan)
 
   const items = (cart.data ?? []).filter((i) => i.selected);
   const ready = items.length > 0 && items.every((i) => i.is_active && i.stock >= i.qty);
@@ -204,13 +198,6 @@ export default function Checkout() {
       <h1 className={pageTitle}>Checkout</h1>
       <p className={pageSub}>Lengkapi alamat, lalu bayar dengan aman lewat Midtrans.</p>
 
-      {/* DEMO: pita kepatuhan fiskal di atas checkout. */}
-      <p className="mb-4 flex flex-wrap items-center gap-2 rounded-field bg-success-soft px-3.5 py-2.5 text-sm text-on-success-soft">
-        <span className="material-symbols-outlined !text-[18px]" aria-hidden>verified</span>
-        <span className="font-semibold">{DEMO_COMPLIANCE_BANNER.checkout}</span>
-        <span className="inline-flex h-5 items-center rounded-pill bg-surface px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-success-soft">{DEMO_COMPLIANCE_BANNER.tag}</span>
-      </p>
-
       <ol className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-card border border-outline-soft bg-surface p-4 text-xs font-semibold text-muted" aria-label="Langkah checkout">
         {steps.map((step, idx) => {
           const current = idx === 1;
@@ -286,8 +273,6 @@ export default function Checkout() {
               <label className={label}>
                 <span className="flex flex-wrap items-center justify-between gap-2">
                   NPWP pembeli
-                  {/* DEMO: keterangan NPWP instansi untuk e-Faktur. */}
-                  <span className="font-mono text-[10px] font-medium uppercase tracking-[0.05em] text-muted">{DEMO_CHECKOUT_ADDRESS.npwpCaption}</span>
                 </span>
                 <span className="flex items-center gap-2">
                   <input
@@ -304,7 +289,7 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* Kartu per toko: barang, kurir per toko, dan badge toko resmi/PKP. */}
+          {/* Kartu per toko: barang, kurir per toko, dan lokasi toko. */}
           {groups.map((group, gIdx) => {
             const storeOptions = options.data?.find((s) => s.store_id === group.storeId);
             return (
@@ -315,9 +300,6 @@ export default function Checkout() {
                       <span className="material-symbols-outlined !text-[20px] text-primary" aria-hidden>storefront</span>
                       <span className="truncate">{group.storeName}</span>
                     </h2>
-                    {/* DEMO: badge toko resmi dan PKP (belum ada di API). */}
-                    <span className="inline-flex h-5 items-center rounded-pill bg-primary px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-primary">{DEMO_STORE_TAGS.official}</span>
-                    <span className="inline-flex h-5 items-center rounded-pill bg-success-soft px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-success-soft">{DEMO_STORE_TAGS.pkp}</span>
                   </div>
                   <span className="flex items-center gap-2 text-xs text-muted">
                     <span className="font-mono tabular-nums">Toko {gIdx + 1}/{groups.length}</span>
@@ -412,18 +394,6 @@ export default function Checkout() {
             );
           })}
 
-          {/* DEMO: dokumen pertanggungjawaban BOS (hanya tampilan, tidak mengubah pesanan). */}
-          <div className={`${card} flex flex-col gap-3 p-5 md:p-6`}>
-            <label className="!flex min-h-11 cursor-pointer items-start gap-3">
-              <input type="checkbox" className={`${checkbox} mt-1`} defaultChecked={bosDocs} aria-label={DEMO_BOS_DOCS.title} />
-              <span className="flex flex-col gap-1">
-                <span className="text-sm font-semibold text-ink">{DEMO_BOS_DOCS.title}</span>
-                <span className="text-xs text-muted">{DEMO_BOS_DOCS.body}</span>
-                <span className="mt-1 w-fit rounded-field bg-surface-low px-2.5 py-1 font-mono text-[11px] text-ink-2">{DEMO_BOS_DOCS.format}</span>
-              </span>
-            </label>
-          </div>
-
           <div className={`${card} flex flex-col gap-3 p-5 md:p-6`}>
             <h2 className="m-0 flex items-center gap-2.5 font-display text-lg font-semibold text-ink">
               <span className="material-symbols-outlined !text-[22px] text-primary" aria-hidden>payments</span>Metode pembayaran
@@ -432,14 +402,6 @@ export default function Checkout() {
               <span className="material-symbols-outlined mt-px !text-[20px] text-primary" aria-hidden>lock</span>
               Setelah klik bayar, kamu diarahkan ke halaman pembayaran Midtrans yang aman. Semua metode yang tersedia ditampilkan di sana.
             </p>
-            {/* DEMO: contoh kanal pembayaran (pemilihan sebenarnya dilakukan di Midtrans). */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">{DEMO_PAYMENT_CARD.tag}</span>
-              {DEMO_PAYMENT_CHIPS.map((c) => (
-                <span key={c} className="inline-flex h-7 items-center rounded-pill border border-outline-soft bg-surface px-2.5 text-xs font-semibold text-ink-2">{c}</span>
-              ))}
-            </div>
-            <p className="m-0 text-xs text-muted">{DEMO_PAYMENT_CARD.caption}</p>
           </div>
 
           {error && <p className={alertError}>{error}</p>}

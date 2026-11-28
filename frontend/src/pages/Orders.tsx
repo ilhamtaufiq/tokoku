@@ -5,11 +5,9 @@ import { api } from '../api';
 import type { OrderStatus, OrderView } from '../api/types';
 import { ProductImage } from '../components/ProductImage';
 import {
-  DEMO_BUYER_TAG,
   DEMO_ORDER_PREVIEW,
   DEMO_SELLER_LINK,
   DEMO_STORE_CITY,
-  DEMO_VA,
 } from '../data/demo';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
@@ -130,11 +128,6 @@ export default function Orders() {
             </span>
           </div>
         </div>
-        {/* DEMO */}
-        <span className="inline-flex h-8 items-center gap-2 rounded-pill border border-outline-soft bg-surface px-3 text-xs font-medium text-ink-2">
-          <span className="size-2 rounded-pill bg-success" aria-hidden />
-          Sinkronisasi e-Faktur DJP aktif
-        </span>
       </header>
 
       <div className="rounded-card border border-outline-soft bg-surface p-2 shadow-card">
@@ -220,17 +213,10 @@ export default function Orders() {
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-card border border-outline-soft bg-surface-low p-5">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="material-symbols-outlined grid size-11 shrink-0 place-items-center rounded-pill bg-primary-container text-[22px] text-on-primary" aria-hidden>verified_user</span>
-          <div className="min-w-0">
-            <p className="m-0 font-display text-base font-semibold text-ink">Jaminan Pengadaan Resmi</p>
-            <p className="m-0 mt-1 text-sm text-ink-2">Semua transaksi dicatat pada sistem e-Faktur Ditjen Pajak &amp; terlindungi garansi 100% barang orisinal.</p>
-          </div>
-        </div>
         {/* DEMO: unduhan rekap belum tersedia */}
         <button type="button" disabled className={`${btnDefault} disabled:opacity-60`}>
           <span className="material-symbols-outlined !text-[18px]" aria-hidden>download</span>
-          Unduh rekap laporan BOS
+          Unduh rekap laporan
         </button>
       </div>
     </section>
@@ -248,17 +234,12 @@ function OrderCard({ o, remaining }: { o: OrderView; remaining: number | null })
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               {o.store_name && <strong className="font-display text-[15px] font-semibold text-ink">{o.store_name}</strong>}
-              {o.store_npwp && (
-                <span className="inline-flex h-5 items-center rounded-pill bg-success-soft px-2 text-[11px] font-bold uppercase tracking-wide text-on-success-soft">PKP resmi</span>
-              )}
               {/* DEMO */}
               <span className="inline-flex h-5 items-center rounded-pill bg-surface-high px-2 text-[11px] font-semibold text-ink-2">{DEMO_STORE_CITY}</span>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
               <span className="inline-flex h-6 items-center rounded-field bg-surface-high px-2 font-mono font-semibold tabular-nums text-ink-2">{o.invoice_no}</span>
               <span>{formatDate(o.created_at)}</span>
-              {/* DEMO */}
-              <span className="inline-flex h-5 items-center rounded-pill border border-outline-soft px-2 text-[11px] font-semibold text-ink-2">{DEMO_BUYER_TAG}</span>
             </div>
           </div>
         </div>
@@ -326,8 +307,6 @@ function OrderCard({ o, remaining }: { o: OrderView; remaining: number | null })
             <dt className="text-sm font-semibold text-ink">{waiting ? 'Total tagihan' : 'Total transaksi'}</dt>
             <dd className="m-0 text-right">
               <span className="block font-mono text-lg font-bold tabular-nums text-ink">{rp(o.grand_total)}</span>
-              {/* DEMO: nomor VA contoh */}
-              {waiting && <span className="block font-mono text-[11px] text-muted">VA {DEMO_VA.bank} · {DEMO_VA.number}</span>}
             </dd>
           </div>
         </dl>

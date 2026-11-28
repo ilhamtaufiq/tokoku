@@ -188,68 +188,6 @@ export function MiniLabel({ children }: { children: ReactNode }) {
   return <span className="block text-[11px] font-bold uppercase tracking-wider text-[#5b5e6e]">{children}</span>;
 }
 
-/** Stempel bundar atau persegi bergaya cetak (dekoratif). */
-export function Stamp({ children, color, className = '' }: { children: ReactNode; color: string; className?: string }) {
-  return (
-    <span
-      className={`inline-block rounded-field border-[3px] px-3 py-1 font-display text-lg font-black uppercase tracking-wider ${className}`}
-      style={{ color, borderColor: color }}
-    >
-      {children}
-    </span>
-  );
-}
-
-/**
- * QR dummy untuk tampilan. Pola dibentuk dari nilai `value` agar stabil antar render.
- * Bukan kode QR yang bisa dipindai.
- */
-export function DemoQr({ value, label, size = 96 }: { value: string; label: string; size?: number }) {
-  const n = 25;
-  const cells: boolean[][] = Array.from({ length: n }, () => Array(n).fill(false));
-  let seed = 0;
-  for (const ch of value) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
-  const rnd = () => {
-    seed = (seed * 1664525 + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) cells[y][x] = rnd() < 0.5;
-  const finder = (ox: number, oy: number) => {
-    for (let dy = 0; dy < 7; dy++)
-      for (let dx = 0; dx < 7; dx++)
-        cells[oy + dy][ox + dx] = dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4);
-  };
-  finder(0, 0);
-  finder(n - 7, 0);
-  finder(0, n - 7);
-  return (
-    <svg viewBox={`0 0 ${n} ${n}`} width={size} height={size} role="img" aria-label={label} shapeRendering="crispEdges" className="block bg-white">
-      {cells.flatMap((row, y) => row.map((on, x) => (on ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#0b1c30" /> : null)))}
-    </svg>
-  );
-}
-
-/** Barcode dummy untuk tampilan. Lebar batang dibentuk dari `value`. */
-export function DemoBarcode({ value, label, width = 180, height = 40 }: { value: string; label: string; width?: number; height?: number }) {
-  const rects: ReactNode[] = [];
-  let x = 0;
-  let bar = true;
-  for (const ch of value) {
-    const code = ch.charCodeAt(0);
-    for (let k = 0; k < 8; k++) {
-      const w = (code >> k) & 1 ? 2 : 1;
-      if (bar) rects.push(<rect key={`${rects.length}`} x={x} y={0} width={w} height={20} fill="#0b1c30" />);
-      x += w;
-      bar = !bar;
-    }
-  }
-  return (
-    <svg viewBox={`0 0 ${x} 20`} width={width} height={height} role="img" aria-label={label} preserveAspectRatio="none" shapeRendering="crispEdges" className="block bg-white">
-      {rects}
-    </svg>
-  );
-}
-
 const SATUAN = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
 
 /** Ejaan angka dalam bahasa Indonesia (tanpa kata "rupiah"). */

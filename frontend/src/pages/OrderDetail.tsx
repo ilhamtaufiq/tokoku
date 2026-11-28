@@ -6,15 +6,7 @@ import { api } from '../api';
 import { ApiError } from '../api/client';
 import { Breakdown } from '../components/Breakdown';
 import { ProductImage } from '../components/ProductImage';
-import {
-  DEMO_DRIVER,
-  DEMO_INSTANSI,
-  DEMO_INSURANCE_FEE,
-  DEMO_JAMINAN,
-  DEMO_LPJ,
-  DEMO_SELLER_LINK,
-  DEMO_VA,
-} from '../data/demo';
+import { DEMO_LPJ, DEMO_SELLER_LINK } from '../data/demo';
 import { ORDER_STATUS_LABEL, formatDate, percent, rp, sisaWaktu } from '../lib/money';
 import type { OrderDetail as OrderDetailType, OrderStatus, PaymentStatus } from '../api/types';
 import { useSeo } from '../lib/seo';
@@ -23,7 +15,6 @@ const btnBase =
   'inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill border px-5 text-sm font-semibold no-underline transition-[background-color,border-color,color,opacity] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-45';
 const btnPrimary = `${btnBase} border-primary bg-primary text-on-primary hover:brightness-110 active:opacity-85`;
 const btnOutline = `${btnBase} border-outline bg-surface px-4 text-ink hover:border-primary hover:text-primary`;
-const btnGhostDemo = `${btnBase} border-outline-soft bg-surface px-4 text-ink-2`;
 const calloutInfo = 'my-3 rounded-field border border-outline-soft bg-surface-low px-4 py-3 text-sm text-ink-2';
 const alertError = 'my-3 rounded-field bg-error-soft px-4 py-3 text-sm text-on-error-soft';
 const alertSuccess = 'my-3 rounded-field bg-success-soft px-4 py-3 text-sm text-on-success-soft';
@@ -120,18 +111,10 @@ export default function OrderDetail() {
             >
               {ORDER_STATUS_LABEL[o.status] ?? o.status}
             </span>
-            {/* DEMO */}
-            <span className="inline-flex h-7 items-center gap-1.5 rounded-pill border border-success-soft bg-success-soft px-3 text-xs font-semibold text-on-success-soft">
-              <span className="material-symbols-outlined !text-[15px]" aria-hidden>verified</span>
-              Tervalidasi DJP e-Faktur
-            </span>
           </div>
           <p className="mt-1.5 text-xs leading-[18px] text-muted">
             {formatDate(o.created_at)}
             {o.store_name && <> · Toko {o.store_name}</>}
-            {/* DEMO */}
-            <> · {DEMO_VA.bankName}</>
-            <> · KDL: <span className="font-mono">{DEMO_VA.kdl}</span></>
           </p>
         </div>
         {/* DEMO: tautan dummy, belum ada fitur chat penjual */}
@@ -189,17 +172,15 @@ export default function OrderDetail() {
       <div className={`${card} print:hidden mt-6`}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="m-0 font-display text-lg font-semibold leading-7 text-ink">Dokumen pertanggungjawaban</h2>
-          {/* DEMO */}
-          <span className="inline-flex h-6 items-center rounded-pill bg-surface-high px-2.5 text-[11px] font-bold uppercase tracking-wide text-ink-2">SIPLah</span>
         </div>
         <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
-          <DocRow icon="receipt_long" title="Faktur pajak (e-Faktur PPN 11%)">
+          <DocRow icon="receipt_long" title="Invoice">
             <Link to={`/orders/${o.id}/invoice`} className={btnOutline}>
               <span className="material-symbols-outlined !text-[18px]" aria-hidden>download</span>
               Lihat & cetak invoice
             </Link>
           </DocRow>
-          <DocRow icon="description" title="Pesanan resmi (SPK / PO)">
+          <DocRow icon="description" title="Surat pesanan">
             <Link to={`/orders/${o.id}/surat-pesanan`} className={btnOutline}>
               <span className="material-symbols-outlined !text-[18px]" aria-hidden>download</span>
               Surat pesanan
@@ -225,10 +206,6 @@ export default function OrderDetail() {
               <span className="text-xs text-muted">Tersedia setelah dikirim</span>
             )}
           </DocRow>
-          {/* DEMO: sertifikat garansi belum tersedia */}
-          <DocRow icon="verified" title="Sertifikat garansi SN">
-            <button type="button" disabled className={btnGhostDemo}>Segera hadir</button>
-          </DocRow>
         </div>
       </div>
 
@@ -241,8 +218,6 @@ export default function OrderDetail() {
                 <span className="material-symbols-outlined grid size-10 place-items-center rounded-pill bg-primary-container text-[20px] text-on-primary" aria-hidden>local_shipping</span>
                 <div>
                   <h2 className="m-0 font-display text-lg font-semibold leading-7 text-ink">Status pelacakan pengiriman</h2>
-                  {/* DEMO */}
-                  <p className="m-0 text-xs text-muted">Koli elektronik · Segel packing kayu utuh</p>
                 </div>
               </div>
               {o.courier && (
@@ -250,21 +225,12 @@ export default function OrderDetail() {
               )}
             </div>
 
-            {/* DEMO: petugas dan armada belum tersedia dari API */}
             <div className="mb-5 grid grid-cols-1 gap-3 rounded-field border border-dashed border-outline bg-surface-low p-3.5 sm:grid-cols-3">
               <div>
                 <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-muted">Ekspedisi</p>
                 <p className="m-0 mt-0.5 text-sm font-semibold text-ink">
                   {o.courier ?? 'Belum ditetapkan'}{o.courier_service ? ` ${o.courier_service}` : ''}
                 </p>
-              </div>
-              <div>
-                <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-muted">Petugas / kurir</p>
-                <p className="m-0 mt-0.5 text-sm font-semibold text-ink">{DEMO_DRIVER.courierPerson}</p>
-              </div>
-              <div>
-                <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-muted">Armada</p>
-                <p className="m-0 mt-0.5 text-sm font-semibold text-ink">{DEMO_DRIVER.vehicle}</p>
               </div>
             </div>
 
@@ -322,9 +288,6 @@ export default function OrderDetail() {
                   {/* DEMO */}
                   <p className="m-0 text-xs text-muted">{o.store_address ?? 'Kota toko'} · NPWP toko: <span className="font-mono">{o.store_npwp ?? '-'}</span></p>
                 </div>
-                {o.store_npwp && (
-                  <span className="inline-flex h-6 shrink-0 items-center rounded-pill bg-success-soft px-2.5 text-[11px] font-bold uppercase tracking-wide text-on-success-soft">PKP resmi</span>
-                )}
               </div>
               {/* DEMO */}
               <span className="inline-flex h-11 items-center text-sm font-semibold text-primary">Kunjungi toko</span>
@@ -348,14 +311,6 @@ export default function OrderDetail() {
                 </li>
               ))}
             </ul>
-            {/* DEMO: layanan proteksi kargo belum tersedia dari API */}
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-field border border-outline-soft bg-surface-low px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="material-symbols-outlined !text-[20px] text-success" aria-hidden>shield</span>
-                <p className="m-0 text-xs leading-[18px] text-ink-2">Proteksi pengiriman kargo khusus edukasi (Tokoku Care)</p>
-              </div>
-              <span className="font-mono text-sm font-semibold tabular-nums text-ink">{rp(DEMO_INSURANCE_FEE)}</span>
-            </div>
           </div>
 
           {/* Pengiriman */}
@@ -383,20 +338,6 @@ export default function OrderDetail() {
             {o.buyer_npwp && <p className="text-xs text-muted">NPWP: <span className="font-mono tabular-nums">{o.buyer_npwp}</span></p>}
             {o.promo_code && <p className="text-xs text-muted">Kode promo: <span className="font-mono">{o.promo_code}</span></p>}
 
-            {/* DEMO: data instansi penerima belum tersedia dari API */}
-            <div className="mt-4 grid grid-cols-1 gap-3 rounded-field border border-outline-soft bg-surface-low p-3.5 sm:grid-cols-2">
-              <div>
-                <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-muted">Nama instansi</p>
-                <p className="m-0 mt-0.5 text-sm font-semibold text-ink">
-                  {DEMO_INSTANSI.name} <span className="ml-1 font-mono text-xs text-muted">NPSN {DEMO_INSTANSI.npsn}</span>
-                </p>
-              </div>
-              <div>
-                <p className="m-0 text-[11px] font-bold uppercase tracking-wider text-muted">Penanggung jawab / penerima</p>
-                <p className="m-0 mt-0.5 text-sm font-semibold text-ink">{DEMO_INSTANSI.pic}</p>
-                <p className="m-0 text-xs text-muted">{DEMO_INSTANSI.picRole} · {DEMO_INSTANSI.phone}</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -410,31 +351,8 @@ export default function OrderDetail() {
                 </span>
               )}
             </div>
-            {/* DEMO: kanal bayar dan nomor VA belum tersedia dari API */}
-            <div className="mb-4 flex flex-col gap-2.5 rounded-field border border-outline-soft bg-surface-low p-3.5 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-ink-2">Kanal bayar</span>
-                <span className="text-right font-semibold text-ink">{DEMO_VA.bankName}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-ink-2">No. referensi</span>
-                <span className="font-mono tabular-nums text-ink">{DEMO_VA.refNo}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-ink-2">Nomor VA {DEMO_VA.bank}</span>
-                <span className="font-mono tabular-nums text-ink">{DEMO_VA.number}</span>
-              </div>
-            </div>
             <Breakdown data={{ ...o, ppn: o.ppn_total }} />
             <p className="mt-4 text-xs leading-[18px] text-muted">PPN {percent(o.ppn_rate)} dihitung atas DPP. Ongkos kirim tidak kena PPN.</p>
-            {/* DEMO */}
-            <div className="mt-4 flex gap-3 rounded-field border border-success-soft bg-success-soft p-4 text-on-success-soft">
-              <span className="material-symbols-outlined !text-[20px]" aria-hidden>verified</span>
-              <div className="min-w-0">
-                <p className="m-0 text-sm font-semibold">{DEMO_JAMINAN.title}</p>
-                <p className="m-0 mt-1 text-xs leading-[18px] opacity-90">{DEMO_JAMINAN.body}</p>
-              </div>
-            </div>
           </aside>
 
           {/* DEMO: kartu bantuan LPJ, tombol belum berfungsi */}

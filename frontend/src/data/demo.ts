@@ -1,5 +1,6 @@
 // Data demo untuk tampilan redesain (Stitch). Hanya untuk tampilan.
 // Semua nilai di sini adalah dummy dan TIDAK mewakili data toko nyata.
+// Dilarang menaruh klaim resmi, status pajak, atau identitas instansi di sini.
 // Hapus atau ganti dengan data API ketika fitur tersebut sudah tersedia.
 
 export const DEMO_FLASH_SALE_ENDS_IN = { hours: 4, minutes: 28, seconds: 7 };
@@ -7,27 +8,12 @@ export const DEMO_FLASH_SALE_ENDS_IN = { hours: 4, minutes: 28, seconds: 7 };
 export const DEMO_HERO = {
   eyebrow: 'Tahun Ajaran Baru & Digitalisasi Sekolah 2025',
   title: 'Perlengkapan sekolah & elektronik, harga sudah termasuk PPN',
-  body: 'Diskon s/d 40% untuk pengadaan laptop, tablet edukasi, dan buku. Faktur pajak resmi langsung dari penjual.',
+  body: 'Diskon s/d 40% untuk pengadaan laptop, tablet edukasi, dan buku.',
   promoTitle: 'Paket ATK Komplit Murah',
   promoPrice: 'Mulai Rp 12.500',
 };
 
-export const DEMO_TRUST_BADGES = [
-  'Faktur pajak PPN 11% otomatis',
-  'Ongkir bebas pengiriman',
-  'Produk 100% original',
-];
-
-export const DEMO_STORE_LABEL = 'Toko resmi';
-
 // Tambahan demo untuk struktur halaman Stitch. Semua nilai dummy.
-
-export const DEMO_USPS = [
-  { icon: 'verified_user', title: 'Faktur Pajak PKP Instan', body: 'Tercatat DJP otomatis & valid', tone: 'text-primary' },
-  { icon: 'local_shipping', title: 'Bebas Biaya Pengiriman', body: 'Subsidi s/d 50rb ke 514 kota', tone: 'text-accent' },
-  { icon: 'verified', title: '100% Produk Original', body: 'Garansi resmi pabrikan/penerbit', tone: 'text-success' },
-  { icon: 'description', title: 'Dukungan Tender & BAST', body: 'Mudah SPK dan LPJ BOS', tone: 'text-primary' },
-] as const;
 
 export const DEMO_SHIP_TO = 'SDN 01 Menteng, Jakarta Pusat';
 
@@ -61,74 +47,73 @@ export const DEMO_NAV_CATEGORIES = [
   { label: 'Laboratorium & Sains', q: 'mikroskop' },
 ];
 
-export const DEMO_B2B_POINTS = [
-  { icon: 'verified', title: 'Kepatuhan Pajak Otomatis', body: 'Setiap transaksi langsung menerbitkan faktur pajak standar tanpa input manual.' },
-  { icon: 'local_police', title: 'Sertifikasi Penyalur Resmi', body: 'Seleksi kurasi ketat untuk menjamin orisinalitas produk.' },
-];
-
-export const DEMO_PAYMENT_METHODS = ['BCA', 'Mandiri', 'BRI', 'QRIS', 'SPayLater'];
-
-export const DEMO_LOGISTICS_CHIPS = ['J&T Cargo', 'SiCepat', 'JNE REG/YES', 'GoSend'];
-
 export const DEMO_APP_STORES = [
   { icon: 'android', caption: 'Tersedia di', label: 'Google Play Store' },
   { icon: 'phone_iphone', caption: 'Unduh di', label: 'Apple App Store' },
 ];
 
-/** NPWP contoh (bukan nomor nyata). */
-export const DEMO_NPWP = '00.000.000.0-000.000';
+// --- Dummy untuk tampilan dokumen (satuan dan berat). Bukan data resmi. ---
 
-// --- Dummy untuk dokumen resmi (faktur, surat pesanan, surat jalan, BAST). ---
-// Hanya untuk tampilan cetak. Data dari pesanan (nama, barang, harga, pajak) TIDAK pakai dummy.
+/** Satuan barang default untuk dokumen (satuan tidak ada di data pesanan). */
+export const DEMO_DOC_UNIT = 'Unit';
 
-/** Nomor seri e-Faktur pajak. */
-export const DEMO_TAX_SERIES = '010.002-25.88219012';
+/** Berat dummy per baris surat jalan (urutan baris, dipakai bila ada). */
+export const DEMO_DOC_ITEM_WEIGHT_GRAM = [2400, 350, 150];
 
-/** Kode untuk QR validasi dokumen. */
-export const DEMO_QR_CODE = 'DJP-VALIDASI-010002258821';
+// --- Data tampilan lain. ---
 
-/** Nilai barcode nomor surat jalan. */
-export const DEMO_BARCODE = 'SJ-DEMO-04912';
+/** Lokasi toko dummy, dipilih dari id toko agar stabil antar render. */
+export const DEMO_STORE_LOCATIONS = ['Jakarta Pusat', 'Surabaya', 'Bandung', 'Medan'];
 
-/** Hash dokumen untuk baris kriptografi di kaki dokumen. */
-export const DEMO_DOC_HASH = '8F7E120A4B7D6C5E332A0091BCE421F87D3910A983E31';
-
-/** Kode anggaran dan data sekolah (BOS). */
-export const DEMO_BUDGET = {
-  source: 'Dana BOS Reguler 2025',
-  mak: '5.1.02.01.01.0024',
-  kodeAnggaran: 'BOS-REGULER-TA-2025',
-  npsn: '20108392',
-  id: 'SIPLAH-TKK-99214',
-};
-
-/** Rekening virtual account escrow BOS untuk surat pesanan. */
-export const DEMO_DOC_VA = {
-  bank: 'Bank Mandiri (B2B Escrow BOS)',
-  number: '89012-081298765432',
-  holder: 'Rekening Escrow Penampungan Belanja BOS',
-  method: 'Kopkar / Giro Sekolah / CMS BOS Mandiri',
-};
-
-/** Nomor SPK (surat perintah kerja) untuk satu pesanan. */
-export function demoSpkNumber(orderId: number): string {
-  return `SPK/2025/BOS-JKT/${String(orderId).padStart(5, '0')}`;
+export function demoStoreLocation(storeId: number): string {
+  return DEMO_STORE_LOCATIONS[Math.abs(storeId) % DEMO_STORE_LOCATIONS.length];
 }
 
-/** Nomor seri per barang (SN) untuk satu baris pesanan. */
-export function demoSerialNo(orderItemId: number): string {
-  return `SN-DEMO-${String(orderItemId).padStart(5, '0')}`;
-}
+/** Data toko dan produk dummy pada halaman detail produk (API produk belum memuat data toko). */
+export const DEMO_PRODUCT_STORE = {
+  name: 'Toko Mitra Demo',
+  location: 'Jakarta Pusat',
+  shipFrom: 'Mulai Rp 18.000',
+  shipNote: 'Ongkir tidak kena PPN • Estimasi tiba 1–2 hari',
+  condition: 'Baru',
+  sold: 'Terjual 450+',
+  packageLabel: 'Paket',
+  packageOptions: ['Unit saja', '+ Tas & mouse'],
+};
 
-/** Penanda kemasan dan berat untuk surat jalan. */
-export const DEMO_DOC_LOGISTICS = {
-  packing: '1 Koli (Packing kayu segel utuh)',
-  weightGram: 2900,
-  driver: 'Hendra Kusuma',
-  plate: 'B 9421 PCX',
-  pickup: 'Pergudangan Edutech Official',
-  hub: 'HUB-JKT-04',
-  instruction: 'Akses truk / kargo ready di pintu gerbang utama. Wajib periksa keutuhan segel pabrik, kemasan kayu pelindung, dan adaptor sebelum serah terima fisik ditandatangani.',
+/** Jumlah slot galeri tambahan (di luar foto asli produk). */
+export const DEMO_GALLERY_EXTRA_SLOTS = 4;
+
+/** Spesifikasi singkat dummy untuk accordion deskripsi. */
+export const DEMO_SPECS: { label: string; value: string }[] = [
+  { label: 'Kondisi', value: 'Baru, segel pabrik' },
+  { label: 'Garansi', value: '1 tahun (contoh)' },
+  { label: 'Berat', value: '1,4 kg (contoh)' },
+  { label: 'Pengiriman', value: 'Reguler / kargo' },
+];
+
+/** Keranjang: catatan kupon. Kode promo sebenarnya diisi di halaman checkout. */
+export const DEMO_CART_COUPON_NOTE = 'Kode promo diisi di halaman checkout.';
+
+/** Keranjang dan checkout: kartu bantuan pajak dan BAST. */
+export const DEMO_HELP_CARD = {
+  title: 'Kendala pajak atau BAST?',
+  body: 'Layanan bantuan khusus instansi, 24 jam.',
+  button: 'Hubungi',
+};
+
+/** Checkout: label alamat. */
+export const DEMO_CHECKOUT_ADDRESS = {
+  pickNew: 'Pilih alamat lain',
+};
+
+/** Checkout: proteksi pengiriman (belum tersedia, tidak masuk total). */
+export const DEMO_CHECKOUT_INSURANCE = { label: 'Proteksi pengiriman kargo & kerusakan', note: 'Belum tersedia' };
+
+/** Bagian produk terkait. */
+export const DEMO_RELATED = {
+  title: 'Pelengkap pengadaan kelas Anda',
+  more: 'Lihat semua katalog',
 };
 
 /* ---------- Layar admin (Stitch): tren, grafik bulanan, tugas, escrow ---------- */
@@ -154,8 +139,6 @@ export const DEMO_MONTHLY_SALES: { label: string; value: number }[] = [
 /** Tugas mendesak dummy untuk panel samping ringkasan. */
 export const DEMO_URGENT_TASKS: { title: string; detail: string; due: string; tone: 'danger' | 'warn' | 'info' }[] = [
   { title: 'Kirim pesanan SPJ sekolah', detail: 'INV/2026/TKK/08921 · batas kirim hari ini', due: 'Hari ini 15:00', tone: 'danger' },
-  { title: 'Unggah ulang sertifikat PKP', detail: 'Sertifikat elektronik segera habis masa berlaku', due: 'Dalam 7 hari', tone: 'warn' },
-  { title: 'Verifikasi rekening BOS cadangan', detail: 'Rekening BNI belum diverifikasi Kemendikbudristek', due: 'Dalam 14 hari', tone: 'info' },
 ];
 
 /** Pengaturan rekening escrow dummy: hanya tampilan, tidak tersimpan. */
@@ -179,206 +162,17 @@ export const DEMO_ESCROW = {
 
 export const DEMO_STORE_CITY = 'Jakarta Pusat';
 
-export const DEMO_BUYER_TAG = 'Pengadaan BOS reguler';
-
 export const DEMO_ORDER_PREVIEW = {
   name: 'Barang pesanan (contoh)',
   variant: 'Varian contoh',
   qty: '1 unit',
 };
 
-export const DEMO_VA = {
-  bank: 'BCA',
-  bankName: 'Mandiri Virtual Account Escrow BOS',
-  number: '807770812903310',
-  refNo: '8992-6192-3841-8921',
-  kdl: 'BOS-REG-2025-V2',
-};
-
 export const DEMO_SELLER_LINK = 'Hubungi penjual';
-
-export const DEMO_INSTANSI = {
-  name: 'SDN 01 Menteng',
-  npsn: '20108392',
-  pic: 'Budi Santoso, S.Pd',
-  picRole: 'Kepala Urusan Tata Usaha',
-  phone: '0812-9876-5432',
-};
-
-export const DEMO_DRIVER = {
-  courierPerson: 'Agus Supriyadi',
-  vehicle: 'B 9421 PCX (Mobil box)',
-};
-
-export const DEMO_INSURANCE_FEE = '5000';
 
 export const DEMO_LPJ = {
   title: 'Bantuan & Pendampingan LPJ',
   body: 'Ada kendala pada pesanan, perbedaan fisik laptop, atau revisi lembar BAST? Tim pendamping BOS Tokoku siap 24 jam.',
   consult: 'Konsultasi kendala LPJ BOS',
   complaint: 'Ajukan komplain / retur barang',
-};
-
-export const DEMO_JAMINAN = {
-  title: 'Jaminan Rekonsiliasi SIPLah / RKAS',
-  body: 'Seluruh data invoice, NPWP sekolah, dan faktur pajak tersinkronisasi otomatis untuk laporan pertanggungjawaban Dana BOS tanpa selisih.',
-};
-
-// ---------------------------------------------------------------------------
-// Tambahan redesain pass 2 (keranjang, checkout, produk): data pelengkap yang belum ada di API.
-// ---------------------------------------------------------------------------
-
-/** Lokasi toko dummy, dipilih dari id toko agar stabil antar render. */
-export const DEMO_STORE_LOCATIONS = ['Jakarta Pusat', 'Surabaya', 'Bandung', 'Medan'];
-
-export function demoStoreLocation(storeId: number): string {
-  return DEMO_STORE_LOCATIONS[Math.abs(storeId) % DEMO_STORE_LOCATIONS.length];
-}
-
-/** Data toko dan produk dummy pada halaman detail produk (API produk belum memuat data toko). */
-export const DEMO_PRODUCT_STORE = {
-  name: 'Toko Mitra Demo',
-  location: 'Jakarta Pusat',
-  pkp: 'PKP terverifikasi',
-  banner: 'Toko resmi • PKP',
-  shipFrom: 'Mulai Rp 18.000',
-  shipNote: 'Ongkir tidak kena PPN • Estimasi tiba 1–2 hari',
-  warranty: 'Garansi resmi 1 tahun',
-  condition: 'Baru',
-  sold: 'Terjual 450+',
-  efaktur: 'e-Faktur otomatis & siap BAST BOS',
-  packageLabel: 'Paket',
-  packageOptions: ['Unit saja', '+ Tas & mouse'],
-};
-
-/** Jumlah slot galeri tambahan (di luar foto asli produk). */
-export const DEMO_GALLERY_EXTRA_SLOTS = 4;
-
-/** Spesifikasi singkat dummy untuk accordion deskripsi. */
-export const DEMO_SPECS: { label: string; value: string }[] = [
-  { label: 'Kondisi', value: 'Baru, segel pabrik' },
-  { label: 'Garansi', value: 'Resmi 1 tahun' },
-  { label: 'Berat', value: '1,4 kg (contoh)' },
-  { label: 'Pengiriman', value: 'Reguler / kargo' },
-];
-
-/** Label sumber dana pada setiap ulasan (belum ada di API). */
-export const DEMO_REVIEW_TAG = 'Dana BOS';
-
-/** Keranjang: banner kesiapan pengadaan. */
-export const DEMO_CART_BANNER = {
-  title: 'Siap pengadaan BOS & dokumen perpajakan lengkap',
-  tag: 'Sesuai juknis 2025',
-  body: 'Sistem menyiapkan draf BAST, SPK digital, dan e-Faktur terdaftar DJP otomatis setelah pelunasan.',
-};
-
-/** Pita kepatuhan di atas keranjang dan checkout. */
-export const DEMO_COMPLIANCE_BANNER = {
-  cart: 'Kepatuhan fiskal terjamin',
-  checkout: 'Faktur pajak & e-Bupot otomatis diterbitkan',
-  tag: 'PPN 11% PKP',
-};
-
-/** Keranjang: catatan kupon. Kode promo sebenarnya diisi di halaman checkout. */
-export const DEMO_CART_COUPON_NOTE = 'Kode promo diisi di halaman checkout.';
-
-/** Keranjang: kartu surat penawaran resmi (SPH). */
-export const DEMO_SPH = {
-  title: 'Butuh surat penawaran resmi (SPH)?',
-  body: 'Unduh dokumen penawaran harga resmi bertanda tangan digital untuk kelengkapan administrasi SPK sekolah.',
-  button: 'Unduh draf SPH (.PDF)',
-};
-
-/** Keranjang: kartu jaminan rekening institusi. */
-export const DEMO_CART_ESCROW = {
-  title: 'Jaminan keamanan rekening institusi',
-  body: 'Dana pembayaran disimpan di rekening penampungan dan diteruskan ke penjual setelah pesanan dikonfirmasi.',
-  tags: ['Escrow protected', 'DJP connected'],
-};
-
-/** Keranjang dan checkout: kartu bantuan pajak dan BAST. */
-export const DEMO_HELP_CARD = {
-  title: 'Kendala pajak atau BAST?',
-  body: 'Layanan bantuan khusus instansi, 24 jam.',
-  button: 'Hubungi',
-};
-
-/** Checkout: label alamat dan NPWP. */
-export const DEMO_CHECKOUT_ADDRESS = {
-  pickNew: 'Pilih alamat lain',
-  schoolTag: 'Alamat instansi',
-  mainTag: 'Alamat pengadaan utama',
-  truckReady: 'Akses truk / kargo',
-  npwpCaption: 'NPWP instansi untuk e-Faktur',
-};
-
-/** Checkout: opsi dokumen BOS. */
-export const DEMO_BOS_DOCS = {
-  title: 'Dokumen pertanggungjawaban BOS',
-  body: 'Kirim BAST & surat pesanan fisik bermaterai via POS dan salinan digital instan lewat email sekolah.',
-  format: 'Format BAST sesuai standar Kemendikbudristek',
-};
-
-/** Checkout: metode pembayaran yang tampil sebagai contoh (pemilihan sebenarnya di Midtrans). */
-export const DEMO_PAYMENT_CHIPS = ['VA Bank BJB', 'Mandiri B2B', 'BRI Escrow', 'QRIS BAST'];
-
-/** Checkout: kartu metode pembayaran. */
-export const DEMO_PAYMENT_CARD = {
-  tag: 'Escrow resmi',
-  caption: 'Rekening penampungan khusus belanja satuan pendidikan',
-};
-
-/** Checkout: proteksi pengiriman (belum tersedia, tidak masuk total). */
-export const DEMO_CHECKOUT_INSURANCE = { label: 'Proteksi pengiriman kargo & kerusakan', note: 'Belum tersedia' };
-
-/** Checkout: label kecil pada kartu toko. */
-export const DEMO_STORE_TAGS = { official: 'Toko resmi', pkp: 'PKP' };
-
-/** Bagian produk terkait. */
-export const DEMO_RELATED = {
-  title: 'Pelengkap pengadaan kelas Anda',
-  body: 'Produk pelengkap yang sering dibeli bersamaan oleh sekolah dan instansi PKP sejenis.',
-  more: 'Lihat semua katalog',
-};
-
-// --- Dummy tambahan untuk dokumen resmi (hanya tampilan cetak). ---
-
-/** Satuan barang default untuk dokumen (satuan tidak ada di data pesanan). */
-export const DEMO_DOC_UNIT = 'Unit';
-
-/** Keterangan KPP dan pengukuhan PKP pada kepala faktur. */
-export const DEMO_DOC_KPP = 'KPP Pratama Jakarta Kebayoran Baru Satu • Pengukuhan PKP: S-192PKP/WPJ.06/KP.0103/2021';
-
-/** Skema pajak untuk rincian jasa ekspedisi. */
-export const DEMO_DOC_TAX_SCHEME = 'Skema PMK-71/PMK.03/2022 (bebas PPN pengiriman)';
-
-/** Tanda tangan elektronik penerbit faktur. */
-export const DEMO_DOC_SIGN = { ca: 'TOKOKU CA ROOT 2025', role: 'Kepala Divisi Keuangan & Pajak' };
-
-/** Nilai meterai elektronik di kolom penerima faktur. */
-export const DEMO_DOC_METERAI = '10000';
-
-/** Kode KBLI dan spesifikasi singkat untuk surat pesanan. */
-export const DEMO_DOC_KBLI = 'KBLI 47411';
-export const DEMO_DOC_SPEC = 'Spesifikasi teknis sesuai katalog produk';
-
-/** Pihak pada surat pesanan (KPA dan penyelenggara pengadaan). */
-export const DEMO_DOC_SP_SIGN = {
-  kpaRole: 'Kuasa Pengguna Anggaran (KPA)',
-  kpaName: 'Budi Santoso, M.Pd.',
-  kpaNip: '19740815 199903 1 002',
-  penyelenggaraRole: 'Direktur Layanan Institusi & BOS',
-  penyelenggaraName: 'Hendra Kusuma, S.Kom.',
-  token: 'TKK-AUTH-99214-BOS',
-};
-
-/** Berat dummy per baris surat jalan (urutan baris, dipakai bila ada). */
-export const DEMO_DOC_ITEM_WEIGHT_GRAM = [2400, 350, 150];
-
-/** Pejabat yang mengetahui pada BAST. */
-export const DEMO_DOC_BAST_KPA = {
-  title: 'Mengetahui',
-  role: 'Kepala Sekolah selaku KPA',
-  name: 'Drs. H. Mulyono, M.Pd.',
-  nip: '19780415 200501 1 008',
 };

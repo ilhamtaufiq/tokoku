@@ -206,12 +206,6 @@ export default function ProductDetail() {
                 </div>
               ))}
             </div>
-            {/* Badge toko resmi (DEMO) di pojok kiri atas galeri. */}
-            {/* DEMO */}
-            <span className="absolute left-3 top-3 inline-flex h-7 items-center gap-1 rounded-pill bg-primary px-3 font-mono text-[11px] font-semibold uppercase tracking-[0.05em] text-on-primary shadow-sm">
-              <span className="material-symbols-outlined !text-[14px]" aria-hidden>verified</span>
-              {DEMO_PRODUCT_STORE.banner}
-            </span>
             <span className="absolute bottom-3 right-3 rounded-pill bg-primary/80 px-2.5 py-1 font-mono text-xs font-semibold text-on-primary tabular-nums" aria-live="polite">
               {slide + 1}/{slideCount}
             </span>
@@ -295,16 +289,14 @@ export default function ProductDetail() {
             </span>
           </div>
 
-          {/* Kartu rincian pajak resmi: DPP, PPN 11%, dan catatan ongkir. */}
+          {/* Kartu rincian pajak: DPP, PPN, dan catatan ongkir. */}
           {p.is_taxable && (
             <div className={infoCard}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="m-0 flex items-center gap-2 font-display text-[15px] font-semibold text-ink">
                   <span className="material-symbols-outlined !text-[20px] text-primary" aria-hidden>account_balance</span>
-                  Rincian pajak resmi
+                  Rincian pajak
                 </h2>
-                {/* DEMO */}
-                <span className="inline-flex h-6 items-center rounded-pill bg-success-soft px-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.05em] text-on-success-soft">PKP terverifikasi</span>
               </div>
               <div className="grid grid-cols-2 gap-3 rounded-field bg-surface-low p-3">
                 <div className="flex flex-col gap-0.5">
@@ -319,8 +311,7 @@ export default function ProductDetail() {
               <ul className="m-0 flex list-none flex-col gap-2 p-0 text-sm text-ink-2">
                 <li className="flex items-start gap-2.5">
                   <span className="material-symbols-outlined !text-[18px] text-success" aria-hidden>check_circle</span>
-                  {/* DEMO */}
-                  {DEMO_PRODUCT_STORE.efaktur}
+                  Invoice dengan rincian pajak
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="material-symbols-outlined !text-[18px] text-primary" aria-hidden>local_shipping</span>
@@ -392,7 +383,7 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* Kartu toko: badge toko resmi dan PKP. */}
+          {/* Kartu toko: nama dan lokasi toko. */}
           <div className={`${infoCard} flex-row items-center`}>
             <span className={iconCircle} aria-hidden>
               <span className="material-symbols-outlined">storefront</span>
@@ -401,10 +392,9 @@ export default function ProductDetail() {
               <span className="flex flex-wrap items-center gap-1.5 font-display text-[15px] font-semibold text-ink">
                 {/* DEMO */}
                 {DEMO_PRODUCT_STORE.name}
-                <span className="material-symbols-outlined !text-[16px] text-primary" aria-hidden>verified</span>
               </span>
               {/* DEMO */}
-              <span className="text-xs text-muted">{DEMO_PRODUCT_STORE.location} • {DEMO_PRODUCT_STORE.pkp}</span>
+              <span className="text-xs text-muted">{DEMO_PRODUCT_STORE.location}</span>
             </div>
             {/* DEMO */}
             <button type="button" className={`${btnBase} ${btnOutline} h-11 shrink-0 px-4 text-[13px]`}>Kunjungi</button>
@@ -425,7 +415,6 @@ export default function ProductDetail() {
               <span className="material-symbols-outlined !text-[22px] text-primary" aria-hidden>verified</span>
               {/* DEMO */}
               <span className="flex flex-col gap-0.5">
-                <strong className="font-semibold text-ink">{DEMO_PRODUCT_STORE.warranty}</strong>
                 <span className="text-xs text-muted">Invoice dengan rincian pajak</span>
               </span>
             </li>
@@ -530,7 +519,6 @@ export default function ProductDetail() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
               <h2 id="related-title" className="m-0 font-display text-lg font-semibold text-ink">{DEMO_RELATED.title}</h2>
-              <p className="m-0 mt-1 text-sm text-muted">{DEMO_RELATED.body}</p>
             </div>
             <Link to="/" className="inline-flex min-h-11 items-center whitespace-nowrap text-sm font-semibold text-primary no-underline hover:underline">
               {DEMO_RELATED.more} →

@@ -10,16 +10,12 @@ import { useSeo } from '../lib/seo';
 import { rp } from '../lib/money';
 import { btnBase, btnDefault, btnPrimary, emptyNote, errorBox, skeletonBlock, card } from '../components/ui/storefront';
 import {
-  DEMO_B2B_POINTS,
   DEMO_CURATION_TABS,
   DEMO_FLASH_DISCOUNTS,
   DEMO_FLASH_SALE_ENDS_IN,
   DEMO_FLASH_SOLD_PCT,
   DEMO_HERO,
   DEMO_SHIP_TO,
-  DEMO_STORE_LABEL,
-  DEMO_TRUST_BADGES,
-  DEMO_USPS,
 } from '../data/demo';
 
 const PER_PAGE = 12;
@@ -141,15 +137,6 @@ export default function Catalog() {
                 Pengadaan Sekolah (B2B)
               </Link>
             </div>
-            {/* DEMO */}
-            <ul className="m-0 flex list-none flex-wrap gap-x-5 gap-y-2 p-0 text-xs font-semibold text-ink-2 max-[760px]:hidden">
-              {DEMO_TRUST_BADGES.map((t) => (
-                <li key={t} className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-base text-success" aria-hidden>check_circle</span>
-                  {t}
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
@@ -186,29 +173,13 @@ export default function Catalog() {
         </div>
       </section>
 
-      {/* USP: 4 kartu keunggulan */}
-      <section aria-label="Keunggulan" className={`${card} mb-10 grid grid-cols-2 gap-4 p-4 shadow-card min-[761px]:grid-cols-4 min-[761px]:p-5`}>
-        {/* DEMO */}
-        {DEMO_USPS.map((u) => (
-          <div key={u.title} className="flex items-start gap-3">
-            <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-field bg-surface-low ${u.tone}`}>
-              <span className="material-symbols-outlined text-2xl" aria-hidden>{u.icon}</span>
-            </span>
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="text-sm font-bold leading-tight text-ink">{u.title}</span>
-              <span className="text-xs leading-4 text-muted">{u.body}</span>
-            </span>
-          </div>
-        ))}
-      </section>
-
       {/* KATEGORI POPULER */}
       <section className="mb-10" aria-labelledby="kategori-title">
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
             <h2 id="kategori-title" className="m-0 font-display text-xl font-bold tracking-tight text-ink">Kategori Populer</h2>
             {/* DEMO */}
-            <p className="m-0 mt-1 text-xs text-muted">Pilihan perlengkapan dan kurikulum terverifikasi</p>
+            <p className="m-0 mt-1 text-xs text-muted">Pilihan perlengkapan dan kurikulum</p>
           </div>
           <a href="#katalog" className="inline-flex h-11 flex-none items-center gap-1 text-sm font-bold text-primary no-underline hover:text-accent">
             Lihat semua kategori
@@ -258,12 +229,8 @@ export default function Catalog() {
             </span>
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 id="flash-title" className="m-0 font-display text-xl font-bold tracking-tight text-ink">Flash Sale PPN Disubsidi</h2>
-                {/* DEMO */}
-                <span className="rounded-pill bg-accent px-2.5 py-0.5 font-mono text-[11px] font-bold text-white">PPN 0% Subsidi</span>
+                <h2 id="flash-title" className="m-0 font-display text-xl font-bold tracking-tight text-ink">Flash Sale</h2>
               </div>
-              {/* DEMO */}
-              <p className="m-0 text-xs text-muted">Harga netto terbit faktur pajak resmi khusus transaksi instan hari ini</p>
             </div>
           </div>
           {/* DEMO: timer */}
@@ -304,11 +271,6 @@ export default function Catalog() {
               {products.data ? `${total} produk` : 'Memuat produk…'}
             </p>
           </div>
-          {/* DEMO */}
-          <span className="inline-flex items-center gap-1.5 rounded-pill bg-success-soft px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider text-on-success-soft">
-            <span className="material-symbols-outlined !text-[14px]" aria-hidden>verified</span>
-            Terverifikasi SIPLah
-          </span>
         </div>
 
         {/* Bar filter: kurasi (demo) dan urutan (fungsional) */}
@@ -405,31 +367,14 @@ export default function Catalog() {
             </h2>
             {/* DEMO */}
             <p className="m-0 max-w-2xl text-[15px] leading-6 text-white/85">
-              Bergabung bersama ribuan institusi pendidikan negeri dan swasta. Dapatkan akses katalog SiPLAh, faktur pajak otomatis, verifikasi BAST digital, dan penagihan terpusat.
+              Bergabung bersama ribuan institusi pendidikan negeri dan swasta.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link to="/jual" className={`${btnBase} bg-accent px-6 font-bold text-white hover:brightness-110`}>
                 <span className="material-symbols-outlined" aria-hidden>storefront</span>
                 Buka Toko Gratis
               </Link>
-              {/* DEMO */}
-              <Link to="/bantuan" className={`${btnBase} border border-white/25 bg-white/10 px-6 font-bold text-white hover:bg-white/20`}>
-                <span className="material-symbols-outlined" aria-hidden>receipt</span>
-                Panduan Integrasi e-Faktur
-              </Link>
             </div>
-          </div>
-          {/* DEMO */}
-          <div className="flex flex-col gap-3 lg:col-span-5">
-            {DEMO_B2B_POINTS.map((pt) => (
-              <div key={pt.title} className="rounded-field border border-white/15 bg-white/10 p-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
-                  <span className="material-symbols-outlined text-lg" aria-hidden>{pt.icon}</span>
-                  {pt.title}
-                </div>
-                <p className="m-0 mt-1.5 text-xs leading-5 text-white/75">{pt.body}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -454,10 +399,6 @@ function FlashCard({ product: p, index }: { product: Product; index: number }) {
         <ProductImage name={p.name} src={p.image_url} className="h-full w-full" />
         {/* DEMO */}
         <span className="absolute left-2 top-2 rounded-pill bg-accent px-2 py-0.5 font-mono text-[11px] font-bold text-white">-{discount}%</span>
-        {/* DEMO */}
-        <span className="absolute bottom-2 left-2 rounded-field bg-surface/95 px-1.5 py-0.5 font-mono text-[10px] font-bold text-success">
-          {DEMO_STORE_LABEL} • PKP
-        </span>
       </Link>
       <div className="flex flex-1 flex-col gap-1.5 pt-3">
         <Link
