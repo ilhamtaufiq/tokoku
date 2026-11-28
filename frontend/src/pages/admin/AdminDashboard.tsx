@@ -6,7 +6,13 @@ import { ORDER_STATUS_LABEL, formatDate, rp } from '../../lib/money';
 import type { OrderStatus, PaymentStatus } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
 import { DEMO_KPI_TREND, DEMO_MONTHLY_SALES, DEMO_URGENT_TASKS } from '../../data/demo';
-import { CARD, DEMO_TAG, HIDE_MD, MONEY, MUTED_SMALL, SKU, Sparkline, StatusBadge, TABLE_STACK, TBODY, TD, TD_MONEY, TH, TH_NUM, Trend, btn, cx, type Tone } from './adminUi';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { KpiCard } from '../../components/admin/KpiCard';
+import { TONE_BADGE } from '../../components/admin/status';
+import { DEMO_TAG, HIDE_MD, MONEY, MUTED_SMALL, SKU, Sparkline, TABLE_STACK, Trend, cx, type Tone } from './adminUi';
 
 const DAY = new Intl.DateTimeFormat('id-ID', { weekday: 'short' });
 
@@ -19,18 +25,15 @@ function statusInfo(status: OrderStatus, payment: PaymentStatus): { label: strin
   return { label: ORDER_STATUS_LABEL[status] ?? status, tone: 'info' };
 }
 
-const KPI_TOP = 'flex items-center justify-between gap-2 text-sm font-semibold text-ink-2';
-const KPI_ICON = 'material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field bg-secondary-container text-[20px] text-on-secondary-container';
 /** Angka KPI memakai font mono agar lebar digit sama dan sejajar antar kartu. */
 const KPI_VALUE = cx(MONEY, 'text-xl font-bold leading-7 text-ink sm:text-[26px] sm:leading-8');
 const SECTION_TITLE = 'font-display text-lg font-semibold leading-7 text-ink sm:text-xl';
-const LINK_SMALL = 'inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0';
+const PANEL = 'gap-0 rounded-card border border-outline-soft bg-surface py-0 shadow-card ring-0';
 const TASK_TONE: Record<'danger' | 'warn' | 'info', string> = {
   danger: 'bg-error-soft text-on-error-soft',
   warn: 'bg-warning-soft text-on-warning-soft',
   info: 'bg-secondary-container text-on-secondary-container',
 };
-const SEG_BTN = 'inline-flex min-h-11 items-center rounded-pill px-3.5 text-xs font-semibold transition-colors md:min-h-8';
 
 type Series = '7d' | '6m';
 
@@ -54,22 +57,21 @@ export default function AdminDashboard() {
         actions={
           <>
             {/* DEMO: tombol unduh rekap belum punya API, jadi dinonaktifkan. */}
-            <button type="button" className={btn('default')} disabled title="Belum tersedia">
+            <Button variant="outline" className="h-11 md:h-9" disabled title="Belum tersedia">
               <span className="material-symbols-outlined" aria-hidden>download</span>
               Unduh rekap
               <span className={DEMO_TAG}>Demo</span>
-            </button>
-            <Link to="/admin/products" className={btn('primary')}>
+            </Button>
+            <Button render={<Link to="/admin/products" />} nativeButton={false} className="h-11 md:h-9">
               <span className="material-symbols-outlined" aria-hidden>add</span>
               Kelola produk
-            </Link>
+            </Button>
           </>
         }
       />
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-        <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
-          <div className={KPI_TOP}><span>Total pendapatan</span><span className={KPI_ICON} aria-hidden>payments</span></div>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" aria-label="Ringkasan angka">
+        <KpiCard title="Total pendapatan" icon="payments">
           <strong className={cx(KPI_VALUE, 'whitespace-nowrap text-base sm:text-xl lg:text-[22px]')}>{rp(d.revenue_total)}</strong>
           <span className={MUTED_SMALL}>{d.orders_total} pesanan lunas</span>
           {/* DEMO: tren persentase dan sparkline bulanan dummy. */}
@@ -81,9 +83,8 @@ export default function AdminDashboard() {
             {/* DEMO */}
             <Sparkline values={DEMO_MONTHLY_SALES.map((m) => m.value)} />
           </div>
-        </article>
-        <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
-          <div className={KPI_TOP}><span>Perlu dikirim</span><span className={KPI_ICON} aria-hidden>local_shipping</span></div>
+        </KpiCard>
+        <KpiCard title="Perlu dikirim" icon="local_shipping">
           <strong className={KPI_VALUE}>{d.orders_to_ship}</strong>
           <span className={MUTED_SMALL}>pesanan menunggu proses</span>
           {/* DEMO: tren pesanan baru dummy. */}
@@ -91,9 +92,8 @@ export default function AdminDashboard() {
             <Trend {...DEMO_KPI_TREND.toShip} />
             <span className={DEMO_TAG}>Demo</span>
           </div>
-        </article>
-        <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
-          <div className={KPI_TOP}><span>Produk aktif</span><span className={KPI_ICON} aria-hidden>inventory_2</span></div>
+        </KpiCard>
+        <KpiCard title="Produk aktif" icon="inventory_2">
           <strong className={KPI_VALUE}>{d.active_products}</strong>
           <span className={MUTED_SMALL}>produk tampil di katalog</span>
           {/* DEMO: tren produk baru dummy. */}
@@ -101,9 +101,8 @@ export default function AdminDashboard() {
             <Trend {...DEMO_KPI_TREND.products} />
             <span className={DEMO_TAG}>Demo</span>
           </div>
-        </article>
-        <article className={cx(CARD, 'flex flex-col gap-1.5 p-4 lg:p-5')}>
-          <div className={KPI_TOP}><span>Stok menipis</span><span className={cx(KPI_ICON, 'text-accent')} aria-hidden>warning</span></div>
+        </KpiCard>
+        <KpiCard title="Stok menipis" icon="warning" iconClassName="text-accent">
           <strong className={KPI_VALUE}>{d.low_stock_count}</strong>
           <span className={d.low_stock_count > 0 ? 'text-xs font-semibold text-accent' : MUTED_SMALL}>
             {d.low_stock_count > 0 ? 'Perlu restok (≤ 5 unit)' : 'Semua stok aman'}
@@ -113,25 +112,35 @@ export default function AdminDashboard() {
             <Trend {...DEMO_KPI_TREND.lowStock} />
             <span className={DEMO_TAG}>Demo</span>
           </div>
-        </article>
+        </KpiCard>
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <article className={cx(CARD, 'flex min-w-0 flex-col p-4 sm:p-5')}>
+        <Card className={cx(PANEL, 'min-w-0 p-4 sm:p-5')}>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
               <h2 className={SECTION_TITLE}>Tren penjualan</h2>
               <span className={MUTED_SMALL}>{series === '7d' ? 'Dalam ribu rupiah · 7 hari terakhir' : 'Dalam juta rupiah · 6 bulan'}</span>
             </div>
             {/* DEMO: pilihan 6 bulan memakai data bulanan dummy. */}
-            <div className="inline-flex rounded-pill bg-surface-low p-1" role="group" aria-label="Rentang grafik">
-              <button type="button" className={cx(SEG_BTN, series === '7d' ? 'bg-primary text-on-primary' : 'text-ink-2')} aria-pressed={series === '7d'} onClick={() => setSeries('7d')}>
+            <div className="inline-flex gap-1 rounded-pill bg-surface-low p-1" role="group" aria-label="Rentang grafik">
+              <Button
+                variant={series === '7d' ? 'default' : 'ghost'}
+                className="h-11 rounded-pill px-3.5 text-xs md:h-8"
+                aria-pressed={series === '7d'}
+                onClick={() => setSeries('7d')}
+              >
                 7 hari
-              </button>
-              <button type="button" className={cx(SEG_BTN, series === '6m' ? 'bg-primary text-on-primary' : 'text-ink-2')} aria-pressed={series === '6m'} onClick={() => setSeries('6m')}>
+              </Button>
+              <Button
+                variant={series === '6m' ? 'default' : 'ghost'}
+                className="h-11 rounded-pill px-3.5 text-xs md:h-8"
+                aria-pressed={series === '6m'}
+                onClick={() => setSeries('6m')}
+              >
                 6 bulan
                 <span className={cx(DEMO_TAG, 'ml-1.5')}>Demo</span>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -175,14 +184,14 @@ export default function AdminDashboard() {
               })}
             </div>
           )}
-        </article>
+        </Card>
 
         <div className="flex min-w-0 flex-col gap-4">
           {/* DEMO: daftar tugas mendesak dummy. */}
-          <article className={cx(CARD, 'p-4 sm:p-5')}>
+          <Card className={cx(PANEL, 'p-4 sm:p-5')}>
             <div className="flex items-center justify-between gap-2">
               <h2 className={SECTION_TITLE}>Tugas mendesak</h2>
-              <span className={DEMO_TAG}>Demo</span>
+              <Badge variant="outline" className={cx(DEMO_TAG, 'h-5 rounded-pill')}>Demo</Badge>
             </div>
             <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
               {DEMO_URGENT_TASKS.map((t) => (
@@ -191,73 +200,74 @@ export default function AdminDashboard() {
                     {t.tone === 'danger' ? 'priority_high' : t.tone === 'warn' ? 'schedule' : 'verified_user'}
                   </span>
                   <div className="min-w-0 flex-1 text-left">
-                    <strong className="block font-display text-[15px] font-semibold text-ink">{t.title}</strong>
-                    <span className="mt-0.5 block text-xs text-muted">{t.detail}</span>
+                    <strong className="block text-left font-display text-[15px] font-semibold text-ink">{t.title}</strong>
+                    <span className="mt-0.5 block text-left text-xs text-muted">{t.detail}</span>
                     <span className={cx('mt-1.5 inline-block text-xs font-semibold', t.tone === 'danger' ? 'text-error' : 'text-muted')}>{t.due}</span>
                   </div>
                 </li>
               ))}
             </ul>
-          </article>
+          </Card>
 
-          <article className={cx(CARD, 'p-4 sm:p-5')}>
+          <Card className={cx(PANEL, 'p-4 sm:p-5')}>
             <div className="flex items-end justify-between gap-2">
               <h2 className={SECTION_TITLE}>Stok menipis</h2>
-              <Link to="/admin/products" className={LINK_SMALL}>Lihat semua</Link>
+              <Link to="/admin/products" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0">Lihat semua</Link>
             </div>
             {d.low_stock.length === 0 && <p className={cx(MUTED_SMALL, 'mt-3')}>Tidak ada produk dengan stok menipis.</p>}
             <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
               {d.low_stock.map((p) => (
                 <li
                   key={p.id}
-                  className={cx(
-                    'flex items-center justify-between gap-3 rounded-field p-3.5',
-                    p.stock <= 2 ? 'bg-warning-soft/70' : 'bg-surface-low',
-                  )}
+                  className={cx('flex items-center justify-between gap-3 rounded-field p-3.5', p.stock <= 2 ? 'bg-warning-soft/70' : 'bg-surface-low')}
                 >
                   <div className="min-w-0 text-left">
-                    <strong className="block font-display text-[15px] font-semibold text-ink">{p.name}</strong>
-                    <span className={cx(SKU, 'mt-0.5 block truncate')}>{p.sku}</span>
+                    <strong className="block text-left font-display text-[15px] font-semibold text-ink">{p.name}</strong>
+                    <span className={cx(SKU, 'mt-0.5 block truncate text-left')}>{p.sku}</span>
                   </div>
-                  <StatusBadge tone={p.stock <= 2 ? 'danger' : 'warn'}>Sisa {p.stock}</StatusBadge>
+                  <Badge variant="outline" className={cx('h-6 rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[p.stock <= 2 ? 'danger' : 'warn'])}>
+                    Sisa {p.stock}
+                  </Badge>
                 </li>
               ))}
             </ul>
-          </article>
+          </Card>
         </div>
       </section>
 
-      <section className={cx(CARD, 'overflow-hidden')}>
+      <Card className={cx(PANEL, 'overflow-hidden')}>
         <div className="flex items-end justify-between gap-2 px-4 pb-2 pt-4 sm:px-5 sm:pt-5">
           <h2 className={SECTION_TITLE}>Pesanan terbaru</h2>
-          <Link to="/admin/orders" className={LINK_SMALL}>Kelola pesanan</Link>
+          <Link to="/admin/orders" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0">Kelola pesanan</Link>
         </div>
-        <table className={TABLE_STACK}>
-          <thead>
-            <tr>
-              <th className={TH}>Invoice</th>
-              <th className={TH}>Pembeli</th>
-              <th className={cx(TH, HIDE_MD)}>Waktu</th>
-              <th className={TH}>Status</th>
-              <th className={TH_NUM}>Total</th>
-            </tr>
-          </thead>
-          <tbody className={TBODY}>
+        <Table className={cx(TABLE_STACK, 'mt-2')}>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-3 sm:px-4">Invoice</TableHead>
+              <TableHead className="px-3 sm:px-4">Pembeli</TableHead>
+              <TableHead className={cx('px-3 sm:px-4', HIDE_MD)}>Waktu</TableHead>
+              <TableHead className="px-3 sm:px-4">Status</TableHead>
+              <TableHead className="px-3 text-right sm:px-4">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {d.recent_orders.map((o) => {
               const s = statusInfo(o.status, o.payment_status);
               return (
-                <tr key={o.id}>
-                  <td data-label="" className={cx(TD, SKU, 'max-md:block!')}>{o.invoice_no}</td>
-                  <td data-label="Pembeli" className={TD}>{o.buyer_name ?? '-'}</td>
-                  <td data-label="Waktu" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
-                  <td data-label="Status" className={TD}><StatusBadge tone={s.tone}>{s.label}</StatusBadge></td>
-                  <td data-label="Total" className={TD_MONEY}>{rp(o.grand_total)}</td>
-                </tr>
+                <TableRow key={o.id} className="border-outline-soft">
+                  <TableCell data-label="" className={cx('px-3 py-3 sm:px-4', SKU, 'max-md:block!')}>{o.invoice_no}</TableCell>
+                  <TableCell data-label="Pembeli" className="px-3 py-3 sm:px-4">{o.buyer_name ?? '-'}</TableCell>
+                  <TableCell data-label="Waktu" className={cx('px-3 py-3 sm:px-4', MUTED_SMALL, HIDE_MD)}>{formatDate(o.created_at)}</TableCell>
+                  <TableCell data-label="Status" className="px-3 py-3 sm:px-4">
+                    <Badge variant="outline" className={cx('h-6 whitespace-nowrap rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[s.tone])}>{s.label}</Badge>
+                  </TableCell>
+                  <TableCell data-label="Total" className={cx('whitespace-nowrap px-3 py-3 text-right sm:px-4', MONEY)}>{rp(o.grand_total)}</TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-      </section>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

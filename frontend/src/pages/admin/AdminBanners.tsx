@@ -4,35 +4,37 @@ import { api } from '../../api';
 import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 import type { Banner, BannerInput } from '../../api/types';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  ACTIONS,
-  CHECKBOX,
-  EMPTY_ROW,
-  FORM_CARD,
+  BTN,
+  CheckField,
+  EMPTY_TEXT,
+  FIELD,
+  FILE_FIELD,
+  FORM_BODY,
+  FORM_TITLE,
+  FormField,
+  FormNotice,
   HIDE_MD,
   HIDE_SM,
   HINT,
-  INPUT,
-  LABEL,
-  LABEL_CHECK,
+  LINK_BTN,
   MUTED_SMALL,
-  Notice,
+  PANEL,
   ROW,
+  SECTION_RULE,
   SKU,
-  StatusBadge,
-  TABLE_WRAP,
-  TBODY,
+  StatusPill,
+  TABLE_STACK,
   TD,
   TH,
-  btn,
-  cx, TABLE_STACK } from './adminUi';
+} from '@/components/admin-products/ui';
+import { cn } from 'cn';
 
 const empty: BannerInput = { title: '', subtitle: '', cta_label: '', cta_url: '', is_active: true, sort_order: 0 };
-
-const FORM_TITLE = 'm-0 text-lg font-semibold text-ink';
-const SECTION_RULE = 'mt-2 flex flex-col gap-3 border-t border-outline-soft pt-5';
-const FILE_INPUT =
-  'text-sm text-ink file:mr-3 file:cursor-pointer file:rounded-field file:border-0 file:bg-secondary-container file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-secondary-container';
 
 export default function AdminBanners() {
   const queryClient = useQueryClient();
@@ -60,10 +62,10 @@ export default function AdminBanners() {
       <PageHeader
         title="Banner promo"
         subtitle="Banner aktif tampil berurutan di katalog. Urutan kecil tampil lebih dulu. Gambar ideal 1600×600 px."
-        actions={<button type="button" className={btn('primary')} onClick={() => setEditing('new')}>+ Banner baru</button>}
+        actions={<Button type="button" className={BTN} onClick={() => setEditing('new')}>+ Banner baru</Button>}
       />
-      <p className={cx(MUTED_SMALL, 'mb-4')}>Banner aktif tampil berurutan di katalog (urutan kecil tampil lebih dulu). Gambar ideal 1600×600 px.</p>
-      {message && <div className="mb-4"><Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice></div>}
+      <p className={cn(MUTED_SMALL, 'mb-4')}>Banner aktif tampil berurutan di katalog (urutan kecil tampil lebih dulu). Gambar ideal 1600×600 px.</p>
+      {message && <div className="mb-4"><FormNotice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</FormNotice></div>}
 
       {editing && (
         <div className="mb-4">
@@ -81,53 +83,54 @@ export default function AdminBanners() {
         </div>
       )}
 
-      <div className={TABLE_WRAP}>
-        <table className={TABLE_STACK}>
-          <thead>
-            <tr>
-              <th className={TH}>Gambar</th>
-              <th className={TH}>Judul</th>
-              <th className={cx(TH, HIDE_MD)}>Tautan</th>
-              <th className={cx(TH, HIDE_SM)}>Urutan</th>
-              <th className={TH}>Status</th>
-              <th className={TH} />
-            </tr>
-          </thead>
-          <tbody className={TBODY}>
+      <Card className={cn(PANEL, 'overflow-hidden')}>
+        <Table className={TABLE_STACK}>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={TH}>Gambar</TableHead>
+              <TableHead className={TH}>Judul</TableHead>
+              <TableHead className={cn(TH, HIDE_MD)}>Tautan</TableHead>
+              <TableHead className={cn(TH, HIDE_SM)}>Urutan</TableHead>
+              <TableHead className={TH}>Status</TableHead>
+              <TableHead className={TH} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {banners.data?.map((b) => (
-              <tr key={b.id} className={b.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                <td data-label="" className={cx(TD, 'max-md:block!')}>
-                  <span className="flex h-[45px] w-20 items-center justify-center overflow-hidden rounded-field bg-surface-high text-muted sm:h-[54px] sm:w-24">
+              <TableRow key={b.id} className={b.is_active ? '' : 'bg-surface-low/60 text-sub'}>
+                <TableCell data-label="" className={cn(TD, 'max-md:block!')}>
+                  <span className="flex h-[45px] w-20 items-center justify-center overflow-hidden rounded-lg bg-surface-high text-sub sm:h-[54px] sm:w-24">
                     {b.image_url ? <img src={b.image_url} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined" aria-hidden>image</span>}
                   </span>
-                </td>
-                <td data-label="Judul" className={TD}>
+                </TableCell>
+                <TableCell data-label="Judul" className={TD}>
                   <strong className="font-semibold">{b.title}</strong>
                   {b.subtitle && <div className={MUTED_SMALL}>{b.subtitle}</div>}
-                </td>
-                <td data-label="Tautan" className={cx(TD, HIDE_MD, SKU)}>{b.cta_url ?? '—'}</td>
-                <td data-label="Urutan" className={cx(TD, HIDE_SM, 'tabular-nums')}>{b.sort_order}</td>
-                <td data-label="Status" className={TD}>
-                  <StatusBadge tone={b.is_active ? 'ok' : 'neutral'}>{b.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
-                </td>
-                <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
+                </TableCell>
+                <TableCell data-label="Tautan" className={cn(TD, HIDE_MD, SKU)}>{b.cta_url ?? '—'}</TableCell>
+                <TableCell data-label="Urutan" className={cn(TD, HIDE_SM, 'tabular-nums')}>{b.sort_order}</TableCell>
+                <TableCell data-label="Status" className={TD}>
+                  <StatusPill tone={b.is_active ? 'ok' : 'neutral'}>{b.is_active ? 'Aktif' : 'Nonaktif'}</StatusPill>
+                </TableCell>
+                <TableCell data-label="" className={cn(TD, 'whitespace-nowrap')}>
                   <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
-                    <button type="button" className={btn('link', 'link')} onClick={() => setEditing(b)}>Ubah</button>
-                    <button
+                    <Button type="button" variant="link" className={LINK_BTN} onClick={() => setEditing(b)}>Ubah</Button>
+                    <Button
                       type="button"
-                      className={btn('linkDanger', 'link')}
+                      variant="link"
+                      className={cn(LINK_BTN, 'text-destructive')}
                       onClick={() => {
                         if (window.confirm(`Hapus banner "${b.title}"?`)) remove.mutate(b.id);
                       }}
-                    >Hapus</button>
+                    >Hapus</Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-        {banners.data?.length === 0 && <p className={EMPTY_ROW}>Belum ada banner. Katalog akan menampilkan banner bawaan.</p>}
-      </div>
+          </TableBody>
+        </Table>
+        {banners.data?.length === 0 && <p className={EMPTY_TEXT}>Belum ada banner. Katalog akan menampilkan banner bawaan.</p>}
+      </Card>
     </section>
   );
 }
@@ -181,59 +184,59 @@ function BannerForm({
   });
 
   return (
-    <form
-      className={FORM_CARD}
-      onSubmit={(e) => {
-        e.preventDefault();
-        save.mutate();
-      }}
-    >
-      <h2 className={FORM_TITLE}>{banner ? 'Ubah banner' : 'Banner baru'}</h2>
-      <label className={LABEL}>
-        Judul
-        <input className={INPUT} value={form.title} onChange={(e) => set('title', e.target.value)} required maxLength={120} />
-      </label>
-      <label className={LABEL}>
-        Subjudul
-        <input className={INPUT} value={form.subtitle ?? ''} onChange={(e) => set('subtitle', e.target.value)} maxLength={255} />
-      </label>
-      <div className={ROW}>
-        <label className={LABEL}>
-          Teks tombol
-          <input className={INPUT} value={form.cta_label ?? ''} onChange={(e) => set('cta_label', e.target.value)} maxLength={60} placeholder="Belanja sekarang" />
-        </label>
-        <label className={LABEL}>
-          Tautan
-          <input className={INPUT} value={form.cta_url ?? ''} onChange={(e) => set('cta_url', e.target.value)} maxLength={255} placeholder="/ atau https://…" />
-        </label>
-      </div>
-      <div className={ROW}>
-        <label className={LABEL}>
-          Urutan tampil
-          <input className={INPUT} type="number" value={form.sort_order ?? 0} onChange={(e) => set('sort_order', Number(e.target.value))} />
-        </label>
-        <label className={cx(LABEL_CHECK, 'sm:flex-none sm:self-end sm:pb-2.5')}>
-          <input className={CHECKBOX} type="checkbox" checked={form.is_active ?? true} onChange={(e) => set('is_active', e.target.checked)} />
-          Tampilkan di katalog
-        </label>
-      </div>
-      <div className={ACTIONS}>
-        <button type="submit" className={btn('primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</button>
-        <button type="button" className={btn('ghost')} onClick={onClose}>Tutup</button>
-      </div>
-
-      {banner && (
-        <div className={SECTION_RULE}>
-          <h2 className={FORM_TITLE}>Gambar banner</h2>
-          <p className={HINT}>JPEG, PNG, atau WebP, maksimal 2 MB. Tanpa gambar, banner memakai latar warna.</p>
-          <div className={ACTIONS}>
-            <input type="file" className={FILE_INPUT} accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-            <button type="button" className={btn('default')} disabled={!file || upload.isPending} onClick={() => upload.mutate()}>
-              {upload.isPending ? 'Mengunggah…' : 'Unggah gambar'}
-            </button>
-          </div>
+    <Card className={PANEL}>
+      <form
+        className={FORM_BODY}
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
+      >
+        <h2 className={FORM_TITLE}>{banner ? 'Ubah banner' : 'Banner baru'}</h2>
+        <FormField label="Judul">
+          <Input className={FIELD} value={form.title} onChange={(e) => set('title', e.target.value)} required maxLength={120} />
+        </FormField>
+        <FormField label="Subjudul">
+          <Input className={FIELD} value={form.subtitle ?? ''} onChange={(e) => set('subtitle', e.target.value)} maxLength={255} />
+        </FormField>
+        <div className={ROW}>
+          <FormField label="Teks tombol">
+            <Input className={FIELD} value={form.cta_label ?? ''} onChange={(e) => set('cta_label', e.target.value)} maxLength={60} placeholder="Belanja sekarang" />
+          </FormField>
+          <FormField label="Tautan">
+            <Input className={FIELD} value={form.cta_url ?? ''} onChange={(e) => set('cta_url', e.target.value)} maxLength={255} placeholder="/ atau https://…" />
+          </FormField>
         </div>
-      )}
-    </form>
+        <div className={ROW}>
+          <FormField label="Urutan tampil">
+            <Input className={FIELD} type="number" value={form.sort_order ?? 0} onChange={(e) => set('sort_order', Number(e.target.value))} />
+          </FormField>
+          <CheckField
+            className="sm:flex-none sm:self-end sm:pb-2.5"
+            checked={form.is_active ?? true}
+            onCheckedChange={(v) => set('is_active', v)}
+          >
+            Tampilkan di katalog
+          </CheckField>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="submit" className={BTN} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
+          <Button type="button" variant="ghost" className={BTN} onClick={onClose}>Tutup</Button>
+        </div>
+
+        {banner && (
+          <div className={SECTION_RULE}>
+            <h2 className={FORM_TITLE}>Gambar banner</h2>
+            <p className={HINT}>JPEG, PNG, atau WebP, maksimal 2 MB. Tanpa gambar, banner memakai latar warna.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input type="file" className={FILE_FIELD} accept="image/jpeg,image/png,image/webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <Button type="button" variant="outline" className={BTN} disabled={!file || upload.isPending} onClick={() => upload.mutate()}>
+                {upload.isPending ? 'Mengunggah…' : 'Unggah gambar'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </form>
+    </Card>
   );
 }

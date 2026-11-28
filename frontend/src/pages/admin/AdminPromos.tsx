@@ -3,7 +3,11 @@ import { useMutation } from '@tanstack/react-query';
 import { api } from '../../api';
 import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
-import { FORM_CARD, INPUT, LABEL, Notice, ROW, btn, cx } from './adminUi';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { BTN, FIELD, FORM_BODY, FormField, FormNotice, PANEL, ROW } from '@/components/admin-products/ui';
+import { cn } from 'cn';
 
 export default function AdminPromos() {
   const [code, setCode] = useState('');
@@ -35,46 +39,43 @@ export default function AdminPromos() {
   return (
     <section className="max-w-[560px]">
       <PageHeader title="Kode promo" subtitle="Buat kode diskon persen atau nominal, lengkap dengan minimum belanja dan kuota." />
-      <form
-        className={FORM_CARD}
-        onSubmit={(e) => {
-          e.preventDefault();
-          setMessage(null);
-          create.mutate();
-        }}
-      >
-        <label className={LABEL}>
-          Kode
-          <input className={INPUT} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required maxLength={40} />
-        </label>
-        <div className={ROW}>
-          <label className={LABEL}>
-            Jenis
-            <select className={INPUT} value={type} onChange={(e) => setType(e.target.value as 'percent' | 'fixed')}>
-              <option value="percent">Persen (%)</option>
-              <option value="fixed">Nominal (Rp)</option>
-            </select>
-          </label>
-          <label className={LABEL}>
-            Nilai {type === 'percent' ? '(%)' : '(Rp)'}
-            <input className={INPUT} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ''))} required />
-          </label>
-        </div>
-        <div className={ROW}>
-          <label className={LABEL}>
-            Minimum belanja (Rp)
-            <input className={INPUT} inputMode="numeric" value={minSubtotal} onChange={(e) => setMinSubtotal(e.target.value.replace(/[^0-9]/g, ''))} placeholder="0" />
-          </label>
-          <label className={LABEL}>
-            Kuota pemakaian
-            <input className={INPUT} inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Tanpa batas" />
-          </label>
-        </div>
-        {message && <Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice>}
-        <button type="submit" className={cx(btn('primary'), 'w-full')} disabled={create.isPending}>
-          Buat promo
-        </button>
-      </form>
+      <Card className={PANEL}>
+        <form
+          className={FORM_BODY}
+          onSubmit={(e) => {
+            e.preventDefault();
+            setMessage(null);
+            create.mutate();
+          }}
+        >
+          <FormField label="Kode">
+            <Input className={FIELD} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} required maxLength={40} />
+          </FormField>
+          <div className={ROW}>
+            <FormField label="Jenis">
+              <select className={FIELD} value={type} onChange={(e) => setType(e.target.value as 'percent' | 'fixed')}>
+                <option value="percent">Persen (%)</option>
+                <option value="fixed">Nominal (Rp)</option>
+              </select>
+            </FormField>
+            <FormField label={`Nilai ${type === 'percent' ? '(%)' : '(Rp)'}`}>
+              <Input className={FIELD} inputMode="numeric" value={value} onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ''))} required />
+            </FormField>
+          </div>
+          <div className={ROW}>
+            <FormField label="Minimum belanja (Rp)">
+              <Input className={FIELD} inputMode="numeric" value={minSubtotal} onChange={(e) => setMinSubtotal(e.target.value.replace(/[^0-9]/g, ''))} placeholder="0" />
+            </FormField>
+            <FormField label="Kuota pemakaian">
+              <Input className={FIELD} inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Tanpa batas" />
+            </FormField>
+          </div>
+          {message && <FormNotice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</FormNotice>}
+          <Button type="submit" className={cn(BTN, 'w-full')} disabled={create.isPending}>
+            Buat promo
+          </Button>
+        </form>
+      </Card>
     </section>
   );
 }

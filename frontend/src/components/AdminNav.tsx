@@ -1,8 +1,20 @@
-import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { useSeo } from '../lib/seo';
-import { btn, cx } from '../pages/admin/adminUi';
+import { Button } from '@/components/ui/button';
+import {
+  Sidebar,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarProvider,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
+import { cx } from '../pages/admin/adminUi';
 
 type NavItem = { to: string; label: string; icon: string; end?: boolean };
 type NavGroup = { title: string; items: NavItem[]; platformOnly?: boolean };
@@ -44,97 +56,119 @@ const LINK_ACTIVE = 'bg-primary-container text-white';
 const FOOT_LINK = 'flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-[#cbd5e1] no-underline hover:bg-white/10 hover:text-white hover:no-underline';
 
 /**
- * Shell panel admin. Di layar lebar, sidebar tampil tetap di kiri.
- * Di layar kecil, sidebar menjadi drawer yang dibuka dari bar atas.
+ * Shell admin berbasis Sidebar shadcn. Di layar lebar (md ke atas) sidebar tampil tetap di kiri.
+ * Di layar kecil, sidebar menjadi drawer (Sheet) yang dibuka dari bar atas dan ditutup
+ * dengan tombol "Tutup menu", klik di luar, atau tombol Escape.
  */
 export function AdminLayout() {
   const location = useLocation();
   useSeo({ title: 'Admin', noindex: true });
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-
-  // Tutup drawer dengan tombol Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
-
+  const { user } = useAuth();
   const groups = GROUPS.filter((g) => !g.platformOnly || user?.role === 'admin');
 
   return (
-    <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-outline-soft bg-surface px-4 py-2.5 lg:hidden">
-        <button
-          type="button"
-          className={btn('default', 'sm', '!h-11 !px-4')}
-          aria-controls="admin-side"
-          aria-expanded={open}
-          onClick={() => setOpen(true)}
-        >
-          <span className="material-symbols-outlined" aria-hidden>menu</span>
-          Menu
-        </button>
-        <span className="material-symbols-outlined ml-auto flex h-9 w-9 items-center justify-center rounded-field bg-[#213145] text-[20px] text-white" aria-hidden>storefront</span>
-      </header>
+    <SidebarProvider className="min-h-screen bg-bg">
+      <AdminSidebar groups={groups} />
+      <SidebarInset className="min-w-0 bg-bg">
+        <AdminTopBar />
+        <div className="min-w-0 flex-1 px-4 pb-14 pt-6 sm:px-6 lg:px-10 lg:pt-8">
+          <div className="mx-auto max-w-[1180px]">
+            <div key={location.pathname} className="animate-fade-up">
+              <Outlet />
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
 
-      {open && (
-        <button
-          type="button"
-          aria-label="Tutup menu"
-          className="fixed inset-0 z-40 cursor-default bg-black/40 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
-
-      <aside
-        id="admin-side"
-        className={cx(
-          'fixed inset-y-0 left-0 z-50 flex w-[272px] max-w-[85vw] flex-col gap-6 overflow-y-auto bg-[#213145] p-4 text-white transition-[transform,visibility] duration-200 ease-out',
-          open ? 'translate-x-0 visible' : '-translate-x-full invisible',
-          'lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-auto lg:max-w-none lg:translate-x-0 lg:visible lg:py-6 lg:transition-none',
-        )}
+function AdminTopBar() {
+  const { isMobile, open, openMobile, toggleSidebar } = useSidebar();
+  const expanded = isMobile ? openMobile : open;
+  return (
+    <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-outline-soft bg-surface px-4 py-2.5">
+      <Button
+        variant="outline"
+        className="h-11 gap-2 rounded-field px-4 text-sm font-semibold text-ink"
+        aria-expanded={expanded}
+        onClick={toggleSidebar}
       >
+        <span className="material-symbols-outlined text-[20px]" aria-hidden>menu</span>
+        <span className="md:sr-only">Menu</span>
+      </Button>
+      <span className="material-symbols-outlined ml-auto flex h-9 w-9 items-center justify-center rounded-field bg-[#213145] text-[20px] text-white" aria-hidden>
+        storefront
+      </span>
+    </header>
+  );
+}
+
+function AdminSidebar({ groups }: { groups: NavGroup[] }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { isMobile, setOpenMobile } = useSidebar();
+  /** Di layar kecil, klik menu atau tombol di sidebar menutup drawer. Di layar lebar sidebar tetap tampil. */
+  const closeDrawer = () => {
+    if (isMobile) setOpenMobile(false);
+  };
+
+  return (
+    <Sidebar collapsible="offcanvas" className="border-outline-soft">
+      {/* Latar gelap Tokoku dipasang di pembungkus isi, agar berlaku untuk sidebar tetap maupun drawer. */}
+      <div className="flex h-full w-full flex-col gap-6 overflow-y-auto bg-[#213145] p-4 text-white">
         <div className="flex items-center gap-3 px-2 pt-1">
           <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-primary-container text-[22px] text-white" aria-hidden>
             storefront
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <strong className="block font-display text-[17px] leading-[22px] text-white">Tokoku</strong>
             <span className="block truncate text-xs font-semibold text-[#94a3b8]">Portal penjual</span>
           </div>
+          <button
+            type="button"
+            aria-label="Tutup menu"
+            onClick={closeDrawer}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-field text-white hover:bg-white/10 md:hidden"
+          >
+            <span className="material-symbols-outlined text-[22px]" aria-hidden>close</span>
+          </button>
         </div>
 
         <nav aria-label="Menu admin" className="flex flex-col gap-5">
           {groups.map((g) => (
-            <div key={g.title} className="flex flex-col gap-1">
-              <p className="m-0 px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">{g.title}</p>
-              {g.items.map((it) => (
-                <NavLink
-                  key={it.to}
-                  to={it.to}
-                  end={it.end}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) => cx(LINK_BASE, isActive ? LINK_ACTIVE : LINK_IDLE)}
-                >
-                  <span className="material-symbols-outlined text-[20px]" aria-hidden>{it.icon}</span>
-                  {it.label}
-                </NavLink>
-              ))}
-            </div>
+            <SidebarGroup key={g.title} className="gap-1 p-0">
+              <SidebarGroupLabel className="h-auto px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">
+                {g.title}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="m-0 list-none gap-1 p-0">
+                  {g.items.map((it) => (
+                    <SidebarMenuItem key={it.to}>
+                      <NavLink
+                        to={it.to}
+                        end={it.end}
+                        onClick={closeDrawer}
+                        className={({ isActive }) => cx(LINK_BASE, isActive ? LINK_ACTIVE : LINK_IDLE)}
+                      >
+                        <span className="material-symbols-outlined text-[20px]" aria-hidden>{it.icon}</span>
+                        {it.label}
+                      </NavLink>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-1 border-t border-white/10 pt-3">
-          <NavLink to="/" onClick={() => setOpen(false)} className={FOOT_LINK}>
+        <div className="mt-auto flex flex-col gap-1">
+          <Separator className="mb-2 bg-white/10" />
+          <NavLink to="/" onClick={closeDrawer} className={FOOT_LINK}>
             <span className="material-symbols-outlined text-[18px]" aria-hidden>arrow_back</span>
             Ke toko
           </NavLink>
-          <NavLink to="/account" onClick={() => setOpen(false)} className={FOOT_LINK}>
+          <NavLink to="/account" onClick={closeDrawer} className={FOOT_LINK}>
             <span className="material-symbols-outlined text-[18px]" aria-hidden>manage_accounts</span>
             <span className="truncate">{user?.name ?? 'Akun saya'}</span>
           </NavLink>
@@ -142,7 +176,7 @@ export function AdminLayout() {
             type="button"
             className="mt-1 flex h-11 items-center rounded-field border-0 bg-transparent px-3 text-left text-sm font-semibold text-[#cbd5e1] hover:bg-white/10 hover:text-white"
             onClick={async () => {
-              setOpen(false);
+              closeDrawer();
               await logout();
               navigate('/');
             }}
@@ -150,15 +184,7 @@ export function AdminLayout() {
             Keluar
           </button>
         </div>
-      </aside>
-
-      <div className="min-w-0 px-4 pb-14 pt-6 sm:px-6 lg:px-10 lg:pt-8">
-        <div className="mx-auto max-w-[1180px]">
-          <div key={location.pathname} className="animate-fade-up">
-            <Outlet />
-          </div>
-        </div>
       </div>
-    </div>
+    </Sidebar>
   );
 }

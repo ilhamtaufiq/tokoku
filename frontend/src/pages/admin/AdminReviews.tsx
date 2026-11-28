@@ -5,7 +5,23 @@ import { Stars } from '../../components/Reviews';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import { formatDate } from '../../lib/money';
-import { CHIP_GROUP, EMPTY_ROW, FILTER_BAR, HIDE_LG, MUTED_SMALL, Notice, StatusBadge, TABLE_WRAP, TBODY, TD, TH, btn, chipClass, cx, TABLE_STACK } from './adminUi';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  EMPTY_TEXT,
+  FormNotice,
+  HIDE_LG,
+  LINK_BTN,
+  MUTED_SMALL,
+  PANEL,
+  StatusPill,
+  TABLE_STACK,
+  TD,
+  TH,
+  chipClass,
+} from '@/components/admin-products/ui';
+import { cn } from 'cn';
 
 /** Moderasi ulasan: sembunyikan ulasan yang melanggar, tampilkan kembali jika perlu. */
 export default function AdminReviews() {
@@ -32,55 +48,56 @@ export default function AdminReviews() {
         title="Ulasan"
         subtitle={reviews.data ? `${reviews.data.length} ulasan ditampilkan` : 'Memuat ulasan…'}
       />
-      <div className={FILTER_BAR}>
-        <div className={CHIP_GROUP} role="group" aria-label="Filter ulasan">
-          <button type="button" className={chipClass(!hiddenOnly)} aria-pressed={!hiddenOnly} onClick={() => setHiddenOnly(false)}>Semua</button>
-          <button type="button" className={chipClass(hiddenOnly)} aria-pressed={hiddenOnly} onClick={() => setHiddenOnly(true)}>Disembunyikan</button>
+      <Card className={cn(PANEL, 'mb-4 flex-col gap-3 p-3.5 md:flex-row md:flex-wrap md:items-center')}>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter ulasan">
+          <Button type="button" variant="outline" className={chipClass(!hiddenOnly)} aria-pressed={!hiddenOnly} onClick={() => setHiddenOnly(false)}>Semua</Button>
+          <Button type="button" variant="outline" className={chipClass(hiddenOnly)} aria-pressed={hiddenOnly} onClick={() => setHiddenOnly(true)}>Disembunyikan</Button>
         </div>
-      </div>
-      {error && <div className="mb-4"><Notice kind="error">{error}</Notice></div>}
-      <div className={TABLE_WRAP}>
-        <table className={TABLE_STACK}>
-          <thead>
-            <tr>
-              <th className={TH}>Produk</th>
-              <th className={TH}>Rating</th>
-              <th className={TH}>Ulasan</th>
-              <th className={TH}>Pembeli</th>
-              <th className={cx(TH, HIDE_LG)}>Tanggal</th>
-              <th className={TH}>Status</th>
-              <th className={TH} />
-            </tr>
-          </thead>
-          <tbody className={TBODY}>
+      </Card>
+      {error && <div className="mb-4"><FormNotice kind="error">{error}</FormNotice></div>}
+      <Card className={cn(PANEL, 'overflow-hidden')}>
+        <Table className={TABLE_STACK}>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={TH}>Produk</TableHead>
+              <TableHead className={TH}>Rating</TableHead>
+              <TableHead className={TH}>Ulasan</TableHead>
+              <TableHead className={TH}>Pembeli</TableHead>
+              <TableHead className={cn(TH, HIDE_LG)}>Tanggal</TableHead>
+              <TableHead className={TH}>Status</TableHead>
+              <TableHead className={TH} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {(reviews.data ?? []).map((r) => (
-              <tr key={r.id}>
-                <td data-label="" className={cx(TD, 'font-medium max-md:block!')}>{r.product_name}</td>
-                <td data-label="Rating" className={TD}><Stars value={r.rating} /></td>
-                <td data-label="Ulasan" className={cx(TD, 'max-w-[320px] whitespace-normal break-words')}>
+              <TableRow key={r.id}>
+                <TableCell data-label="" className={cn(TD, 'font-medium max-md:block!')}>{r.product_name}</TableCell>
+                <TableCell data-label="Rating" className={TD}><Stars value={r.rating} /></TableCell>
+                <TableCell data-label="Ulasan" className={cn(TD, 'max-w-[320px] whitespace-normal break-words')}>
                   {r.comment || <span className={MUTED_SMALL}>(tanpa komentar)</span>}
-                </td>
-                <td data-label="Pembeli" className={TD}>{r.buyer_name}</td>
-                <td data-label="Tanggal" className={cx(TD, HIDE_LG, MUTED_SMALL)}>{formatDate(r.created_at)}</td>
-                <td data-label="Status" className={TD}>
-                  <StatusBadge tone={r.is_visible ? 'ok' : 'neutral'}>{r.is_visible ? 'Tampil' : 'Disembunyikan'}</StatusBadge>
-                </td>
-                <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
-                  <button
+                </TableCell>
+                <TableCell data-label="Pembeli" className={TD}>{r.buyer_name}</TableCell>
+                <TableCell data-label="Tanggal" className={cn(TD, HIDE_LG, MUTED_SMALL)}>{formatDate(r.created_at)}</TableCell>
+                <TableCell data-label="Status" className={TD}>
+                  <StatusPill tone={r.is_visible ? 'ok' : 'neutral'}>{r.is_visible ? 'Tampil' : 'Disembunyikan'}</StatusPill>
+                </TableCell>
+                <TableCell data-label="" className={cn(TD, 'whitespace-nowrap')}>
+                  <Button
                     type="button"
-                    className={btn('link', 'link')}
+                    variant="link"
+                    className={LINK_BTN}
                     disabled={toggle.isPending}
                     onClick={() => toggle.mutate({ id: r.id, visible: !r.is_visible })}
                   >
                     {r.is_visible ? 'Sembunyikan' : 'Tampilkan'}
-                  </button>
-                </td>
-              </tr>
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-        {reviews.data?.length === 0 && <p className={EMPTY_ROW}>Belum ada ulasan.</p>}
-      </div>
+          </TableBody>
+        </Table>
+        {reviews.data?.length === 0 && <p className={EMPTY_TEXT}>Belum ada ulasan.</p>}
+      </Card>
     </section>
   );
 }

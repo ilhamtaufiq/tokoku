@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from 'lucide-react';
 import { api } from '../../api';
 import { PageHeader } from '../../components/PageHeader';
 import type { ProductInput } from '../../api';
@@ -7,43 +8,42 @@ import { ApiError } from '../../api/client';
 import type { Product } from '../../api/types';
 import { rp } from '../../lib/money';
 import { VariantsEditor } from './VariantsEditor';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  ACTIONS,
-  CHECKBOX,
-  EMPTY_ROW,
-  FILTER_BAR,
-  FORM_CARD,
+  BTN,
+  BTN_ICON,
+  CheckField,
+  DemoTag,
+  EMPTY_TEXT,
+  FIELD,
+  FILE_FIELD,
+  FORM_BODY,
+  FORM_TITLE,
+  FormField,
+  FormNotice,
   HIDE_LG,
   HINT,
-  INPUT,
-  LABEL,
-  LABEL_CHECK,
-  Notice,
+  LINK_BTN,
+  MONEY,
+  PANEL,
   ROW,
-  SEARCH_ICON,
-  SEARCH_WRAP,
+  SECTION_RULE,
   SKU,
-  StatusBadge,
-  TABLE_WRAP,
-  TBODY,
+  StatusPill,
+  TABLE_STACK,
   TD,
   TD_MONEY,
   TD_NUM,
   TH,
   TH_NUM,
-  btn,
-  cx,
-  TABLE_STACK,
-  MONEY,
-  DEMO_TAG,
-} from './adminUi';
+} from '@/components/admin-products/ui';
+import { cn } from 'cn';
 
 const empty: ProductInput = { category_id: 0, sku: '', name: '', description: '', price: '', is_taxable: true, stock: 0, weight_grams: 1000 };
-
-const FORM_TITLE = 'm-0 text-lg font-semibold text-ink';
-const SECTION_RULE = 'mt-2 flex flex-col gap-3 border-t border-outline-soft pt-5';
-const FILE_INPUT =
-  'text-sm text-ink file:mr-3 file:cursor-pointer file:rounded-field file:border-0 file:bg-secondary-container file:px-3 file:py-2 file:text-sm file:font-semibold file:text-on-secondary-container';
 
 export default function AdminProducts() {
   const queryClient = useQueryClient();
@@ -77,14 +77,14 @@ export default function AdminProducts() {
         crumbs={['Portal penjual', 'Operasional bisnis', 'Produk']}
         title="Produk"
         subtitle="Kelola katalog, harga, stok, dan varian. Produk yang dinonaktifkan tidak tampil di toko."
-        actions={<button type="button" className={btn('primary')} onClick={() => setEditing('new')}>+ Produk baru</button>}
+        actions={<Button type="button" className={BTN} onClick={() => setEditing('new')}>+ Produk baru</Button>}
       />
-      <div className={FILTER_BAR}>
-        <div className={SEARCH_WRAP}>
-          <span className={SEARCH_ICON} aria-hidden>search</span>
-          <input
+      <Card className={cn(PANEL, 'mb-4 flex-col gap-3 p-3.5 md:flex-row md:flex-wrap md:items-center')}>
+        <div className="relative w-full md:min-w-[240px] md:flex-1">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-sub" aria-hidden />
+          <Input
             type="search"
-            className={cx(INPUT, 'pl-10')}
+            className="h-11 md:h-10 pl-9"
             placeholder="Cari nama atau SKU…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -94,14 +94,14 @@ export default function AdminProducts() {
         {/* DEMO: filter status belum punya parameter API, jadi nonaktif. */}
         <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
           <div className="md:w-44">
-            <select className={INPUT} disabled aria-label="Filter status (belum tersedia)" defaultValue="all">
+            <select className={FIELD} disabled aria-label="Filter status (belum tersedia)" defaultValue="all">
               <option value="all">Semua status</option>
             </select>
           </div>
-          <span className={DEMO_TAG}>Demo</span>
+          <DemoTag />
         </div>
-      </div>
-      {message && <div className="mb-4"><Notice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</Notice></div>}
+      </Card>
+      {message && <div className="mb-4"><FormNotice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</FormNotice></div>}
 
       {editing && (
         <ProductForm
@@ -118,63 +118,68 @@ export default function AdminProducts() {
 
       {editing && editing !== 'new' && <div className="mt-4"><VariantsEditor productId={editing.id} /></div>}
 
-      <div className={cx(TABLE_WRAP, 'mt-4')}>
-        <table className={TABLE_STACK}>
-          <thead>
-            <tr>
-              <th className={TH}>Nama</th>
-              <th className={TH}>SKU</th>
-              <th className={TH_NUM}>Harga</th>
-              <th className={cx(TH, HIDE_LG, 'text-right')}>PPN</th>
-              <th className={TH_NUM}>Stok</th>
-              <th className={TH}>Status</th>
-              <th className={TH} />
-            </tr>
-          </thead>
-          <tbody className={TBODY}>
+      <Card className={cn(PANEL, 'mt-4 overflow-hidden')}>
+        <Table className={TABLE_STACK}>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={TH}>Nama</TableHead>
+              <TableHead className={TH}>SKU</TableHead>
+              <TableHead className={TH_NUM}>Harga</TableHead>
+              <TableHead className={cn(TH, HIDE_LG, 'text-right')}>PPN</TableHead>
+              <TableHead className={TH_NUM}>Stok</TableHead>
+              <TableHead className={TH}>Status</TableHead>
+              <TableHead className={TH} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {products.data?.items.map((p) => (
-              <tr key={p.id} className={p.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                <td data-label="" className={cx(TD, 'max-md:block!')}>
+              <TableRow key={p.id} className={p.is_active ? '' : 'bg-surface-low/60 text-sub'}>
+                <TableCell data-label="" className={cn(TD, 'max-md:block!')}>
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-field bg-surface-high font-display text-sm font-bold text-muted">
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-high font-display text-sm font-bold text-sub">
                       {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover" /> : p.name.charAt(0)}
                     </span>
                     <span className="min-w-0 font-medium">{p.name}</span>
                   </div>
-                </td>
-                <td data-label="SKU" className={cx(TD, SKU)}>{p.sku}</td>
-                <td data-label="Harga" className={TD_MONEY}>{rp(p.price)}</td>
-                <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right', MONEY)}>{p.is_taxable ? rp(p.ppn_included) : '—'}</td>
-                <td data-label="Stok" className={cx(TD_NUM, MONEY)}>{p.stock}</td>
-                <td data-label="Status" className={TD}>
-                  <StatusBadge tone={p.is_active ? 'ok' : 'neutral'}>{p.is_active ? 'Aktif' : 'Nonaktif'}</StatusBadge>
-                </td>
-                <td data-label="" className={cx(TD, 'whitespace-nowrap')}>
+                </TableCell>
+                <TableCell data-label="SKU" className={cn(TD, SKU)}>{p.sku}</TableCell>
+                <TableCell data-label="Harga" className={TD_MONEY}>{rp(p.price)}</TableCell>
+                <TableCell data-label="PPN" className={cn(TD, HIDE_LG, 'whitespace-nowrap text-right', MONEY)}>{p.is_taxable ? rp(p.ppn_included) : '—'}</TableCell>
+                <TableCell data-label="Stok" className={cn(TD_NUM, MONEY)}>{p.stock}</TableCell>
+                <TableCell data-label="Status" className={TD}>
+                  <StatusPill tone={p.is_active ? 'ok' : 'neutral'}>{p.is_active ? 'Aktif' : 'Nonaktif'}</StatusPill>
+                </TableCell>
+                <TableCell data-label="" className={cn(TD, 'whitespace-nowrap')}>
                   <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
-                    <button type="button" className={btn('link', 'link')} onClick={() => setEditing(p)}>Ubah</button>
+                    <Button type="button" variant="link" className={LINK_BTN} onClick={() => setEditing(p)}>Ubah</Button>
                     {p.is_active && (
-                      <button type="button" className={btn('linkDanger', 'link')} onClick={() => deactivate.mutate(p.id)}>Nonaktifkan</button>
+                      <Button type="button" variant="link" className={cn(LINK_BTN, 'text-destructive')} onClick={() => deactivate.mutate(p.id)}>Nonaktifkan</Button>
                     )}
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-        {products.data?.items.length === 0 && <p className={EMPTY_ROW}>Belum ada produk.</p>}
-      </div>
+          </TableBody>
+        </Table>
+        {products.data?.items.length === 0 && <p className={EMPTY_TEXT}>Belum ada produk.</p>}
+      </Card>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-xs text-muted">Menampilkan {products.data?.items.length ?? 0} produk</span>
+        <span className="text-xs text-sub">Menampilkan {products.data?.items.length ?? 0} produk</span>
         {/* DEMO: pagination belum dipakai di layar ini, jadi tombol nonaktif. */}
         <div className="flex items-center gap-1.5">
-          <button type="button" className={btn('default', 'sm', '!w-11 !px-0 max-md:!h-11')} disabled aria-label="Halaman sebelumnya">
-            <span className="material-symbols-outlined" aria-hidden>chevron_left</span>
-          </button>
-          <span className={btn('primary', 'sm', '!w-11 !px-0 max-md:!h-11')} aria-current="page">1</span>
-          <button type="button" className={btn('default', 'sm', '!w-11 !px-0 max-md:!h-11')} disabled aria-label="Halaman berikutnya">
-            <span className="material-symbols-outlined" aria-hidden>chevron_right</span>
-          </button>
-          <span className={cx(DEMO_TAG, 'ml-1')}>Demo</span>
+          <Button type="button" variant="outline" size="icon" className={BTN_ICON} disabled aria-label="Halaman sebelumnya">
+            <ChevronLeftIcon aria-hidden />
+          </Button>
+          <span
+            aria-current="page"
+            className="inline-flex size-11 md:size-9 items-center justify-center rounded-lg border border-primary bg-primary text-sm font-semibold text-primary-foreground"
+          >
+            1
+          </span>
+          <Button type="button" variant="outline" size="icon" className={BTN_ICON} disabled aria-label="Halaman berikutnya">
+            <ChevronRightIcon aria-hidden />
+          </Button>
+          <DemoTag className="ml-1" />
         </div>
       </div>
 
@@ -238,91 +243,84 @@ function ProductForm({
   const set = <K extends keyof ProductInput>(key: K, value: ProductInput[K]) => setForm({ ...form, [key]: value });
 
   return (
-    <form
-      className={FORM_CARD}
-      onSubmit={(e) => {
-        e.preventDefault();
-        save.mutate();
-      }}
-    >
-      <h2 className={FORM_TITLE}>{isNew ? 'Produk baru' : 'Ubah produk'}</h2>
-      <div className={ROW}>
-        <label className={LABEL}>
-          SKU
-          <input className={INPUT} value={form.sku} onChange={(e) => set('sku', e.target.value)} required />
-        </label>
-        <label className={LABEL}>
-          Kategori
-          <select className={INPUT} value={form.category_id} onChange={(e) => set('category_id', Number(e.target.value))} required>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </label>
-      </div>
-      <label className={LABEL}>
-        Nama
-        <input className={INPUT} value={form.name} onChange={(e) => set('name', e.target.value)} required />
-      </label>
-      <label className={LABEL}>
-        Deskripsi
-        <textarea className={INPUT} rows={3} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} />
-      </label>
-      <div className={ROW}>
-        <label className={LABEL}>
-          Harga (rupiah, termasuk PPN)
-          <input
-            className={INPUT}
-            inputMode="numeric"
-            value={form.price}
-            onChange={(e) => set('price', e.target.value.replace(/[^0-9]/g, ''))}
-            required
-          />
-        </label>
-        <label className={LABEL}>
-          Stok
-          <input className={INPUT} type="number" min={0} value={form.stock ?? 0} onChange={(e) => set('stock', Number(e.target.value))} />
-        </label>
-        <label className={LABEL}>
-          <span>Berat <span className={HINT}>(gram, untuk ongkir)</span></span>
-          <input className={INPUT} type="number" min={1} max={100000} value={form.weight_grams ?? 1000} onChange={(e) => set('weight_grams', Number(e.target.value))} />
-        </label>
-      </div>
-      <label className={LABEL_CHECK}>
-        <input className={CHECKBOX} type="checkbox" checked={form.is_taxable ?? true} onChange={(e) => set('is_taxable', e.target.checked)} />
-        Kena PPN
-      </label>
-      <p className={HINT}>Harga dimasukkan sebagai harga akhir yang sudah termasuk PPN. Rincian PPN dihitung otomatis.</p>
-      <div className={ACTIONS}>
-        <button type="submit" className={btn('primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</button>
-        <button type="button" className={btn('ghost')} onClick={onCancel}>Batal</button>
-      </div>
-
-      {!isNew && (
-        <div className={SECTION_RULE}>
-          <h2 className={FORM_TITLE}>Gambar produk</h2>
-          <p className={HINT}>JPEG, PNG, atau WebP, maksimal 2 MB.</p>
-          <div className={ACTIONS}>
-            <input
-              type="file"
-              className={FILE_INPUT}
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                setFile(e.target.files?.[0] ?? null);
-                setImageMsg(null);
-              }}
-            />
-            <button
-              type="button"
-              className={btn('default')}
-              disabled={!file || upload.isPending}
-              onClick={() => upload.mutate()}
-            >
-              {upload.isPending ? 'Mengunggah…' : 'Unggah gambar'}
-            </button>
-          </div>
-          {imageMsg && <Notice kind={imageMsg.kind === 'ok' ? 'ok' : 'error'}>{imageMsg.text}</Notice>}
+    <Card className={PANEL}>
+      <form
+        className={FORM_BODY}
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
+      >
+        <h2 className={FORM_TITLE}>{isNew ? 'Produk baru' : 'Ubah produk'}</h2>
+        <div className={ROW}>
+          <FormField label="SKU">
+            <Input className={FIELD} value={form.sku} onChange={(e) => set('sku', e.target.value)} required />
+          </FormField>
+          <FormField label="Kategori">
+            <select className={FIELD} value={form.category_id} onChange={(e) => set('category_id', Number(e.target.value))} required>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </FormField>
         </div>
-      )}
-    </form>
+        <FormField label="Nama">
+          <Input className={FIELD} value={form.name} onChange={(e) => set('name', e.target.value)} required />
+        </FormField>
+        <FormField label="Deskripsi">
+          <Textarea className="min-h-24 rounded-lg border-input bg-surface px-3 py-2 text-sm text-ink dark:bg-surface" rows={3} value={form.description ?? ''} onChange={(e) => set('description', e.target.value)} />
+        </FormField>
+        <div className={ROW}>
+          <FormField label="Harga (rupiah, termasuk PPN)">
+            <Input
+              className={FIELD}
+              inputMode="numeric"
+              value={form.price}
+              onChange={(e) => set('price', e.target.value.replace(/[^0-9]/g, ''))}
+              required
+            />
+          </FormField>
+          <FormField label="Stok">
+            <Input className={FIELD} type="number" min={0} value={form.stock ?? 0} onChange={(e) => set('stock', Number(e.target.value))} />
+          </FormField>
+          <FormField label={<span>Berat <span className={HINT}>(gram, untuk ongkir)</span></span>}>
+            <Input className={FIELD} type="number" min={1} max={100000} value={form.weight_grams ?? 1000} onChange={(e) => set('weight_grams', Number(e.target.value))} />
+          </FormField>
+        </div>
+        <CheckField checked={form.is_taxable ?? true} onCheckedChange={(v) => set('is_taxable', v)}>Kena PPN</CheckField>
+        <p className={HINT}>Harga dimasukkan sebagai harga akhir yang sudah termasuk PPN. Rincian PPN dihitung otomatis.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="submit" className={BTN} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
+          <Button type="button" variant="ghost" className={BTN} onClick={onCancel}>Batal</Button>
+        </div>
+
+        {!isNew && (
+          <div className={SECTION_RULE}>
+            <h2 className={FORM_TITLE}>Gambar produk</h2>
+            <p className={HINT}>JPEG, PNG, atau WebP, maksimal 2 MB.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                type="file"
+                className={FILE_FIELD}
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] ?? null);
+                  setImageMsg(null);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className={BTN}
+                disabled={!file || upload.isPending}
+                onClick={() => upload.mutate()}
+              >
+                {upload.isPending ? 'Mengunggah…' : 'Unggah gambar'}
+              </Button>
+            </div>
+            {imageMsg && <FormNotice kind={imageMsg.kind === 'ok' ? 'ok' : 'error'}>{imageMsg.text}</FormNotice>}
+          </div>
+        )}
+      </form>
+    </Card>
   );
 }
 
@@ -339,19 +337,21 @@ function CategoryForm({ onCreated, onError }: { onCreated: () => void; onError: 
     onError,
   });
   return (
-    <form
-      className={cx(FORM_CARD, 'p-4 sm:p-5')}
-      onSubmit={(e) => {
-        e.preventDefault();
-        create.mutate();
-      }}
-    >
-      <h2 className={FORM_TITLE}>Kategori baru</h2>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input className={cx(INPUT, 'sm:flex-1')} placeholder="Nama" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input className={cx(INPUT, 'sm:flex-1')} placeholder="slug (mis. elektronik)" value={slug} onChange={(e) => setSlug(e.target.value)} required />
-        <button type="submit" className={btn('default')}>Tambah</button>
-      </div>
-    </form>
+    <Card className={cn(PANEL)}>
+      <form
+        className="flex flex-col gap-4 p-4 sm:p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          create.mutate();
+        }}
+      >
+        <h2 className={FORM_TITLE}>Kategori baru</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input className={cn(FIELD, 'sm:flex-1')} placeholder="Nama" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input className={cn(FIELD, 'sm:flex-1')} placeholder="slug (mis. elektronik)" value={slug} onChange={(e) => setSlug(e.target.value)} required />
+          <Button type="submit" variant="outline" className={BTN}>Tambah</Button>
+        </div>
+      </form>
+    </Card>
   );
 }
