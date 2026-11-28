@@ -61,7 +61,7 @@ export default function Login() {
           />
         </label>
         {error && <p className={alertError}>{error}</p>}
-        <button className={btn('primary', 'lg', 'w-full')} disabled={busy}>{busy ? 'Memproses…' : 'Masuk'}</button>
+        <button className={btn('primary', 'lg', 'w-full !rounded-pill')} disabled={busy}>{busy ? 'Memproses…' : 'Masuk'}</button>
         <p className="text-center text-[13px] text-muted">
           Belum punya akun?{' '}
           <Link to={`/register?next=${encodeURIComponent(next)}`} className="font-semibold">Daftar</Link>

@@ -74,7 +74,7 @@ export default function Account() {
             {isAdmin ? 'Admin' : 'Pelanggan'}
           </span>
           <button
-            className={btn('ghost', 'md', 'mt-2.5 w-full')}
+            className={btn('ghost', 'md', 'mt-2.5 w-full !rounded-pill')}
             onClick={async () => {
               await logout();
               navigate('/');
@@ -106,7 +106,7 @@ export default function Account() {
             </div>
             <p id="email-note" className="mt-1.5 text-xs text-muted">Email tidak bisa diubah. Hubungi admin jika perlu perubahan.</p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button className={btn('primary', 'md')} disabled={!nameChanged || saveName.isPending}>
+              <button className={btn('primary', 'md', '!rounded-pill')} disabled={!nameChanged || saveName.isPending}>
                 {saveName.isPending ? 'Menyimpan…' : 'Simpan profil'}
               </button>
             </div>
@@ -163,7 +163,7 @@ export default function Account() {
             </div>
             {pwError && <p className={`${alertError} mt-4`}>{pwError}</p>}
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button className={btn('primary', 'md')} disabled={savePassword.isPending}>
+              <button className={btn('primary', 'md', '!rounded-pill')} disabled={savePassword.isPending}>
                 {savePassword.isPending ? 'Menyimpan…' : 'Ganti password'}
               </button>
             </div>

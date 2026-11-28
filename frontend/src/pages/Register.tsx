@@ -69,7 +69,7 @@ export default function Register() {
           />
         </label>
         {error && <p className={alertError}>{error}</p>}
-        <button className={btn('primary', 'lg', 'w-full')} disabled={busy}>{busy ? 'Memproses…' : 'Daftar'}</button>
+        <button className={btn('primary', 'lg', 'w-full !rounded-pill')} disabled={busy}>{busy ? 'Memproses…' : 'Daftar'}</button>
         <p className="text-center text-[13px] text-muted">
           Sudah punya akun?{' '}
           <Link to={`/login?next=${encodeURIComponent(next)}`} className="font-semibold">Masuk</Link>

@@ -6,7 +6,6 @@ import type { OrderStatus, OrderView } from '../api/types';
 import { ProductImage } from '../components/ProductImage';
 import {
   DEMO_BUYER_TAG,
-  DEMO_LPJ,
   DEMO_ORDER_PREVIEW,
   DEMO_SELLER_LINK,
   DEMO_STORE_CITY,
@@ -378,5 +377,3 @@ function formatRemaining(total: number) {
   const s = total % 60;
   return h > 0 ? `${h} jam ${m} menit` : `${m} menit ${String(s).padStart(2, '0')} detik`;
 }
-
-export { DEMO_LPJ };
