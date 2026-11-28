@@ -153,7 +153,7 @@ export default function AdminStore() {
               {DEMO_ESCROW.mutations.map((m) => (
                 <tr key={m.ref}>
                   <td data-label="Waktu" className={cx(TD, MUTED_SMALL)}>{m.at}</td>
-                  <td data-label="Satuan" className={TD}>
+                  <td data-label="Satuan" className={cx(TD, 'text-left')}>
                     <span className="block font-medium">{m.buyer}</span>
                     <span className={cx(SKU, 'block truncate')}>{m.ref}</span>
                   </td>
