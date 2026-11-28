@@ -131,6 +131,9 @@ export default function AdminStore() {
           <button type="button" className={btn('primary', 'md', 'w-full')} disabled>Simpan rekening (belum tersedia)</button>
         </form>
 
+      </div>
+      </div>
+      <div className="mt-4">
         {/* DEMO: riwayat mutasi dummy. */}
         <article className={cx(CARD, 'overflow-hidden')}>
           <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
@@ -161,7 +164,6 @@ export default function AdminStore() {
             </tbody>
           </table>
         </article>
-      </div>
       </div>
     </section>
   );

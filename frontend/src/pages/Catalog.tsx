@@ -462,7 +462,7 @@ function FlashCard({ product: p, index }: { product: Product; index: number }) {
       <div className="flex flex-1 flex-col gap-1.5 pt-3">
         <Link
           to={`/products/${p.id}`}
-          className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-ink no-underline hover:text-primary"
+          className="line-clamp-2 min-h-11 text-sm font-semibold leading-5 text-ink no-underline hover:text-primary"
         >
           {p.name}
         </Link>

@@ -11,7 +11,6 @@ import {
   CHIP_GROUP,
   EMPTY_ROW,
   FILTER_BAR,
-  HIDE_LG,
   HIDE_MD,
   INPUT,
   LABEL,
@@ -188,7 +187,7 @@ export default function AdminOrders() {
               <th className={TH}>Invoice</th>
               <th className={cx(TH, HIDE_MD)}>Tanggal</th>
               <th className={cx(TH, 'text-right')}>Total</th>
-              <th className={cx(TH, HIDE_LG, 'text-right')}>PPN</th>
+              <th className={cx(TH, 'hidden 2xl:table-cell', 'text-right')}>PPN</th>
               <th className={TH}>Status</th>
               <th className={cx(TH, HIDE_MD)}>Pembayaran</th>
               <th className={TH} />
@@ -207,7 +206,7 @@ export default function AdminOrders() {
                     </td>
                     <td data-label="Tanggal" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(o.created_at)}</td>
                     <td data-label="Total" className={TD_MONEY}>{rp(o.grand_total)}</td>
-                    <td data-label="PPN" className={cx(TD, HIDE_LG, 'whitespace-nowrap text-right text-muted', MONEY)}>{rp(o.ppn_total)}</td>
+                    <td data-label="PPN" className={cx(TD, 'hidden 2xl:table-cell', 'whitespace-nowrap text-right text-muted', MONEY)}>{rp(o.ppn_total)}</td>
                     <td data-label="Status" className={TD}>
                       <StatusBadge tone={TONE_BY_STATUS[o.status] ?? 'neutral'}>{ORDER_STATUS_LABEL[o.status]}</StatusBadge>
                       {o.estimated_days && <div className={cx(MUTED_SMALL, 'mt-1.5')}>Estimasi {o.estimated_days} hari</div>}
