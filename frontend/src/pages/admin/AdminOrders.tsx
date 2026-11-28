@@ -119,7 +119,7 @@ export default function AdminOrders() {
           <Button
             variant="ghost"
             size="sm"
-            className={TOUCH_BTN}
+            className={cx(TOUCH_BTN, 'bg-transparent')}
             onClick={() => api.adminExportOrdersCsv(status).catch((e) => setError(e instanceof ApiError ? e.message : 'Ekspor gagal.'))}
           >
             Ekspor CSV
@@ -289,7 +289,7 @@ export default function AdminOrders() {
                             {pending.kind === 'ship' && 'Simpan & tandai dikirim'}
                             {pending.kind === 'refund' && 'Konfirmasi pembatalan'}
                           </Button>
-                          <Button type="button" variant="ghost" className={TOUCH_BTN} onClick={() => setPending(null)}>Batal</Button>
+                          <Button type="button" variant="ghost" className={cx(TOUCH_BTN, 'bg-transparent')} onClick={() => setPending(null)}>Batal</Button>
                         </form>
                         {pending.kind === 'refund' && (
                           <p className={cx(MUTED_SMALL, 'mt-2')}>
