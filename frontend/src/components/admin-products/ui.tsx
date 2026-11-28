@@ -24,7 +24,9 @@ export const FORM_BODY = 'flex flex-col gap-4 p-4 sm:p-6';
 export const BTN = 'h-11 md:h-10 px-4 font-semibold';
 export const BTN_SM = 'h-11 md:h-8 px-3';
 export const BTN_ICON = 'size-11 md:size-9';
-export const LINK_BTN = 'h-auto px-1.5 py-1 font-semibold max-md:min-h-11 max-md:px-3';
+export const LINK_BTN = 'h-auto bg-transparent px-1.5 py-1 font-semibold max-md:min-h-11 max-md:px-3';
+/** Variant ghost: tanpa preflight Tailwind, latar harus transparan secara eksplisit. */
+export const GHOST_BTN = 'h-11 md:h-10 bg-transparent px-4 font-semibold';
 
 /** Chip filter (dipakai sebagai tombol shadcn dengan status aktif). */
 export function chipClass(on: boolean): string {

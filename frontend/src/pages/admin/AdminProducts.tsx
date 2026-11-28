@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  GHOST_BTN,
   BTN,
   BTN_ICON,
   CheckField,
@@ -77,7 +78,7 @@ export default function AdminProducts() {
         crumbs={['Portal penjual', 'Operasional bisnis', 'Produk']}
         title="Produk"
         subtitle="Kelola katalog, harga, stok, dan varian. Produk yang dinonaktifkan tidak tampil di toko."
-        actions={<Button type="button" className={BTN} onClick={() => setEditing('new')}>+ Produk baru</Button>}
+        actions={<Button type="button" className={cn(BTN, 'text-on-primary')} onClick={() => setEditing('new')}>+ Produk baru</Button>}
       />
       <Card className={cn(PANEL, 'mb-4 flex-col gap-3 p-3.5 md:flex-row md:flex-wrap md:items-center')}>
         <div className="relative w-full md:min-w-[240px] md:flex-1">
@@ -172,7 +173,7 @@ export default function AdminProducts() {
           </Button>
           <span
             aria-current="page"
-            className="inline-flex size-11 md:size-9 items-center justify-center rounded-lg border border-primary bg-primary text-sm font-semibold text-primary-foreground"
+            className="inline-flex size-11 md:size-9 items-center justify-center rounded-lg border border-primary bg-primary text-sm font-semibold text-on-primary"
           >
             1
           </span>
@@ -288,8 +289,8 @@ function ProductForm({
         <CheckField checked={form.is_taxable ?? true} onCheckedChange={(v) => set('is_taxable', v)}>Kena PPN</CheckField>
         <p className={HINT}>Harga dimasukkan sebagai harga akhir yang sudah termasuk PPN. Rincian PPN dihitung otomatis.</p>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="submit" className={BTN} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
-          <Button type="button" variant="ghost" className={BTN} onClick={onCancel}>Batal</Button>
+          <Button type="submit" className={cn(BTN, 'text-on-primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
+          <Button type="button" variant="ghost" className={GHOST_BTN} onClick={onCancel}>Batal</Button>
         </div>
 
         {!isNew && (

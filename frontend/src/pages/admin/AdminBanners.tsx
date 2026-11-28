@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
+  GHOST_BTN,
   BTN,
   CheckField,
   EMPTY_TEXT,
@@ -62,7 +63,7 @@ export default function AdminBanners() {
       <PageHeader
         title="Banner promo"
         subtitle="Banner aktif tampil berurutan di katalog. Urutan kecil tampil lebih dulu. Gambar ideal 1600×600 px."
-        actions={<Button type="button" className={BTN} onClick={() => setEditing('new')}>+ Banner baru</Button>}
+        actions={<Button type="button" className={cn(BTN, 'text-on-primary')} onClick={() => setEditing('new')}>+ Banner baru</Button>}
       />
       <p className={cn(MUTED_SMALL, 'mb-4')}>Banner aktif tampil berurutan di katalog (urutan kecil tampil lebih dulu). Gambar ideal 1600×600 px.</p>
       {message && <div className="mb-4"><FormNotice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</FormNotice></div>}
@@ -220,8 +221,8 @@ function BannerForm({
           </CheckField>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="submit" className={BTN} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
-          <Button type="button" variant="ghost" className={BTN} onClick={onClose}>Tutup</Button>
+          <Button type="submit" className={cn(BTN, 'text-on-primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan'}</Button>
+          <Button type="button" variant="ghost" className={GHOST_BTN} onClick={onClose}>Tutup</Button>
         </div>
 
         {banner && (

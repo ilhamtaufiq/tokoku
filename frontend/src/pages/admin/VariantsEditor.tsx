@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
+  GHOST_BTN,
   BTN,
   BTN_SM,
   CheckField,
@@ -164,8 +165,8 @@ export function VariantsEditor({ productId }: { productId: number }) {
             </CheckField>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" className={BTN} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan varian'}</Button>
-            <Button type="button" variant="ghost" className={BTN} onClick={() => setEditing(null)}>Batal</Button>
+            <Button type="submit" className={cn(BTN, 'text-on-primary')} disabled={save.isPending}>{save.isPending ? 'Menyimpan…' : 'Simpan varian'}</Button>
+            <Button type="button" variant="ghost" className={GHOST_BTN} onClick={() => setEditing(null)}>Batal</Button>
           </div>
         </form>
       )}

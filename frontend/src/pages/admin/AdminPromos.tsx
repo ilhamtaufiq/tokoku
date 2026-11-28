@@ -71,7 +71,7 @@ export default function AdminPromos() {
             </FormField>
           </div>
           {message && <FormNotice kind={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</FormNotice>}
-          <Button type="submit" className={cn(BTN, 'w-full')} disabled={create.isPending}>
+          <Button type="submit" className={cn(BTN, 'w-full text-on-primary')} disabled={create.isPending}>
             Buat promo
           </Button>
         </form>
