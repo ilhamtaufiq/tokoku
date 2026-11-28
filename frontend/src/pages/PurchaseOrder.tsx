@@ -93,7 +93,7 @@ export default function PurchaseOrder() {
               <span className="material-symbols-outlined text-[18px]" aria-hidden="true">school</span>
               Data satuan pendidikan (pembeli)
             </p>
-            <h2 className="m-0 font-display text-base font-bold">{o.buyer_name ?? '-'}</h2>
+            <h2 className="m-0 font-display text-base font-bold text-[#1a1b22]">{o.buyer_name ?? '-'}</h2>
             <dl className="m-0 mt-2 space-y-1 text-sm">
               <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPWP</dt><dd className="m-0 font-mono">: {o.buyer_npwp ?? '-'}</dd></div>
             </dl>

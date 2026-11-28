@@ -82,7 +82,7 @@ export default function Invoice() {
                   <span className="font-display text-[11px] font-bold uppercase tracking-wider">Identitas Instansi Pembeli</span>
                 </span>
               </div>
-              <h2 className="m-0 font-display text-lg font-bold">{o.buyer_name ?? '-'}</h2>
+              <h2 className="m-0 font-display text-lg font-bold text-[#1a1b22]">{o.buyer_name ?? '-'}</h2>
               <dl className="m-0 mt-2 space-y-1 text-sm">
                 <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPWP instansi</dt><dd className="m-0 font-mono font-semibold">: {o.buyer_npwp ?? '-'}</dd></div>
                 <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Alamat pengiriman</dt><dd className="m-0 whitespace-pre-line leading-snug">: {o.shipping_address}</dd></div>
