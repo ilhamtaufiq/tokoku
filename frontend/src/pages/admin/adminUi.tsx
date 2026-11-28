@@ -130,3 +130,34 @@ export const HIDE_LG = 'hidden lg:table-cell';
 export const SKU = 'font-mono text-xs text-muted';
 export const MUTED_SMALL = 'text-xs text-muted';
 export const EMPTY_ROW = 'px-4 py-10 text-center text-sm text-muted';
+
+/* ---------- Tren, sparkline, dan penanda DEMO (Stitch) ---------- */
+
+/** Penanda untuk data dummy. Dipakai bersama komentar {/* DEMO *\/} di JSX. */
+export const DEMO_TAG = 'inline-flex h-5 items-center rounded-pill border border-dashed border-outline px-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-muted';
+
+/** Baris tren kecil di bawah angka KPI: panah, selisih, dan keterangan. `good` menentukan warna. */
+export function Trend({ delta, note, up, good }: { delta: string; note: string; up: boolean; good: boolean }) {
+  return (
+    <span className={cx('inline-flex flex-wrap items-center gap-1 text-xs font-semibold', good ? 'text-success' : 'text-error')}>
+      <span className="material-symbols-outlined text-[16px]" aria-hidden>{up ? 'trending_up' : 'trending_down'}</span>
+      {delta}
+      <span className="font-normal text-muted">{note}</span>
+    </span>
+  );
+}
+
+/** Garis tren kecil tanpa sumbu. Hanya untuk visual, tidak dibaca oleh layar pembaca. */
+export function Sparkline({ values, className }: { values: number[]; className?: string }) {
+  if (values.length < 2) return null;
+  const min = Math.min(...values);
+  const range = Math.max(...values) - min || 1;
+  const points = values
+    .map((v, i) => `${(i / (values.length - 1)) * 100},${92 - ((v - min) / range) * 84}`)
+    .join(' ');
+  return (
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className={cx('h-10 w-full', className)} aria-hidden>
+      <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}

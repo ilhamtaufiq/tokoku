@@ -4,19 +4,44 @@ import { useAuth } from '../auth/AuthContext';
 import { useSeo } from '../lib/seo';
 import { btn, cx } from '../pages/admin/adminUi';
 
-/** Item menu; `divider` menaruh garis pemisah sebelum item (pengelompokan visual). */
-const ITEMS: { to: string; label: string; icon: string; end?: boolean; platformOnly?: boolean; divider?: boolean }[] = [
-  { to: '/admin', label: 'Ringkasan', icon: 'dashboard', end: true },
-  { to: '/admin/orders', label: 'Pesanan', icon: 'receipt_long' },
-  { to: '/admin/products', label: 'Produk', icon: 'inventory_2' },
-  { to: '/admin/banners', label: 'Banner', icon: 'view_carousel', platformOnly: true, divider: true },
-  { to: '/admin/stores', label: 'Toko', icon: 'storefront', platformOnly: true },
-  { to: '/admin/users', label: 'Pengguna', icon: 'group', platformOnly: true },
-  { to: '/admin/promos', label: 'Promo', icon: 'sell' },
-  { to: '/admin/reviews', label: 'Ulasan', icon: 'rate_review' },
-  { to: '/admin/aktivitas', label: 'Aktivitas', icon: 'history' },
-  { to: '/admin/store', label: 'Data toko', icon: 'store', divider: true },
+type NavItem = { to: string; label: string; icon: string; end?: boolean };
+type NavGroup = { title: string; items: NavItem[]; platformOnly?: boolean };
+
+/** Menu dikelompokkan seperti sidebar Stitch: judul grup kecil di atas, ikon di tiap item. */
+const GROUPS: NavGroup[] = [
+  {
+    title: 'Operasional bisnis',
+    items: [
+      { to: '/admin', label: 'Ringkasan', icon: 'dashboard', end: true },
+      { to: '/admin/orders', label: 'Pesanan', icon: 'receipt_long' },
+      { to: '/admin/products', label: 'Produk', icon: 'inventory_2' },
+      { to: '/admin/promos', label: 'Promo', icon: 'sell' },
+      { to: '/admin/reviews', label: 'Ulasan', icon: 'rate_review' },
+    ],
+  },
+  {
+    title: 'Platform',
+    platformOnly: true,
+    items: [
+      { to: '/admin/banners', label: 'Banner', icon: 'view_carousel' },
+      { to: '/admin/stores', label: 'Toko', icon: 'storefront' },
+      { to: '/admin/users', label: 'Pengguna', icon: 'group' },
+    ],
+  },
+  {
+    title: 'Fiskal & rekening',
+    items: [{ to: '/admin/store', label: 'Data toko', icon: 'account_balance' }],
+  },
+  {
+    title: 'Dukungan teknis',
+    items: [{ to: '/admin/aktivitas', label: 'Aktivitas', icon: 'history' }],
+  },
 ];
+
+const LINK_BASE = 'flex h-11 items-center gap-3 rounded-field px-3 text-sm font-semibold no-underline transition-colors hover:no-underline';
+const LINK_IDLE = 'text-[#cbd5e1] hover:bg-white/10 hover:text-white';
+const LINK_ACTIVE = 'bg-primary-container text-white';
+const FOOT_LINK = 'flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-[#cbd5e1] no-underline hover:bg-white/10 hover:text-white hover:no-underline';
 
 /**
  * Shell panel admin. Di layar lebar, sidebar tampil tetap di kiri.
@@ -39,6 +64,8 @@ export function AdminLayout() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
+  const groups = GROUPS.filter((g) => !g.platformOnly || user?.role === 'admin');
+
   return (
     <div className="min-h-screen bg-bg lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-outline-soft bg-surface px-4 py-2.5 lg:hidden">
@@ -52,7 +79,7 @@ export function AdminLayout() {
           <span className="material-symbols-outlined" aria-hidden>menu</span>
           Menu
         </button>
-        <span className="material-symbols-outlined ml-auto flex h-9 w-9 items-center justify-center rounded-field bg-primary text-[20px] text-on-primary" aria-hidden>storefront</span>
+        <span className="material-symbols-outlined ml-auto flex h-9 w-9 items-center justify-center rounded-field bg-[#213145] text-[20px] text-white" aria-hidden>storefront</span>
       </header>
 
       {open && (
@@ -67,57 +94,53 @@ export function AdminLayout() {
       <aside
         id="admin-side"
         className={cx(
-          'fixed inset-y-0 left-0 z-50 flex w-[272px] max-w-[85vw] flex-col gap-5 overflow-y-auto border-r border-outline-soft bg-surface p-4 transition-[transform,visibility] duration-200 ease-out',
+          'fixed inset-y-0 left-0 z-50 flex w-[272px] max-w-[85vw] flex-col gap-6 overflow-y-auto bg-[#213145] p-4 text-white transition-[transform,visibility] duration-200 ease-out',
           open ? 'translate-x-0 visible' : '-translate-x-full invisible',
           'lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-auto lg:max-w-none lg:translate-x-0 lg:visible lg:py-6 lg:transition-none',
         )}
       >
-        <div className="flex items-center gap-3 rounded-card bg-surface-low p-3">
-          <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-primary text-[22px] text-on-primary" aria-hidden>
+        <div className="flex items-center gap-3 px-2 pt-1">
+          <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-primary-container text-[22px] text-white" aria-hidden>
             storefront
           </span>
           <div className="min-w-0">
-            <strong className="block font-display text-[17px] leading-[22px] text-ink">Tokoku</strong>
-            <span className="block truncate text-xs font-semibold text-muted">Portal penjual</span>
+            <strong className="block font-display text-[17px] leading-[22px] text-white">Tokoku</strong>
+            <span className="block truncate text-xs font-semibold text-[#94a3b8]">Portal penjual</span>
           </div>
         </div>
 
-        <nav aria-label="Menu admin" className="flex flex-col gap-1">
-          {ITEMS.filter((it) => !it.platformOnly || user?.role === 'admin').map((it) => (
-            <div key={it.to} className="contents">
-              {it.divider && <div className="my-2 h-px bg-outline-soft" role="presentation" />}
-              <NavLink
-                to={it.to}
-                end={it.end}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) =>
-                  cx(
-                    'flex h-11 items-center gap-3 rounded-field px-3 text-sm font-semibold no-underline transition-colors hover:no-underline',
-                    isActive
-                      ? 'bg-primary text-on-primary shadow-cta'
-                      : 'text-ink-2 hover:bg-surface-low hover:text-ink',
-                  )
-                }
-              >
-                <span className="material-symbols-outlined text-[20px]" aria-hidden>{it.icon}</span>
-                {it.label}
-              </NavLink>
+        <nav aria-label="Menu admin" className="flex flex-col gap-5">
+          {groups.map((g) => (
+            <div key={g.title} className="flex flex-col gap-1">
+              <p className="m-0 px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">{g.title}</p>
+              {g.items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  end={it.end}
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) => cx(LINK_BASE, isActive ? LINK_ACTIVE : LINK_IDLE)}
+                >
+                  <span className="material-symbols-outlined text-[20px]" aria-hidden>{it.icon}</span>
+                  {it.label}
+                </NavLink>
+              ))}
             </div>
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-1 border-t border-outline-soft pt-3">
-          <NavLink to="/" onClick={() => setOpen(false)} className="flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-primary no-underline hover:bg-surface-low hover:no-underline">
+        <div className="mt-auto flex flex-col gap-1 border-t border-white/10 pt-3">
+          <NavLink to="/" onClick={() => setOpen(false)} className={FOOT_LINK}>
             <span className="material-symbols-outlined text-[18px]" aria-hidden>arrow_back</span>
             Ke toko
           </NavLink>
-          <NavLink to="/account" onClick={() => setOpen(false)} className="flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-primary no-underline hover:bg-surface-low hover:no-underline">
+          <NavLink to="/account" onClick={() => setOpen(false)} className={FOOT_LINK}>
             <span className="material-symbols-outlined text-[18px]" aria-hidden>manage_accounts</span>
             <span className="truncate">{user?.name ?? 'Akun saya'}</span>
           </NavLink>
           <button
             type="button"
-            className={btn('ghost', 'md', 'mt-1 justify-start px-3 text-ink-2')}
+            className="mt-1 flex h-11 items-center rounded-field px-3 text-left text-sm font-semibold text-[#cbd5e1] hover:bg-white/10 hover:text-white"
             onClick={async () => {
               setOpen(false);
               await logout();
