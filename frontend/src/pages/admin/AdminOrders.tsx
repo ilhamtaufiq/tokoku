@@ -53,7 +53,6 @@ const STATUS_CHIPS: { value: OrderStatus | ''; label: string }[] = [
 ];
 
 const PANEL = 'gap-0 overflow-hidden rounded-card border border-outline-soft bg-surface py-0 shadow-card ring-0';
-const SELECT = cx(TOUCH_BTN, 'w-full min-w-0 rounded-field border border-outline bg-surface px-3 text-sm text-ink focus:border-primary focus:outline-none disabled:opacity-60');
 const PAGE_BTN = cx(TOUCH_BTN, 'w-11 px-0');
 const ACTION_BTN = 'h-auto min-h-11 justify-start border-transparent bg-transparent px-1.5 font-body text-sm font-semibold hover:bg-transparent md:min-h-0';
 const CHIP = 'h-11 whitespace-nowrap rounded-pill px-3.5 text-[13px] font-semibold md:h-8 md:px-3';
@@ -117,52 +116,49 @@ export default function AdminOrders() {
         subtitle={orders.data ? `${visible.length} pesanan${search.trim() ? ' cocok dengan pencarian' : ''}` : 'Memuat pesanan…'}
         actions={
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className={cx(TOUCH_BTN, 'bg-transparent')}
+            className={cx(TOUCH_BTN, 'text-foreground')}
             onClick={() => api.adminExportOrdersCsv(status).catch((e) => setError(e instanceof ApiError ? e.message : 'Ekspor gagal.'))}
           >
+            <span className="material-symbols-outlined" aria-hidden>download</span>
             Ekspor CSV
           </Button>
         }
       />
 
-      <Card className={cx(PANEL, 'mb-4 flex-col gap-3 p-3.5 md:flex-row md:flex-wrap md:items-center')}>
-        <div className="relative w-full md:min-w-[240px] md:flex-1">
-          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-muted" aria-hidden>search</span>
-          <Input
-            type="search"
-            className={cx(TOUCH_BTN, 'w-full rounded-field border-outline bg-surface pl-10 text-sm text-ink placeholder:text-muted focus-visible:border-primary focus-visible:ring-primary/20')}
-            placeholder="Cari nomor invoice atau nama pembeli…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Cari pesanan"
-          />
-        </div>
-        {/* DEMO: filter periode dan tipe transaksi belum punya parameter API, jadi nonaktif. */}
-        <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
-          <div className="md:w-44">
-            <select className={SELECT} disabled aria-label="Periode (belum tersedia)" defaultValue="30">
-              <option value="30">30 hari terakhir</option>
-            </select>
+      <Card className={cx(PANEL, 'mb-4 flex-col gap-3 p-3.5')}>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="relative w-full md:min-w-[240px] md:flex-1">
+            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-muted" aria-hidden>search</span>
+            <Input
+              type="search"
+              className={cx(TOUCH_BTN, 'w-full rounded-field border-outline bg-surface pl-10 text-sm text-ink placeholder:text-muted focus-visible:border-primary focus-visible:ring-primary/20')}
+              placeholder="Cari nomor invoice atau nama pembeli…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Cari pesanan"
+            />
           </div>
-          <div className="md:w-52">
-            <select className={SELECT} disabled aria-label="Tipe transaksi (belum tersedia)" defaultValue="all">
-              <option value="all">Semua tipe transaksi</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+            {/* DEMO: urutan tabel belum punya parameter API, jadi nonaktif. */}
+            <Button variant="outline" className={cx(TOUCH_BTN, 'text-foreground')} disabled title="Belum tersedia">
+              <span className="material-symbols-outlined" aria-hidden>swap_vert</span>
+              Sort
+              <span className={DEMO_TAG}>Demo</span>
+            </Button>
+            <Button
+              variant="outline"
+              className={cx(TOUCH_BTN, 'text-foreground max-md:w-full')}
+              onClick={() => {
+                setSearch('');
+                setStatus('');
+              }}
+            >
+              <span className="material-symbols-outlined" aria-hidden>restart_alt</span>
+              Reset
+            </Button>
           </div>
-          <Badge variant="outline" className={DEMO_TAG}>Demo</Badge>
-          <Button
-            variant="outline"
-            className={cx(TOUCH_BTN, 'max-md:w-full')}
-            onClick={() => {
-              setSearch('');
-              setStatus('');
-            }}
-          >
-            <span className="material-symbols-outlined" aria-hidden>restart_alt</span>
-            Reset
-          </Button>
         </div>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter status">
           {STATUS_CHIPS.map((c) => (

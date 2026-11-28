@@ -43,6 +43,14 @@ const GROUPS: NavGroup[] = [
     ],
   },
   {
+    /* Tautan yang sudah ada di navigasi Tokoku, dipindah ke grup ini dari footer. */
+    title: 'Halaman',
+    items: [
+      { to: '/', label: 'Ke toko', icon: 'arrow_back', end: true },
+      { to: '/account', label: 'Akun saya', icon: 'manage_accounts' },
+    ],
+  },
+  {
     title: 'Platform',
     platformOnly: true,
     items: [
@@ -61,10 +69,9 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-const LINK_BASE = 'flex h-11 items-center gap-3 rounded-field px-3 text-sm font-semibold no-underline transition-colors hover:no-underline';
+const LINK_BASE = 'flex h-11 md:h-9 items-center gap-3 rounded-field px-3 text-sm font-semibold no-underline transition-colors hover:no-underline';
 const LINK_IDLE = 'text-sidebar-foreground/70 hover:bg-sidebar-hover hover:text-sidebar-hover-fg';
 const LINK_ACTIVE = 'bg-sidebar-primary text-sidebar-primary-foreground';
-const FOOT_LINK = 'flex h-11 items-center gap-2.5 rounded-field px-3 text-[13px] font-semibold text-sidebar-foreground/70 no-underline hover:bg-sidebar-hover hover:text-sidebar-hover-fg hover:no-underline';
 
 const REPO_URL = 'https://github.com/ilhamtaufiq/tokoku';
 const THEME_KEY = 'tokoku-admin-theme';
@@ -288,7 +295,7 @@ function AdminSidebar({ groups }: { groups: NavGroup[] }) {
   return (
     <Sidebar collapsible="offcanvas" className="border-sidebar-border">
       {/* Latar sidebar dipasang di pembungkus isi, agar berlaku untuk sidebar tetap maupun drawer. */}
-      <div className="flex h-full w-full flex-col gap-6 overflow-y-auto bg-sidebar p-4 text-sidebar-foreground">
+      <div className="flex h-full w-full flex-col gap-6 overflow-hidden bg-sidebar p-4 text-sidebar-foreground">
         <div className="flex items-center gap-3 px-2 pt-1">
           <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-sidebar-primary text-[22px] text-sidebar-primary-foreground" aria-hidden>
             storefront
@@ -307,7 +314,7 @@ function AdminSidebar({ groups }: { groups: NavGroup[] }) {
           </button>
         </div>
 
-        <nav aria-label="Menu admin" className="flex flex-col gap-5">
+        <nav aria-label="Menu admin" className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
           {groups.map((g) => (
             <SidebarGroup key={g.title} className="gap-1 p-0">
               <SidebarGroupLabel className="h-auto px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
@@ -334,27 +341,54 @@ function AdminSidebar({ groups }: { groups: NavGroup[] }) {
           ))}
         </nav>
 
-        <div className="mt-auto flex flex-col gap-1">
-          <Separator className="mb-2 bg-sidebar-border" />
-          <NavLink to="/" onClick={closeDrawer} className={FOOT_LINK}>
-            <span className="material-symbols-outlined text-[18px]" aria-hidden>arrow_back</span>
-            Ke toko
-          </NavLink>
-          <NavLink to="/account" onClick={closeDrawer} className={FOOT_LINK}>
-            <span className="material-symbols-outlined text-[18px]" aria-hidden>manage_accounts</span>
-            <span className="truncate">{user?.name ?? 'Akun saya'}</span>
-          </NavLink>
-          <button
-            type="button"
-            className="mt-1 flex h-11 items-center rounded-field border-0 bg-transparent px-3 text-left text-sm font-semibold text-sidebar-foreground/70 hover:bg-sidebar-hover hover:text-sidebar-hover-fg"
-            onClick={async () => {
-              closeDrawer();
-              await logout();
-              navigate('/');
-            }}
-          >
-            Keluar
-          </button>
+        <div className="flex shrink-0 flex-col gap-4">
+          {/* Kartu bantuan netral: hanya tautan ke repositori, tanpa klaim layanan. */}
+          <div className="flex flex-col gap-2 rounded-card border border-sidebar-border bg-sidebar-hover p-4">
+            <p className="m-0 text-sm font-semibold text-sidebar-foreground">Ada yang ingin ditanyakan?</p>
+            <p className="m-0 text-xs leading-5 text-muted-foreground">Tanya atau beri masukan lewat repositori Tokoku di GitHub.</p>
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={closeDrawer}
+              className="mt-1 inline-flex h-11 w-fit items-center gap-1.5 rounded-field border border-sidebar-border bg-surface px-3 text-xs font-semibold text-sidebar-foreground no-underline hover:bg-sidebar-hover hover:no-underline md:h-9"
+            >
+              Buka GitHub
+              <span className="material-symbols-outlined text-[16px]" aria-hidden>open_in_new</span>
+            </a>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <Separator className="mb-2 bg-sidebar-border" />
+            {/* Footer profil: inisial, nama, dan email admin. Seluruh baris menuju halaman akun. */}
+            <NavLink
+              to="/account"
+              onClick={closeDrawer}
+              className="flex min-h-11 items-center gap-3 rounded-field px-2 py-1.5 text-left no-underline transition-colors hover:bg-sidebar-hover hover:no-underline"
+            >
+              <Avatar className="size-9 shrink-0">
+                <AvatarFallback className="bg-foreground text-xs font-semibold text-background">
+                  {initialsOf(user?.name ?? 'Admin')}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-sidebar-foreground">{user?.name ?? 'Admin'}</span>
+                {user?.email && <span className="block truncate text-xs text-muted-foreground">{user.email}</span>}
+              </div>
+              <span className="material-symbols-outlined text-[20px] text-muted-foreground" aria-hidden>more_vert</span>
+            </NavLink>
+            <button
+              type="button"
+              className="mt-1 flex h-11 items-center rounded-field border-0 bg-transparent px-3 text-left text-sm font-semibold text-sidebar-foreground/70 hover:bg-sidebar-hover hover:text-sidebar-hover-fg"
+              onClick={async () => {
+                closeDrawer();
+                await logout();
+                navigate('/');
+              }}
+            >
+              Keluar
+            </button>
+          </div>
         </div>
       </div>
     </Sidebar>

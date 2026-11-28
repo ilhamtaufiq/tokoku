@@ -6,14 +6,16 @@ import { api } from '../../api';
 import { ORDER_STATUS_LABEL, formatDate, rp } from '../../lib/money';
 import type { AdminDashboard as AdminDashboardData, OrderStatus, PaymentStatus } from '../../api/types';
 import { DEMO_MONTHLY_SALES } from '../../data/demo';
+import { KpiCard } from '../../components/admin/KpiCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TONE_BADGE } from '../../components/admin/status';
-import { DEMO_TAG, HIDE_MD, MONEY, MUTED_SMALL, SKU, TABLE_STACK, cx, type Tone } from './adminUi';
+import { TONE_BADGE, TOUCH_BTN } from '../../components/admin/status';
+import { DEMO_TAG, HIDE_MD, MUTED_SMALL, SKU, TABLE_STACK, cx, type Tone } from './adminUi';
 
 const DAY = new Intl.DateTimeFormat('id-ID', { weekday: 'short' });
 const DATE_LONG = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -42,6 +44,8 @@ const STATUS_VIEW_ITEMS = [{ value: 'recent', label: 'Pesanan terbaru' }];
 const STATUS_COLORS = ['#71717a', '#a1a1aa', '#3f3f46', '#d4d4d8', '#52525b'];
 /** Ambang stok menipis yang dipakai di halaman ini (sesuai teks "≤ 5 unit"). */
 const LOW_STOCK_REF = 5;
+/** Angka di tabel dan legenda: sans-serif dengan lebar tetap, tanpa font mono. */
+const NUM = 'tabular-nums tracking-[-0.01em]';
 
 const TOOLTIP_STYLE: CSSProperties = {
   background: 'var(--sa-popover)',
@@ -51,11 +55,8 @@ const TOOLTIP_STYLE: CSSProperties = {
   fontSize: 12,
 };
 
-const PILL: Record<'up' | 'down' | 'neutral', string> = {
-  up: 'bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300',
-  down: 'bg-destructive/10 text-destructive',
-  neutral: 'bg-secondary text-secondary-foreground',
-};
+/** Isi gradien area: warna teks aktif, pudar ke transparan di bawah garis. */
+const AREA_FILL_STOP: CSSProperties = { stopColor: 'currentColor' };
 
 function compactRupiah(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`;
@@ -70,39 +71,6 @@ function countByStatus(orders: AdminDashboardData['recent_orders']): { label: st
     counts.set(label, (counts.get(label) ?? 0) + 1);
   }
   return [...counts].map(([label, count]) => ({ label, count }));
-}
-
-function KpiCard({
-  title,
-  value,
-  note,
-  noteClass,
-  pill,
-}: {
-  title: string;
-  value: string | number;
-  note: string;
-  noteClass?: string;
-  pill?: { text: string; tone: 'up' | 'down' | 'neutral'; title: string };
-}) {
-  return (
-    <Card className="gap-3 py-5">
-      <CardHeader className="px-5">
-        <CardTitle className="text-sm font-normal text-muted-foreground">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2 px-5">
-        <div className="font-display text-xl leading-none font-semibold tracking-tight whitespace-nowrap text-foreground sm:text-[22px]">{value}</div>
-        <div className="flex items-end justify-between gap-2">
-          <p className={cx('min-w-0 text-xs text-muted-foreground', noteClass)}>{note}</p>
-          {pill && (
-            <Badge title={pill.title} className={cx('h-6 shrink-0 rounded-md px-2 font-semibold', PILL[pill.tone])}>
-              {pill.text}
-            </Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 export default function AdminDashboard() {
@@ -167,24 +135,26 @@ export default function AdminDashboard() {
         </div>
 
         <TabsContent value="ringkasan" className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               title="Total pendapatan"
+              icon="payments"
               value={rp(d.revenue_total)}
               note={`${d.orders_total} pesanan lunas`}
-              pill={
+              delta={
                 deltaPct === null
                   ? undefined
                   : {
                       text: `${deltaPct > 0 ? '+' : ''}${deltaPct}%`,
-                      tone: deltaPct >= 0 ? 'up' : 'down',
+                      up: deltaPct >= 0,
                       title: 'Pendapatan hari ini dibanding rata-rata 6 hari sebelumnya',
                     }
               }
             />
-            <KpiCard title="Perlu dikirim" value={d.orders_to_ship} note="pesanan lunas menunggu dikirim" />
-            <KpiCard title="Produk aktif" value={d.active_products} note="produk tampil di katalog" />
+            <KpiCard icon="local_shipping" title="Perlu dikirim" value={d.orders_to_ship} note="pesanan lunas menunggu dikirim" />
+            <KpiCard icon="inventory_2" title="Produk aktif" value={d.active_products} note="produk tampil di katalog" />
             <KpiCard
+              icon="production_quantity_limits"
               title="Stok menipis"
               value={d.low_stock_count}
               note={d.low_stock_count > 0 ? 'Perlu restok (≤ 5 unit)' : 'Semua stok aman'}
@@ -200,7 +170,9 @@ export default function AdminDashboard() {
                   {series === '7d' ? 'Pendapatan harian · garis putus-putus = rata-rata' : 'Pendapatan bulanan · garis putus-putus = rata-rata'}
                   {series === '6m' && <span className={DEMO_TAG}>Demo</span>}
                 </CardDescription>
-                <CardAction>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <Select
                     value={series}
                     onValueChange={(value) => {
@@ -208,7 +180,7 @@ export default function AdminDashboard() {
                     }}
                     items={PERIOD_ITEMS}
                   >
-                    <SelectTrigger size="sm" className="w-40" aria-label="Rentang grafik">
+                    <SelectTrigger size="sm" className={cx(TOUCH_BTN, 'w-40')} aria-label="Rentang grafik">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,12 +193,31 @@ export default function AdminDashboard() {
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                </CardAction>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 w-full text-foreground" role="img" aria-label={series === '7d' ? 'Grafik pendapatan 7 hari terakhir' : 'Grafik pendapatan 6 bulan (contoh)'}>
+                  {/* DEMO: laporan lengkap belum punya halaman atau API, jadi dinonaktifkan. */}
+                  <Button variant="outline" size="sm" className={cx(TOUCH_BTN, 'text-foreground')} disabled title="Belum tersedia">
+                    Lihat laporan
+                    <span className={DEMO_TAG}>Demo</span>
+                  </Button>
+                </div>
+                <ul className="m-0 mb-3 flex list-none flex-wrap justify-end gap-x-5 gap-y-1.5 p-0 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-foreground" aria-hidden />
+                    Pendapatan
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-0 w-3 border-t border-dashed border-foreground/60" aria-hidden />
+                    Rata-rata
+                  </li>
+                </ul>
+                <div className="h-64 w-full text-foreground sm:h-72" role="img" aria-label={series === '7d' ? 'Grafik pendapatan 7 hari terakhir' : 'Grafik pendapatan 6 bulan (contoh)'}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="tren-penjualan-fill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" style={{ ...AREA_FILL_STOP, stopOpacity: 0.18 }} />
+                          <stop offset="100%" style={{ ...AREA_FILL_STOP, stopOpacity: 0 }} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.1} />
                       <XAxis
                         dataKey="label"
@@ -248,8 +239,7 @@ export default function AdminDashboard() {
                         dataKey="value"
                         stroke="currentColor"
                         strokeWidth={2}
-                        fill="currentColor"
-                        fillOpacity={0.12}
+                        fill="url(#tren-penjualan-fill)"
                         isAnimationActive={false}
                       />
                     </AreaChart>
@@ -263,9 +253,11 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="font-normal">Status pesanan</CardTitle>
                 <CardDescription>Dari {d.recent_orders.length} pesanan terbaru</CardDescription>
-                <CardAction className="flex items-center gap-2">
+              </CardHeader>
+              <CardContent className="flex flex-col gap-5">
+                <div className="flex items-center justify-end gap-2">
                   <Select disabled defaultValue="recent" items={STATUS_VIEW_ITEMS}>
-                    <SelectTrigger size="sm" className="w-40" aria-label="Tampilan status">
+                    <SelectTrigger size="sm" className={cx(TOUCH_BTN, 'w-40')} aria-label="Tampilan status">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -280,9 +272,8 @@ export default function AdminDashboard() {
                   </Select>
                   {/* DEMO: pilihan tampilan belum punya logika, jadi dinonaktifkan. */}
                   <span className={DEMO_TAG}>Demo</span>
-                </CardAction>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center gap-5 sm:flex-row">
+                </div>
+                <div className="flex flex-col items-center gap-5 sm:flex-row">
                 {statusSlices.length === 0 ? (
                   <p className={MUTED_SMALL}>Belum ada pesanan.</p>
                 ) : (
@@ -318,12 +309,13 @@ export default function AdminDashboard() {
                             <span className="size-2.5 shrink-0 rounded-full" style={{ background: STATUS_COLORS[i % STATUS_COLORS.length] }} aria-hidden />
                             <span className="truncate text-foreground">{s.label}</span>
                           </span>
-                          <span className={cx(MONEY, 'text-muted-foreground')}>{s.count}</span>
+                          <span className={cx(NUM, 'text-muted-foreground')}>{s.count}</span>
                         </li>
                       ))}
                     </ul>
                   </>
                 )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -333,7 +325,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="font-normal">Stok menipis</CardTitle>
                 <CardAction>
-                  <Button variant="ghost" size="sm" className="text-foreground" render={<Link to="/admin/products" />} nativeButton={false}>
+                  <Button variant="ghost" size="sm" className={cx(TOUCH_BTN, 'text-foreground')} render={<Link to="/admin/products" />} nativeButton={false}>
                     Lihat semua
                   </Button>
                 </CardAction>
@@ -420,12 +412,45 @@ export default function AdminDashboard() {
           <Card className="gap-0 overflow-hidden py-0">
             <CardHeader className="px-4 pt-4 sm:px-5 sm:pt-5">
               <CardTitle className="font-normal">Pesanan terbaru</CardTitle>
-              <CardAction>
-                <Button variant="ghost" size="sm" className="text-foreground" render={<Link to="/admin/orders" />} nativeButton={false}>
+              <CardDescription>{d.recent_orders.length} pesanan terbaru</CardDescription>
+              <CardAction className="flex flex-wrap items-center justify-end gap-2">
+                {/* DEMO: ekspor rekap dari ringkasan belum punya API, jadi dinonaktifkan. */}
+                <Button variant="outline" className={cx(TOUCH_BTN, 'text-foreground')} disabled title="Belum tersedia">
+                  <span className="material-symbols-outlined" aria-hidden>download</span>
+                  Export
+                  <span className={DEMO_TAG}>Demo</span>
+                </Button>
+                <Button variant="ghost" className={cx(TOUCH_BTN, 'text-foreground')} render={<Link to="/admin/orders" />} nativeButton={false}>
                   Kelola pesanan
                 </Button>
               </CardAction>
             </CardHeader>
+            {/* DEMO: cari, filter status, dan urutkan di ringkasan belum punya logika, jadi dinonaktifkan. */}
+            <div className="flex flex-col gap-2 px-4 pb-3 pt-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
+                <div className="relative w-full sm:w-72">
+                  <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-muted" aria-hidden>search</span>
+                  <Input
+                    type="search"
+                    disabled
+                    placeholder="Cari invoice atau pembeli…"
+                    aria-label="Cari pesanan (belum tersedia)"
+                    className={cx(TOUCH_BTN, 'w-full rounded-field border-outline bg-surface pl-10 pr-16 text-sm text-ink placeholder:text-muted')}
+                  />
+                  <span className={cx(DEMO_TAG, 'pointer-events-none absolute right-2 top-1/2 -translate-y-1/2')}>Demo</span>
+                </div>
+                <Button variant="outline" size="sm" className={cx(TOUCH_BTN, 'text-foreground')} disabled title="Belum tersedia">
+                  <span className="material-symbols-outlined" aria-hidden>filter_list</span>
+                  Status
+                  <span className={DEMO_TAG}>Demo</span>
+                </Button>
+              </div>
+              <Button variant="outline" size="sm" className={cx(TOUCH_BTN, 'text-foreground')} disabled title="Belum tersedia">
+                <span className="material-symbols-outlined" aria-hidden>swap_vert</span>
+                Sort
+                <span className={DEMO_TAG}>Demo</span>
+              </Button>
+            </div>
             <Table className={cx(TABLE_STACK, 'mt-2')}>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -447,7 +472,7 @@ export default function AdminDashboard() {
                       <TableCell data-label="Status" className="px-3 py-3 sm:px-4">
                         <Badge variant="outline" className={cx('h-6 whitespace-nowrap rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[s.tone])}>{s.label}</Badge>
                       </TableCell>
-                      <TableCell data-label="Total" className={cx('whitespace-nowrap px-3 py-3 text-right sm:px-4', MONEY)}>{rp(o.grand_total)}</TableCell>
+                      <TableCell data-label="Total" className={cx('whitespace-nowrap px-3 py-3 text-right sm:px-4', NUM)}>{rp(o.grand_total)}</TableCell>
                     </TableRow>
                   );
                 })}
