@@ -90,3 +90,35 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Token shadcn untuk dashboard admin. Nama dipisah (hover, sub, subtle) agar tidak bentrok dengan token Tokoku (accent, muted). Nilainya memakai variabel Tokoku sehingga ikut mode gelap. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--surface-low);
+  --color-secondary-foreground: var(--text);
+  --color-subtle: var(--surface-low);
+  --color-sub: var(--muted);
+  --color-hover: var(--surface-mid);
+  --color-hover-fg: var(--text);
+  --color-destructive: #ba1a1a;
+  --color-border: var(--outline-soft);
+  --color-input: var(--outline);
+  --color-ring: var(--c-primary);
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--text);
+  --color-sidebar-primary: var(--c-primary);
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-hover: var(--surface-mid);
+  --color-sidebar-hover-fg: var(--text);
+  --color-sidebar-border: var(--outline-soft);
+  --color-sidebar-ring: var(--c-primary);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-xl: 1rem;
+}
