@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { cn } from 'cn';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import type { AdminUser } from '../../api/types';
@@ -7,23 +8,13 @@ import { useAuth } from '../../auth/AuthContext';
 import { PageHeader } from '../../components/PageHeader';
 import { useToast } from '../../components/Toast';
 import { formatDate } from '../../lib/money';
-import {
-  CHIP_GROUP,
-  EMPTY_ROW,
-  FILTER_BAR,
-  HIDE_MD,
-  INPUT,
-  MUTED_SMALL,
-  Notice,
-  SEARCH_ICON,
-  SEARCH_WRAP,
-  StatusBadge,
-  TABLE_WRAP,
-  TBODY,
-  TD,
-  TH,
-  chipClass,
-  cx, TABLE_STACK } from './adminUi';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EmptyState, FilterChip, Notice, PANEL, StatusPill } from '../../components/admin-stores/AdminBits';
 
 const ROLE_OPTIONS = [
   { v: '', l: 'Semua' },
@@ -35,10 +26,11 @@ const STATUS_OPTIONS = [
   { v: 'active', l: 'Aktif' },
   { v: 'inactive', l: 'Nonaktif' },
 ];
-
-/* `select` di styles.css tanpa layer memberi width:100%, jadi lebar memakai !w-auto. */
-const ROLE_SELECT =
-  'h-11 md:h-9 !w-auto min-w-[140px] rounded-field border border-outline bg-surface px-2.5 text-[13px] text-ink focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-45';
+/** Pilihan role di dropdown baris. Label dipakai Select untuk menampilkan nilai terpilih. */
+const ROLE_ITEMS = [
+  { value: 'customer', label: 'Pelanggan' },
+  { value: 'admin', label: 'Admin' },
+];
 
 export default function AdminUsers() {
   const { user: me } = useAuth();
@@ -72,104 +64,119 @@ export default function AdminUsers() {
         subtitle={users.data ? `${list.length} akun sesuai filter` : 'Memuat akun…'}
       />
 
-      <div className={FILTER_BAR}>
-        <div className={SEARCH_WRAP}>
-          <span className={SEARCH_ICON} aria-hidden>search</span>
-          <input
+      <Card className={`${PANEL} mb-4 flex-col gap-3 p-3.5 md:flex-row md:flex-wrap md:items-center`}>
+        <div className="relative w-full md:min-w-60 md:flex-1">
+          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-sub" aria-hidden>search</span>
+          <Input
             type="search"
-            className={cx(INPUT, 'pl-10')}
+            className="h-11 w-full pl-10 text-sm md:h-9"
             placeholder="Cari nama atau email…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             aria-label="Cari pengguna"
           />
         </div>
-        <div className={CHIP_GROUP} role="group" aria-label="Filter role">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter role">
           {ROLE_OPTIONS.map((o) => (
-            <button type="button" key={o.v} className={chipClass(role === o.v)} aria-pressed={role === o.v} onClick={() => setRole(o.v)}>{o.l}</button>
+            <FilterChip key={o.v} on={role === o.v} onClick={() => setRole(o.v)}>{o.l}</FilterChip>
           ))}
         </div>
-        <div className={CHIP_GROUP} role="group" aria-label="Filter status">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter status">
           {STATUS_OPTIONS.map((o) => (
-            <button type="button" key={o.v} className={chipClass(status === o.v)} aria-pressed={status === o.v} onClick={() => setStatus(o.v)}>{o.l}</button>
+            <FilterChip key={o.v} on={status === o.v} onClick={() => setStatus(o.v)}>{o.l}</FilterChip>
           ))}
         </div>
-      </div>
+      </Card>
 
-      {users.isError && <div className="mb-4"><Notice kind="error">Gagal memuat pengguna.</Notice></div>}
+      {users.isError && <Notice kind="error" className="mb-4">Gagal memuat pengguna.</Notice>}
 
-      <div className={TABLE_WRAP}>
-        <table className={TABLE_STACK}>
-          <thead>
-            <tr>
-              <th className={TH}>Pengguna</th>
-              <th className={TH}>Role</th>
-              <th className={TH}>Status</th>
-              <th className={cx(TH, HIDE_MD)}>Bergabung</th>
-            </tr>
-          </thead>
-          <tbody className={TBODY}>
+      <Card className={`${PANEL} gap-0 py-0`}>
+        <Table className="max-md:block">
+          <TableHeader className="max-md:sr-only">
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="h-auto bg-surface-low px-4 py-3 text-[11px] font-bold uppercase tracking-[0.6px] text-sub">Pengguna</TableHead>
+              <TableHead className="h-auto bg-surface-low px-4 py-3 text-[11px] font-bold uppercase tracking-[0.6px] text-sub">Role</TableHead>
+              <TableHead className="h-auto bg-surface-low px-4 py-3 text-[11px] font-bold uppercase tracking-[0.6px] text-sub">Status</TableHead>
+              <TableHead className="hidden h-auto bg-surface-low px-4 py-3 text-[11px] font-bold uppercase tracking-[0.6px] text-sub md:table-cell">Bergabung</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="max-md:block">
             {list.map((u) => {
               const isMe = u.id === me?.id;
               const lastAdmin = u.role === 'admin' && u.is_active && adminCount <= 1;
               return (
-                <tr key={u.id} className={u.is_active ? '' : 'bg-surface-low/60 text-muted'}>
-                  <td data-label="" className={cx(TD, 'max-md:block!')}>
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-secondary-container font-display text-sm font-bold text-on-secondary-container" aria-hidden>
-                        {u.name.charAt(0).toUpperCase()}
-                      </span>
-                      <div className="min-w-0">
-                        <strong className="font-semibold">{u.name}</strong>
-                        {isMe && <StatusBadge tone="ok" className="ml-2 align-middle">Anda</StatusBadge>}
-                        <div className={cx(MUTED_SMALL, 'truncate')}>{u.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td data-label="Role" className={TD}>
-                    <select
+                <TableRow
+                  key={u.id}
+                  className={cn(
+                    'border-border max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-4 max-md:gap-y-2 max-md:px-4 max-md:py-3',
+                    !u.is_active && 'bg-subtle/60 text-sub',
+                  )}
+                >
+                  <TableCell className="whitespace-normal px-4 py-3 max-md:w-full max-md:px-0 max-md:py-0">
+                    <UserName user={u} isMe={isMe} />
+                  </TableCell>
+                  <TableCell className="px-4 py-3 max-md:px-0 max-md:py-0">
+                    <Select
+                      items={ROLE_ITEMS}
                       value={u.role}
                       disabled={isMe || lastAdmin || update.isPending}
-                      onChange={(e) => update.mutate({ id: u.id, body: { role: e.target.value } })}
-                      aria-label={`Role ${u.name}`}
-                      className={ROLE_SELECT}
+                      onValueChange={(value) => {
+                        if (value) update.mutate({ id: u.id, body: { role: value } });
+                      }}
                     >
-                      <option value="customer">Pelanggan</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </td>
-                  <td data-label="Status" className={TD}>
+                      <SelectTrigger aria-label={`Role ${u.name}`} className="h-11! min-w-36 bg-surface text-[13px] text-ink md:h-9! md:min-w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customer">Pelanggan</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 max-md:px-0 max-md:py-0">
                     <label
-                      className={cx(
-                        'relative !inline-flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap text-[13px] font-semibold text-ink-2 md:min-h-0',
+                      className={cn(
+                        'inline-flex min-h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap text-[13px] font-semibold text-ink-2 md:min-h-0',
                         (isMe || lastAdmin) && 'cursor-not-allowed',
                       )}
                       title={isMe ? 'Tidak bisa menonaktifkan akun sendiri' : ''}
                     >
-                      <input
-                        type="checkbox"
-                        className="peer sr-only !h-px !w-px !min-h-0"
+                      <Switch
                         checked={u.is_active}
                         disabled={isMe || lastAdmin || update.isPending}
-                        onChange={(e) => update.mutate({ id: u.id, body: { is_active: e.target.checked } })}
+                        onCheckedChange={(checked) => update.mutate({ id: u.id, body: { is_active: checked } })}
                         aria-label={`Status aktif ${u.name}`}
+                        className="max-md:after:-inset-y-[13px]"
                       />
-                      <span
-                        aria-hidden
-                        className="relative h-[22px] w-[38px] shrink-0 rounded-pill bg-outline transition-colors after:absolute after:left-[3px] after:top-[3px] after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-4 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary peer-disabled:opacity-45"
-                      />
-                      <span className={cx('peer-disabled:opacity-60', u.is_active ? 'text-ink' : 'text-muted')}>{u.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                      <span className={cn(u.is_active ? 'text-ink' : 'text-sub')}>{u.is_active ? 'Aktif' : 'Nonaktif'}</span>
                     </label>
-                  </td>
-                  <td data-label="Bergabung" className={cx(TD, HIDE_MD, MUTED_SMALL)}>{formatDate(u.created_at)}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="hidden px-4 py-3 text-xs text-sub md:table-cell">{formatDate(u.created_at)}</TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
-        {users.data && list.length === 0 && <p className={EMPTY_ROW}>Tidak ada pengguna yang cocok dengan filter.</p>}
-      </div>
+          </TableBody>
+        </Table>
+        {users.data && list.length === 0 && <EmptyState>Tidak ada pengguna yang cocok dengan filter.</EmptyState>}
+      </Card>
     </section>
+  );
+}
+
+function UserName({ user: u, isMe }: { user: AdminUser; isMe: boolean }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar className="size-9 shrink-0" aria-hidden>
+        <AvatarFallback className="bg-secondary-container font-display text-sm font-bold text-on-secondary-container">
+          {u.name.charAt(0).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <strong className="font-semibold">{u.name}</strong>
+        {isMe && <StatusPill tone="ok" className="ml-2 align-middle">Anda</StatusPill>}
+        <div className="truncate text-xs text-sub">{u.email}</div>
+      </div>
+    </div>
   );
 }
 

@@ -4,7 +4,9 @@ import { PageHeader } from '../../components/PageHeader';
 import { api } from '../../api';
 import { ApiError } from '../../api/client';
 import { formatDate } from '../../lib/money';
-import { CARD, CHIP_GROUP, EMPTY_ROW, MUTED_SMALL, Notice, SKU, StatusBadge, btn, chipClass, type Tone } from './adminUi';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { EmptyState, FilterChip, Notice, PANEL, StatusPill, type Tone } from '../../components/admin-stores/AdminBits';
 
 const STATUS_LABEL: Record<string, string> = { pending: 'Menunggu', active: 'Aktif', suspended: 'Ditangguhkan' };
 const STATUS_TONE: Record<string, Tone> = { pending: 'warn', active: 'ok', suspended: 'danger' };
@@ -28,47 +30,50 @@ export default function AdminStores() {
   return (
     <section>
       <PageHeader title="Toko penjual" subtitle="Setujui pengajuan toko baru atau tangguhkan toko yang bermasalah." />
-      <div className={`${CHIP_GROUP} mb-4`} role="group" aria-label="Filter status toko">
+      <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Filter status toko">
         {STATUS_FILTERS.map((s) => (
-          <button
-            key={s || 'all'}
-            type="button"
-            className={chipClass(status === s)}
-            aria-pressed={status === s}
-            onClick={() => setStatus(s)}
-          >
+          <FilterChip key={s || 'all'} on={status === s} onClick={() => setStatus(s)}>
             {s ? STATUS_LABEL[s] : 'Semua'}
-          </button>
+          </FilterChip>
         ))}
       </div>
-      {error && <div className="mb-4"><Notice kind="error">{error}</Notice></div>}
+      {error && <Notice kind="error" className="mb-4">{error}</Notice>}
       <div className="grid gap-3 md:grid-cols-2">
         {(stores.data ?? []).map((s) => (
-          <article key={s.id} className={`${CARD} flex flex-col gap-3 p-4 sm:p-5`}>
+          <Card key={s.id} className={`${PANEL} flex flex-col gap-3 p-4 sm:p-5`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <strong className="block font-display text-base font-semibold text-ink">{s.name}</strong>
-                <p className={`m-0 mt-0.5 break-all ${MUTED_SMALL}`}>{s.owner_email} · {formatDate(s.created_at)}</p>
-                {s.npwp && <p className={`m-0 mt-0.5 ${SKU}`}>NPWP {s.npwp}</p>}
+                <strong className="font-display text-base font-semibold text-ink">{s.name}</strong>
+                <p className="m-0 mt-0.5 break-all text-xs text-sub">{s.owner_email} · {formatDate(s.created_at)}</p>
+                {s.npwp && <p className="m-0 mt-0.5 font-mono text-xs text-sub">NPWP {s.npwp}</p>}
               </div>
-              <StatusBadge tone={STATUS_TONE[s.status] ?? 'neutral'}>{STATUS_LABEL[s.status]}</StatusBadge>
+              <StatusPill tone={STATUS_TONE[s.status] ?? 'neutral'}>{STATUS_LABEL[s.status]}</StatusPill>
             </div>
             <div className="flex flex-wrap gap-2">
               {s.status !== 'active' && (
-                <button type="button" className={btn('primary', 'md')} onClick={() => setStatusMutation.mutate({ id: s.id, to: 'active' })}>
+                <Button
+                  type="button"
+                  className="h-11 px-4 md:h-9"
+                  onClick={() => setStatusMutation.mutate({ id: s.id, to: 'active' })}
+                >
                   Setujui
-                </button>
+                </Button>
               )}
               {s.status === 'active' && (
-                <button type="button" className={btn('outlineDanger', 'md')} onClick={() => setStatusMutation.mutate({ id: s.id, to: 'suspended' })}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 border-error bg-surface px-4 text-error hover:bg-error-soft md:h-9"
+                  onClick={() => setStatusMutation.mutate({ id: s.id, to: 'suspended' })}
+                >
                   Tangguhkan
-                </button>
+                </Button>
               )}
             </div>
-          </article>
+          </Card>
         ))}
       </div>
-      {stores.data?.length === 0 && <p className={EMPTY_ROW}>Tidak ada toko pada filter ini.</p>}
+      {stores.data?.length === 0 && <EmptyState>Tidak ada toko pada filter ini.</EmptyState>}
     </section>
   );
 }
