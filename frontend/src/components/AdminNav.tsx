@@ -122,8 +122,8 @@ function AdminSidebar({ groups }: { groups: NavGroup[] }) {
             storefront
           </span>
           <div className="min-w-0 flex-1">
-            <strong className="block font-display text-[17px] leading-[22px] text-white">Tokoku</strong>
-            <span className="block truncate text-xs font-semibold text-[#94a3b8]">Portal penjual</span>
+            <strong className="block text-left font-display text-[17px] leading-[22px] text-white">Tokoku</strong>
+            <span className="block truncate text-left text-xs font-semibold text-[#94a3b8]">Portal penjual</span>
           </div>
           <button
             type="button"

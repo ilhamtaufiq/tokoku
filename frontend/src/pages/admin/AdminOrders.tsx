@@ -55,7 +55,7 @@ const STATUS_CHIPS: { value: OrderStatus | ''; label: string }[] = [
 const PANEL = 'gap-0 overflow-hidden rounded-card border border-outline-soft bg-surface py-0 shadow-card ring-0';
 const SELECT = cx(TOUCH_BTN, 'w-full min-w-0 rounded-field border border-outline bg-surface px-3 text-sm text-ink focus:border-primary focus:outline-none disabled:opacity-60');
 const PAGE_BTN = cx(TOUCH_BTN, 'w-11 px-0');
-const ACTION_BTN = 'h-auto min-h-11 justify-start px-1.5 text-sm font-semibold md:min-h-0';
+const ACTION_BTN = 'h-auto min-h-11 justify-start border-transparent bg-transparent px-1.5 font-body text-sm font-semibold hover:bg-transparent md:min-h-0';
 const CHIP = 'h-11 whitespace-nowrap rounded-pill px-3.5 text-[13px] font-semibold md:h-8 md:px-3';
 
 export default function AdminOrders() {
@@ -209,12 +209,14 @@ export default function AdminOrders() {
                     <TableCell data-label="Total" className={cx('whitespace-nowrap px-3 py-3 text-right align-middle sm:px-4', MONEY)}>{rp(o.grand_total)}</TableCell>
                     <TableCell data-label="PPN" className={cx('hidden whitespace-nowrap px-3 py-3 text-right align-middle text-muted sm:px-4 2xl:table-cell', MONEY)}>{rp(o.ppn_total)}</TableCell>
                     <TableCell data-label="Status" className="px-3 py-3 align-middle sm:px-4">
+                      <div className="flex min-w-0 flex-col items-end gap-1 text-right md:items-start md:text-left">
                       <Badge variant="outline" className={cx('h-6 whitespace-nowrap rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[TONE_BY_STATUS[o.status] ?? 'neutral'])}>
                         {ORDER_STATUS_LABEL[o.status]}
                       </Badge>
                       {o.estimated_days && <div className={cx(MUTED_SMALL, 'mt-1.5')}>Estimasi {o.estimated_days} hari</div>}
                       {o.estimated_due_at && <div className={MUTED_SMALL}>Tenggat {formatDate(o.estimated_due_at)} · {sisaWaktu(o.estimated_due_at)}</div>}
                       {o.tracking_number && <div className={cx(SKU, 'mt-0.5')}>Resi {o.tracking_number}</div>}
+                      </div>
                     </TableCell>
                     <TableCell data-label="Pembayaran" className={cx('px-3 py-3 align-middle sm:px-4', HIDE_MD)}>
                       <Badge
