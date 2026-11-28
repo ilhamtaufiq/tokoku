@@ -342,22 +342,6 @@ function AdminSidebar({ groups }: { groups: NavGroup[] }) {
         </nav>
 
         <div className="flex shrink-0 flex-col gap-4">
-          {/* Kartu bantuan netral: hanya tautan ke repositori, tanpa klaim layanan. */}
-          <div className="flex flex-col gap-2 rounded-card border border-sidebar-border bg-sidebar-hover p-4">
-            <p className="m-0 text-sm font-semibold text-sidebar-foreground">Ada yang ingin ditanyakan?</p>
-            <p className="m-0 text-xs leading-5 text-muted-foreground">Tanya atau beri masukan lewat repositori Tokoku di GitHub.</p>
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={closeDrawer}
-              className="mt-1 inline-flex h-11 w-fit items-center gap-1.5 rounded-field border border-sidebar-border bg-surface px-3 text-xs font-semibold text-sidebar-foreground no-underline hover:bg-sidebar-hover hover:no-underline md:h-9"
-            >
-              Buka GitHub
-              <span className="material-symbols-outlined text-[16px]" aria-hidden>open_in_new</span>
-            </a>
-          </div>
-
           <div className="flex flex-col gap-1">
             <Separator className="mb-2 bg-sidebar-border" />
             {/* Footer profil: inisial, nama, dan email admin. Seluruh baris menuju halaman akun. */}
