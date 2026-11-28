@@ -16,7 +16,8 @@
  * Pakai: bg-surface, text-muted, border-outline-soft, rounded-card, dst.
  */
 @theme inline {
-  --color-primary: var(--c-primary);
+  /* Primer dan aksen memakai --sa-* agar admin bisa beralih ke palet netral. Di luar admin nilainya sama dengan Tokoku. */
+  --color-primary: var(--sa-primary);
   --color-on-primary: var(--c-on-primary);
   --color-primary-container: var(--c-primary-container);
   --color-secondary-container: var(--c-secondary-container);
@@ -91,34 +92,171 @@
   }
 }
 
-/* Token shadcn untuk dashboard admin. Nama dipisah (hover, sub, subtle) agar tidak bentrok dengan token Tokoku (accent, muted). Nilainya memakai variabel Tokoku sehingga ikut mode gelap. */
+/*
+ * Token shadcn. Semua lewat variabel --sa-* yang didefinisikan di :root (nilai Tokoku,
+ * sama seperti sebelumnya). Palet netral admin ada di blok .admin-theme di bawah.
+ */
 @theme inline {
-  --color-background: var(--bg);
-  --color-foreground: var(--text);
-  --color-card: var(--surface);
-  --color-card-foreground: var(--text);
-  --color-popover: var(--surface);
-  --color-popover-foreground: var(--text);
-  --color-primary-foreground: #ffffff;
-  --color-secondary: var(--surface-low);
-  --color-secondary-foreground: var(--text);
-  --color-subtle: var(--surface-low);
-  --color-sub: var(--muted);
-  --color-hover: var(--surface-mid);
-  --color-hover-fg: var(--text);
-  --color-destructive: #ba1a1a;
-  --color-border: var(--outline-soft);
-  --color-input: var(--outline);
-  --color-ring: var(--c-primary);
-  --color-sidebar: var(--surface);
-  --color-sidebar-foreground: var(--text);
-  --color-sidebar-primary: var(--c-primary);
-  --color-sidebar-primary-foreground: #ffffff;
-  --color-sidebar-hover: var(--surface-mid);
-  --color-sidebar-hover-fg: var(--text);
-  --color-sidebar-border: var(--outline-soft);
-  --color-sidebar-ring: var(--c-primary);
+  --color-background: var(--sa-background);
+  --color-foreground: var(--sa-foreground);
+  --color-card: var(--sa-card);
+  --color-card-foreground: var(--sa-card-foreground);
+  --color-popover: var(--sa-popover);
+  --color-popover-foreground: var(--sa-popover-foreground);
+  --color-primary-foreground: var(--sa-primary-foreground);
+  --color-secondary: var(--sa-secondary);
+  --color-secondary-foreground: var(--sa-secondary-foreground);
+  --color-muted-foreground: var(--sa-muted-foreground);
+  --color-subtle: var(--sa-subtle);
+  --color-sub: var(--sa-sub);
+  --color-hover: var(--sa-hover);
+  --color-hover-fg: var(--sa-hover-fg);
+  --color-destructive: var(--sa-destructive);
+  --color-border: var(--sa-border);
+  --color-input: var(--sa-input);
+  --color-ring: var(--sa-ring);
+  --color-sidebar: var(--sa-sidebar);
+  --color-sidebar-foreground: var(--sa-sidebar-foreground);
+  --color-sidebar-primary: var(--sa-sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sa-sidebar-primary-foreground);
+  --color-sidebar-hover: var(--sa-sidebar-hover);
+  --color-sidebar-hover-fg: var(--sa-sidebar-hover-fg);
+  --color-sidebar-border: var(--sa-sidebar-border);
+  --color-sidebar-ring: var(--sa-sidebar-ring);
   --radius-sm: 0.5rem;
   --radius-md: 0.625rem;
   --radius-xl: 1rem;
+}
+
+/* Nilai awal --sa-*: sama dengan token Tokoku. Dipakai di luar admin (toko, akun, dll). */
+:root {
+  --sa-background: var(--bg);
+  --sa-foreground: var(--text);
+  --sa-card: var(--surface);
+  --sa-card-foreground: var(--text);
+  --sa-popover: var(--surface);
+  --sa-popover-foreground: var(--text);
+  --sa-primary: var(--c-primary);
+  --sa-primary-foreground: #ffffff;
+  --sa-secondary: var(--surface-low);
+  --sa-secondary-foreground: var(--text);
+  --sa-muted-foreground: var(--muted);
+  --sa-subtle: var(--surface-low);
+  --sa-sub: var(--muted);
+  --sa-hover: var(--surface-mid);
+  --sa-hover-fg: var(--text);
+  --sa-destructive: #ba1a1a;
+  --sa-border: var(--outline-soft);
+  --sa-input: var(--outline);
+  --sa-ring: var(--c-primary);
+  --sa-sidebar: var(--surface);
+  --sa-sidebar-foreground: var(--text);
+  --sa-sidebar-primary: var(--c-primary);
+  --sa-sidebar-primary-foreground: #ffffff;
+  --sa-sidebar-hover: var(--surface-mid);
+  --sa-sidebar-hover-fg: var(--text);
+  --sa-sidebar-border: var(--outline-soft);
+  --sa-sidebar-ring: var(--c-primary);
+}
+
+/*
+ * Palet netral admin (terang). Berlaku untuk kelas .admin-theme. Selector :has(.admin-theme)
+ * juga menimpa variabel di :root selama shell admin terpasang, sehingga konten yang dirender
+ * lewat portal (menu drawer, dialog cmdk, dropdown) ikut netral.
+ */
+.admin-theme,
+:root:has(.admin-theme) {
+  --sa-background: #fafafa;
+  --sa-foreground: #18181b;
+  --sa-card: #ffffff;
+  --sa-card-foreground: #18181b;
+  --sa-popover: #ffffff;
+  --sa-popover-foreground: #18181b;
+  --sa-primary: #18181b;
+  --sa-primary-foreground: #fafafa;
+  --sa-secondary: #f4f4f5;
+  --sa-secondary-foreground: #18181b;
+  --sa-muted-foreground: #71717a;
+  --sa-subtle: #f4f4f5;
+  --sa-sub: #71717a;
+  --sa-hover: #f4f4f5;
+  --sa-hover-fg: #18181b;
+  --sa-destructive: #dc2626;
+  --sa-border: #e4e4e7;
+  --sa-input: #e4e4e7;
+  --sa-ring: #a1a1aa;
+  --sa-sidebar: #fafafa;
+  --sa-sidebar-foreground: #18181b;
+  --sa-sidebar-primary: #18181b;
+  --sa-sidebar-primary-foreground: #fafafa;
+  --sa-sidebar-hover: #f4f4f5;
+  --sa-sidebar-hover-fg: #18181b;
+  --sa-sidebar-border: #e4e4e7;
+  --sa-sidebar-ring: #a1a1aa;
+}
+
+/* Palet netral admin (gelap): ikut preferensi sistem kecuali data-theme="light". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .admin-theme,
+  :root:not([data-theme="light"]):has(.admin-theme) {
+    --sa-background: #09090b;
+    --sa-foreground: #fafafa;
+    --sa-card: #18181b;
+    --sa-card-foreground: #fafafa;
+    --sa-popover: #18181b;
+    --sa-popover-foreground: #fafafa;
+    --sa-primary: #fafafa;
+    --sa-primary-foreground: #18181b;
+    --sa-secondary: #27272a;
+    --sa-secondary-foreground: #fafafa;
+    --sa-muted-foreground: #a1a1aa;
+    --sa-subtle: #27272a;
+    --sa-sub: #a1a1aa;
+    --sa-hover: #27272a;
+    --sa-hover-fg: #fafafa;
+    --sa-destructive: #f87171;
+    --sa-border: #27272a;
+    --sa-input: #27272a;
+    --sa-ring: #71717a;
+    --sa-sidebar: #09090b;
+    --sa-sidebar-foreground: #fafafa;
+    --sa-sidebar-primary: #fafafa;
+    --sa-sidebar-primary-foreground: #18181b;
+    --sa-sidebar-hover: #27272a;
+    --sa-sidebar-hover-fg: #fafafa;
+    --sa-sidebar-border: #27272a;
+    --sa-sidebar-ring: #71717a;
+  }
+}
+
+/* Palet netral admin (gelap) saat pengguna memilih tema gelap dari tombol di topbar. */
+:root[data-theme="dark"] .admin-theme,
+:root[data-theme="dark"]:has(.admin-theme) {
+  --sa-background: #09090b;
+  --sa-foreground: #fafafa;
+  --sa-card: #18181b;
+  --sa-card-foreground: #fafafa;
+  --sa-popover: #18181b;
+  --sa-popover-foreground: #fafafa;
+  --sa-primary: #fafafa;
+  --sa-primary-foreground: #18181b;
+  --sa-secondary: #27272a;
+  --sa-secondary-foreground: #fafafa;
+  --sa-muted-foreground: #a1a1aa;
+  --sa-subtle: #27272a;
+  --sa-sub: #a1a1aa;
+  --sa-hover: #27272a;
+  --sa-hover-fg: #fafafa;
+  --sa-destructive: #f87171;
+  --sa-border: #27272a;
+  --sa-input: #27272a;
+  --sa-ring: #71717a;
+  --sa-sidebar: #09090b;
+  --sa-sidebar-foreground: #fafafa;
+  --sa-sidebar-primary: #fafafa;
+  --sa-sidebar-primary-foreground: #18181b;
+  --sa-sidebar-hover: #27272a;
+  --sa-sidebar-hover-fg: #fafafa;
+  --sa-sidebar-border: #27272a;
+  --sa-sidebar-ring: #71717a;
 }

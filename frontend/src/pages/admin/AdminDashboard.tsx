@@ -1,20 +1,23 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { api } from '../../api';
 import { ORDER_STATUS_LABEL, formatDate, rp } from '../../lib/money';
-import type { OrderStatus, PaymentStatus } from '../../api/types';
-import { PageHeader } from '../../components/PageHeader';
-import { DEMO_KPI_TREND, DEMO_MONTHLY_SALES, DEMO_URGENT_TASKS } from '../../data/demo';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import type { AdminDashboard as AdminDashboardData, OrderStatus, PaymentStatus } from '../../api/types';
+import { DEMO_MONTHLY_SALES } from '../../data/demo';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { KpiCard } from '../../components/admin/KpiCard';
 import { TONE_BADGE } from '../../components/admin/status';
-import { DEMO_TAG, HIDE_MD, MONEY, MUTED_SMALL, SKU, Sparkline, TABLE_STACK, Trend, cx, type Tone } from './adminUi';
+import { DEMO_TAG, HIDE_MD, MONEY, MUTED_SMALL, SKU, TABLE_STACK, cx, type Tone } from './adminUi';
 
 const DAY = new Intl.DateTimeFormat('id-ID', { weekday: 'short' });
+const DATE_LONG = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const TIME = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' });
 
 function statusInfo(status: OrderStatus, payment: PaymentStatus): { label: string; tone: Tone } {
   if (payment === 'refunded') return { label: 'Dana dikembalikan', tone: 'danger' };
@@ -25,249 +28,434 @@ function statusInfo(status: OrderStatus, payment: PaymentStatus): { label: strin
   return { label: ORDER_STATUS_LABEL[status] ?? status, tone: 'info' };
 }
 
-/** Angka KPI memakai font mono agar lebar digit sama dan sejajar antar kartu. */
-const KPI_VALUE = cx(MONEY, 'text-xl font-bold leading-7 text-ink sm:text-[26px] sm:leading-8');
-const SECTION_TITLE = 'font-display text-lg font-semibold leading-7 text-ink sm:text-xl';
-const PANEL = 'gap-0 rounded-card border border-outline-soft bg-surface py-0 shadow-card ring-0';
-const TASK_TONE: Record<'danger' | 'warn' | 'info', string> = {
-  danger: 'bg-error-soft text-on-error-soft',
-  warn: 'bg-warning-soft text-on-warning-soft',
-  info: 'bg-secondary-container text-on-secondary-container',
+type Series = '7d' | '6m';
+type Point = { label: string; value: number };
+
+const PERIOD_ITEMS: { value: Series; label: string }[] = [
+  { value: '7d', label: '7 hari terakhir' },
+  { value: '6m', label: '6 bulan' },
+];
+/** Tampilan donat hanya satu pilihan dan belum ada logikanya, jadi dinonaktifkan. */
+const STATUS_VIEW_ITEMS = [{ value: 'recent', label: 'Pesanan terbaru' }];
+
+/** Warna irisan donat: abu-abu netral yang terbaca di terang maupun gelap. */
+const STATUS_COLORS = ['#71717a', '#a1a1aa', '#3f3f46', '#d4d4d8', '#52525b'];
+/** Ambang stok menipis yang dipakai di halaman ini (sesuai teks "≤ 5 unit"). */
+const LOW_STOCK_REF = 5;
+
+const TOOLTIP_STYLE: CSSProperties = {
+  background: 'var(--sa-popover)',
+  color: 'var(--sa-popover-foreground)',
+  border: '1px solid var(--sa-border)',
+  borderRadius: 8,
+  fontSize: 12,
 };
 
-type Series = '7d' | '6m';
+const PILL: Record<'up' | 'down' | 'neutral', string> = {
+  up: 'bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300',
+  down: 'bg-destructive/10 text-destructive',
+  neutral: 'bg-secondary text-secondary-foreground',
+};
+
+function compactRupiah(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`;
+  return `${Math.round(value / 1000).toLocaleString('id-ID')} rb`;
+}
+
+/** Hitung jumlah pesanan per status dari daftar pesanan terbaru. */
+function countByStatus(orders: AdminDashboardData['recent_orders']): { label: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const o of orders) {
+    const { label } = statusInfo(o.status, o.payment_status);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return [...counts].map(([label, count]) => ({ label, count }));
+}
+
+function KpiCard({
+  title,
+  value,
+  note,
+  noteClass,
+  pill,
+}: {
+  title: string;
+  value: string | number;
+  note: string;
+  noteClass?: string;
+  pill?: { text: string; tone: 'up' | 'down' | 'neutral'; title: string };
+}) {
+  return (
+    <Card className="gap-3 py-5">
+      <CardHeader className="px-5">
+        <CardTitle className="text-sm font-normal text-muted-foreground">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 px-5">
+        <div className="font-display text-xl leading-none font-semibold tracking-tight whitespace-nowrap text-foreground sm:text-[22px]">{value}</div>
+        <div className="flex items-end justify-between gap-2">
+          <p className={cx('min-w-0 text-xs text-muted-foreground', noteClass)}>{note}</p>
+          {pill && (
+            <Badge title={pill.title} className={cx('h-6 shrink-0 rounded-md px-2 font-semibold', PILL[pill.tone])}>
+              {pill.text}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AdminDashboard() {
   const dash = useQuery({ queryKey: ['admin-dashboard'], queryFn: api.adminDashboard, refetchInterval: 60_000 });
   const [series, setSeries] = useState<Series>('7d');
 
-  if (dash.isPending) return <p className="text-muted">Memuat ringkasan…</p>;
+  if (dash.isPending) return <p className="text-muted-foreground">Memuat ringkasan…</p>;
   if (dash.isError || !dash.data) return <p className="rounded-field bg-error-soft px-3.5 py-2.5 text-sm text-on-error-soft">Gagal memuat ringkasan.</p>;
   const d = dash.data;
-  const max = Math.max(1, ...d.sales_7d.map((x) => Number(x.total)));
-  const todayIso = d.sales_7d[d.sales_7d.length - 1]?.day;
-  const monthMax = Math.max(1, ...DEMO_MONTHLY_SALES.map((m) => m.value));
+
+  const daily: Point[] = d.sales_7d.map((x) => ({ label: DAY.format(new Date(`${x.day}T00:00:00Z`)), value: Number(x.total) }));
+  /* DEMO: deret 6 bulan adalah data contoh dari src/data/demo.ts. */
+  const monthly: Point[] = DEMO_MONTHLY_SALES.map((m) => ({ label: m.label, value: m.value }));
+  const points = series === '7d' ? daily : monthly;
+  const average = points.reduce((sum, p) => sum + p.value, 0) / Math.max(1, points.length);
+
+  /* Pendapatan hari ini dibanding rata-rata 6 hari sebelumnya (data nyata dari sales_7d). */
+  const today = daily[daily.length - 1]?.value ?? 0;
+  const earlier = daily.slice(0, -1);
+  const earlierAvg = earlier.reduce((sum, p) => sum + p.value, 0) / Math.max(1, earlier.length);
+  const deltaPct = earlierAvg > 0 ? Math.round(((today - earlierAvg) / earlierAvg) * 100) : null;
+
+  const statusSlices = countByStatus(d.recent_orders);
+  const updatedAt = dash.dataUpdatedAt ? TIME.format(new Date(dash.dataUpdatedAt)) : '';
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        crumbs={['Portal penjual', 'Operasional bisnis', 'Ringkasan']}
-        title="Ringkasan penjualan"
-        subtitle="Pendapatan dari pesanan yang sudah dibayar · diperbarui otomatis"
-        actions={
-          <>
-            {/* DEMO: tombol unduh rekap belum punya API, jadi dinonaktifkan. */}
-            <Button variant="outline" className="h-11 md:h-9" disabled title="Belum tersedia">
+      <header className="flex flex-col gap-1">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">Ringkasan penjualan</h1>
+        <p className="text-sm text-muted-foreground">{DATE_LONG.format(new Date())}</p>
+      </header>
+
+      <Tabs defaultValue="ringkasan" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <TabsList variant="line">
+            <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+            <TabsTrigger value="pesanan">Pesanan</TabsTrigger>
+          </TabsList>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {updatedAt && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="material-symbols-outlined text-[16px]" aria-hidden>update</span>
+                Diperbarui {updatedAt}
+              </span>
+            )}
+            <Button size="sm" variant="outline" className="text-foreground" render={<Link to="/admin/store" />} nativeButton={false}>
+              <span className="material-symbols-outlined" aria-hidden>settings</span>
+              Pengaturan
+            </Button>
+            {/* DEMO: unduh rekap belum punya API, jadi dinonaktifkan. */}
+            <Button size="sm" variant="outline" className="text-foreground" disabled title="Belum tersedia">
               <span className="material-symbols-outlined" aria-hidden>download</span>
               Unduh rekap
               <span className={DEMO_TAG}>Demo</span>
             </Button>
-            <Button render={<Link to="/admin/products" />} nativeButton={false} className="h-11 md:h-9">
+            <Button size="sm" render={<Link to="/admin/products" />} nativeButton={false}>
               <span className="material-symbols-outlined" aria-hidden>add</span>
               Kelola produk
             </Button>
-          </>
-        }
-      />
-
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" aria-label="Ringkasan angka">
-        <KpiCard title="Total pendapatan" icon="payments">
-          <strong className={cx(KPI_VALUE, 'whitespace-nowrap text-base sm:text-xl lg:text-[22px]')}>{rp(d.revenue_total)}</strong>
-          <span className={MUTED_SMALL}>{d.orders_total} pesanan lunas</span>
-          {/* DEMO: tren persentase dan sparkline bulanan dummy. */}
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Trend {...DEMO_KPI_TREND.revenue} />
-            <span className={DEMO_TAG}>Demo</span>
           </div>
-          <div className="text-primary">
-            {/* DEMO */}
-            <Sparkline values={DEMO_MONTHLY_SALES.map((m) => m.value)} />
-          </div>
-        </KpiCard>
-        <KpiCard title="Perlu dikirim" icon="local_shipping">
-          <strong className={KPI_VALUE}>{d.orders_to_ship}</strong>
-          <span className={MUTED_SMALL}>pesanan menunggu proses</span>
-          {/* DEMO: tren pesanan baru dummy. */}
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Trend {...DEMO_KPI_TREND.toShip} />
-            <span className={DEMO_TAG}>Demo</span>
-          </div>
-        </KpiCard>
-        <KpiCard title="Produk aktif" icon="inventory_2">
-          <strong className={KPI_VALUE}>{d.active_products}</strong>
-          <span className={MUTED_SMALL}>produk tampil di katalog</span>
-          {/* DEMO: tren produk baru dummy. */}
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Trend {...DEMO_KPI_TREND.products} />
-            <span className={DEMO_TAG}>Demo</span>
-          </div>
-        </KpiCard>
-        <KpiCard title="Stok menipis" icon="warning" iconClassName="text-accent">
-          <strong className={KPI_VALUE}>{d.low_stock_count}</strong>
-          <span className={d.low_stock_count > 0 ? 'text-xs font-semibold text-accent' : MUTED_SMALL}>
-            {d.low_stock_count > 0 ? 'Perlu restok (≤ 5 unit)' : 'Semua stok aman'}
-          </span>
-          {/* DEMO: tren stok menipis dummy. */}
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Trend {...DEMO_KPI_TREND.lowStock} />
-            <span className={DEMO_TAG}>Demo</span>
-          </div>
-        </KpiCard>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Card className={cx(PANEL, 'min-w-0 p-4 sm:p-5')}>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className={SECTION_TITLE}>Tren penjualan</h2>
-              <span className={MUTED_SMALL}>{series === '7d' ? 'Dalam ribu rupiah · 7 hari terakhir' : 'Dalam juta rupiah · 6 bulan'}</span>
-            </div>
-            {/* DEMO: pilihan 6 bulan memakai data bulanan dummy. */}
-            <div className="inline-flex gap-1 rounded-pill bg-surface-low p-1" role="group" aria-label="Rentang grafik">
-              <Button
-                variant={series === '7d' ? 'default' : 'ghost'}
-                className="h-11 rounded-pill px-3.5 text-xs md:h-8"
-                aria-pressed={series === '7d'}
-                onClick={() => setSeries('7d')}
-              >
-                7 hari
-              </Button>
-              <Button
-                variant={series === '6m' ? 'default' : 'ghost'}
-                className="h-11 rounded-pill px-3.5 text-xs md:h-8"
-                aria-pressed={series === '6m'}
-                onClick={() => setSeries('6m')}
-              >
-                6 bulan
-                <span className={cx(DEMO_TAG, 'ml-1.5')}>Demo</span>
-              </Button>
-            </div>
-          </div>
-
-          {series === '7d' ? (
-            <div className="mt-4 flex h-56 items-end gap-1.5 sm:gap-3" role="img" aria-label="Grafik penjualan 7 hari">
-              {d.sales_7d.map((x) => {
-                const value = Number(x.total);
-                const isToday = x.day === todayIso;
-                const dayLabel = DAY.format(new Date(`${x.day}T00:00:00Z`));
-                return (
-                  <div className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5" key={x.day}>
-                    <span className={cx('h-4 text-[11px] text-muted', MONEY)}>{value > 0 ? Math.round(value / 1000).toLocaleString('id-ID') : ''}</span>
-                    <div className="flex w-full flex-1 items-end">
-                      <div
-                        className={cx('w-full rounded-t-lg', isToday ? 'bg-primary' : 'bg-secondary-container')}
-                        style={{ height: `${Math.max(4, (value / max) * 100)}%` }}
-                      />
-                    </div>
-                    <span className={cx('text-[11px] font-semibold', isToday ? 'font-bold text-primary' : 'text-muted')}>{dayLabel}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="mt-4 flex h-56 items-end gap-2 sm:gap-4" role="img" aria-label="Grafik penjualan 6 bulan (contoh)">
-              {/* DEMO */}
-              {DEMO_MONTHLY_SALES.map((m, i) => {
-                const isLast = i === DEMO_MONTHLY_SALES.length - 1;
-                return (
-                  <div className="flex h-full min-w-0 flex-1 flex-col items-center gap-1.5" key={m.label}>
-                    <span className={cx('h-4 text-[11px] text-muted', MONEY)}>{Math.round(m.value / 1_000_000)}</span>
-                    <div className="flex w-full flex-1 items-end">
-                      <div
-                        className={cx('w-full rounded-t-lg', isLast ? 'bg-primary' : 'bg-secondary-container')}
-                        style={{ height: `${Math.max(4, (m.value / monthMax) * 100)}%` }}
-                      />
-                    </div>
-                    <span className={cx('text-[11px] font-semibold', isLast ? 'font-bold text-primary' : 'text-muted')}>{m.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        <div className="flex min-w-0 flex-col gap-4">
-          {/* DEMO: daftar tugas mendesak dummy. */}
-          <Card className={cx(PANEL, 'p-4 sm:p-5')}>
-            <div className="flex items-center justify-between gap-2">
-              <h2 className={SECTION_TITLE}>Tugas mendesak</h2>
-              <Badge variant="outline" className={cx(DEMO_TAG, 'h-5 rounded-pill')}>Demo</Badge>
-            </div>
-            <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
-              {DEMO_URGENT_TASKS.map((t) => (
-                <li key={t.title} className="flex items-start gap-3 rounded-field bg-surface-low p-3.5">
-                  <span className={cx('material-symbols-outlined flex h-9 w-9 flex-none items-center justify-center rounded-field text-[20px]', TASK_TONE[t.tone])} aria-hidden>
-                    {t.tone === 'danger' ? 'priority_high' : t.tone === 'warn' ? 'schedule' : 'verified_user'}
-                  </span>
-                  <div className="min-w-0 flex-1 text-left">
-                    <strong className="block text-left font-display text-[15px] font-semibold text-ink">{t.title}</strong>
-                    <span className="mt-0.5 block text-left text-xs text-muted">{t.detail}</span>
-                    <span className={cx('mt-1.5 inline-block text-xs font-semibold', t.tone === 'danger' ? 'text-error' : 'text-muted')}>{t.due}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <Card className={cx(PANEL, 'p-4 sm:p-5')}>
-            <div className="flex items-end justify-between gap-2">
-              <h2 className={SECTION_TITLE}>Stok menipis</h2>
-              <Link to="/admin/products" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0">Lihat semua</Link>
-            </div>
-            {d.low_stock.length === 0 && <p className={cx(MUTED_SMALL, 'mt-3')}>Tidak ada produk dengan stok menipis.</p>}
-            <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
-              {d.low_stock.map((p) => (
-                <li
-                  key={p.id}
-                  className={cx('flex items-center justify-between gap-3 rounded-field p-3.5', p.stock <= 2 ? 'bg-warning-soft/70' : 'bg-surface-low')}
-                >
-                  <div className="min-w-0 text-left">
-                    <strong className="block text-left font-display text-[15px] font-semibold text-ink">{p.name}</strong>
-                    <span className={cx(SKU, 'mt-0.5 block truncate text-left')}>{p.sku}</span>
-                  </div>
-                  <Badge variant="outline" className={cx('h-6 rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[p.stock <= 2 ? 'danger' : 'warn'])}>
-                    Sisa {p.stock}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </Card>
         </div>
-      </section>
 
-      <Card className={cx(PANEL, 'overflow-hidden')}>
-        <div className="flex items-end justify-between gap-2 px-4 pb-2 pt-4 sm:px-5 sm:pt-5">
-          <h2 className={SECTION_TITLE}>Pesanan terbaru</h2>
-          <Link to="/admin/orders" className="inline-flex min-h-11 items-center text-xs font-semibold text-primary hover:underline md:min-h-0">Kelola pesanan</Link>
-        </div>
-        <Table className={cx(TABLE_STACK, 'mt-2')}>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 sm:px-4">Invoice</TableHead>
-              <TableHead className="px-3 sm:px-4">Pembeli</TableHead>
-              <TableHead className={cx('px-3 sm:px-4', HIDE_MD)}>Waktu</TableHead>
-              <TableHead className="px-3 sm:px-4">Status</TableHead>
-              <TableHead className="px-3 text-right sm:px-4">Total</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {d.recent_orders.map((o) => {
-              const s = statusInfo(o.status, o.payment_status);
-              return (
-                <TableRow key={o.id} className="border-outline-soft">
-                  <TableCell data-label="" className={cx('px-3 py-3 sm:px-4', SKU, 'max-md:block!')}>{o.invoice_no}</TableCell>
-                  <TableCell data-label="Pembeli" className="px-3 py-3 sm:px-4">{o.buyer_name ?? '-'}</TableCell>
-                  <TableCell data-label="Waktu" className={cx('px-3 py-3 sm:px-4', MUTED_SMALL, HIDE_MD)}>{formatDate(o.created_at)}</TableCell>
-                  <TableCell data-label="Status" className="px-3 py-3 sm:px-4">
-                    <Badge variant="outline" className={cx('h-6 whitespace-nowrap rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[s.tone])}>{s.label}</Badge>
-                  </TableCell>
-                  <TableCell data-label="Total" className={cx('whitespace-nowrap px-3 py-3 text-right sm:px-4', MONEY)}>{rp(o.grand_total)}</TableCell>
+        <TabsContent value="ringkasan" className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              title="Total pendapatan"
+              value={rp(d.revenue_total)}
+              note={`${d.orders_total} pesanan lunas`}
+              pill={
+                deltaPct === null
+                  ? undefined
+                  : {
+                      text: `${deltaPct > 0 ? '+' : ''}${deltaPct}%`,
+                      tone: deltaPct >= 0 ? 'up' : 'down',
+                      title: 'Pendapatan hari ini dibanding rata-rata 6 hari sebelumnya',
+                    }
+              }
+            />
+            <KpiCard title="Perlu dikirim" value={d.orders_to_ship} note="pesanan lunas menunggu dikirim" />
+            <KpiCard title="Produk aktif" value={d.active_products} note="produk tampil di katalog" />
+            <KpiCard
+              title="Stok menipis"
+              value={d.low_stock_count}
+              note={d.low_stock_count > 0 ? 'Perlu restok (≤ 5 unit)' : 'Semua stok aman'}
+              noteClass={d.low_stock_count > 0 ? 'font-semibold text-destructive' : undefined}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <Card className="min-w-0 gap-4 xl:col-span-7">
+              <CardHeader>
+                <CardTitle className="font-normal">Tren penjualan</CardTitle>
+                <CardDescription className="flex flex-wrap items-center gap-2">
+                  {series === '7d' ? 'Pendapatan harian · garis putus-putus = rata-rata' : 'Pendapatan bulanan · garis putus-putus = rata-rata'}
+                  {series === '6m' && <span className={DEMO_TAG}>Demo</span>}
+                </CardDescription>
+                <CardAction>
+                  <Select
+                    value={series}
+                    onValueChange={(value) => {
+                      if (value === '7d' || value === '6m') setSeries(value);
+                    }}
+                    items={PERIOD_ITEMS}
+                  >
+                    <SelectTrigger size="sm" className="w-40" aria-label="Rentang grafik">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {PERIOD_ITEMS.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </CardAction>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 w-full text-foreground" role="img" aria-label={series === '7d' ? 'Grafik pendapatan 7 hari terakhir' : 'Grafik pendapatan 6 bulan (contoh)'}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                      <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.1} />
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tickMargin={8}
+                        tick={{ fontSize: 12, fill: 'currentColor' }}
+                      />
+                      <YAxis hide domain={[0, 'auto']} />
+                      <Tooltip
+                        cursor={{ stroke: 'currentColor', strokeOpacity: 0.2 }}
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={(value) => rp(Number(value))}
+                      />
+                      <ReferenceLine y={average} stroke="currentColor" strokeDasharray="4 4" strokeOpacity={0.6} />
+                      <Area
+                        name="Pendapatan"
+                        type="monotone"
+                        dataKey="value"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        fill="currentColor"
+                        fillOpacity={0.12}
+                        isAnimationActive={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className={cx(MUTED_SMALL, 'mt-2')}>Rata-rata {compactRupiah(average)} per {series === '7d' ? 'hari' : 'bulan'}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="min-w-0 gap-4 xl:col-span-5">
+              <CardHeader>
+                <CardTitle className="font-normal">Status pesanan</CardTitle>
+                <CardDescription>Dari {d.recent_orders.length} pesanan terbaru</CardDescription>
+                <CardAction className="flex items-center gap-2">
+                  <Select disabled defaultValue="recent" items={STATUS_VIEW_ITEMS}>
+                    <SelectTrigger size="sm" className="w-40" aria-label="Tampilan status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {STATUS_VIEW_ITEMS.map((item) => (
+                          <SelectItem key={item.value} value={item.value}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  {/* DEMO: pilihan tampilan belum punya logika, jadi dinonaktifkan. */}
+                  <span className={DEMO_TAG}>Demo</span>
+                </CardAction>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center gap-5 sm:flex-row">
+                {statusSlices.length === 0 ? (
+                  <p className={MUTED_SMALL}>Belum ada pesanan.</p>
+                ) : (
+                  <>
+                    <div className="relative h-44 w-44 shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={statusSlices}
+                            dataKey="count"
+                            nameKey="label"
+                            innerRadius="64%"
+                            outerRadius="100%"
+                            stroke="none"
+                            isAnimationActive={false}
+                          >
+                            {statusSlices.map((s, i) => (
+                              <Cell key={s.label} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={TOOLTIP_STYLE} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="font-display text-2xl font-semibold text-foreground">{d.recent_orders.length}</span>
+                        <span className="text-xs text-muted-foreground">pesanan</span>
+                      </div>
+                    </div>
+                    <ul className="m-0 flex w-full min-w-0 list-none flex-col gap-2.5 p-0 text-sm">
+                      {statusSlices.map((s, i) => (
+                        <li key={s.label} className="flex items-center justify-between gap-3">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="size-2.5 shrink-0 rounded-full" style={{ background: STATUS_COLORS[i % STATUS_COLORS.length] }} aria-hidden />
+                            <span className="truncate text-foreground">{s.label}</span>
+                          </span>
+                          <span className={cx(MONEY, 'text-muted-foreground')}>{s.count}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+            <Card className="min-w-0 gap-4 md:col-span-2 xl:col-span-5">
+              <CardHeader>
+                <CardTitle className="font-normal">Stok menipis</CardTitle>
+                <CardAction>
+                  <Button variant="ghost" size="sm" className="text-foreground" render={<Link to="/admin/products" />} nativeButton={false}>
+                    Lihat semua
+                  </Button>
+                </CardAction>
+              </CardHeader>
+              <CardContent>
+                {d.low_stock.length === 0 && <p className={MUTED_SMALL}>Tidak ada produk dengan stok menipis.</p>}
+                <ul className="m-0 flex list-none flex-col gap-4 p-0">
+                  {d.low_stock.map((p) => (
+                    <li key={p.id} className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-foreground">{p.name}</span>
+                          <span className={cx(SKU, 'block truncate text-left text-xs text-muted-foreground')}>{p.sku}</span>
+                        </div>
+                        <Badge variant="outline" className={cx('shrink-0', p.stock <= 2 ? 'border-destructive/30 text-destructive' : 'text-muted-foreground')}>
+                          Sisa {p.stock}
+                        </Badge>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary" aria-hidden>
+                        <div
+                          className={cx('h-full rounded-full', p.stock <= 2 ? 'bg-destructive' : 'bg-foreground')}
+                          style={{ width: `${Math.min(100, (p.stock / LOW_STOCK_REF) * 100)}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="min-w-0 gap-4 xl:col-span-3">
+              <CardHeader>
+                <CardTitle className="font-normal">Perlu dikirim</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div>
+                  <div className="font-display text-4xl font-semibold tracking-tight text-foreground">{d.orders_to_ship}</div>
+                  <p className="mt-2 text-sm text-muted-foreground">pesanan lunas menunggu diproses dan dikirim.</p>
+                </div>
+                <Button variant="outline" className="text-foreground" render={<Link to="/admin/orders" />} nativeButton={false}>
+                  Kelola pesanan
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="min-w-0 gap-4 md:col-span-2 xl:col-span-4">
+              <CardHeader>
+                <CardTitle className="font-normal">Aksi cepat</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" className="justify-start text-foreground" render={<Link to="/admin/products" />} nativeButton={false}>
+                    <span className="material-symbols-outlined" aria-hidden>inventory_2</span>
+                    Produk
+                  </Button>
+                  <Button variant="outline" className="justify-start text-foreground" render={<Link to="/admin/orders" />} nativeButton={false}>
+                    <span className="material-symbols-outlined" aria-hidden>receipt_long</span>
+                    Pesanan
+                  </Button>
+                  <Button variant="outline" className="justify-start text-foreground" render={<Link to="/admin/promos" />} nativeButton={false}>
+                    <span className="material-symbols-outlined" aria-hidden>sell</span>
+                    Promo
+                  </Button>
+                  <Button variant="outline" className="justify-start text-foreground" render={<Link to="/admin/reviews" />} nativeButton={false}>
+                    <span className="material-symbols-outlined" aria-hidden>rate_review</span>
+                    Ulasan
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
+                  <span className="pb-1 text-xs font-semibold text-muted-foreground">Pintasan</span>
+                  <Link to="/admin/aktivitas" className="rounded-md px-2 py-1.5 font-medium text-foreground no-underline hover:bg-hover hover:no-underline">
+                    Aktivitas
+                  </Link>
+                  <Link to="/admin/store" className="rounded-md px-2 py-1.5 font-medium text-foreground no-underline hover:bg-hover hover:no-underline">
+                    Data toko
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pesanan">
+          <Card className="gap-0 overflow-hidden py-0">
+            <CardHeader className="px-4 pt-4 sm:px-5 sm:pt-5">
+              <CardTitle className="font-normal">Pesanan terbaru</CardTitle>
+              <CardAction>
+                <Button variant="ghost" size="sm" className="text-foreground" render={<Link to="/admin/orders" />} nativeButton={false}>
+                  Kelola pesanan
+                </Button>
+              </CardAction>
+            </CardHeader>
+            <Table className={cx(TABLE_STACK, 'mt-2')}>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-3 sm:px-4">Invoice</TableHead>
+                  <TableHead className="px-3 sm:px-4">Pembeli</TableHead>
+                  <TableHead className={cx('px-3 sm:px-4', HIDE_MD)}>Waktu</TableHead>
+                  <TableHead className="px-3 sm:px-4">Status</TableHead>
+                  <TableHead className="px-3 text-right sm:px-4">Total</TableHead>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {d.recent_orders.map((o) => {
+                  const s = statusInfo(o.status, o.payment_status);
+                  return (
+                    <TableRow key={o.id} className="border-border">
+                      <TableCell data-label="" className={cx('px-3 py-3 sm:px-4', SKU, 'max-md:block!')}>{o.invoice_no}</TableCell>
+                      <TableCell data-label="Pembeli" className="px-3 py-3 sm:px-4">{o.buyer_name ?? '-'}</TableCell>
+                      <TableCell data-label="Waktu" className={cx('px-3 py-3 sm:px-4', MUTED_SMALL, HIDE_MD)}>{formatDate(o.created_at)}</TableCell>
+                      <TableCell data-label="Status" className="px-3 py-3 sm:px-4">
+                        <Badge variant="outline" className={cx('h-6 whitespace-nowrap rounded-pill px-2.5 text-xs font-semibold', TONE_BADGE[s.tone])}>{s.label}</Badge>
+                      </TableCell>
+                      <TableCell data-label="Total" className={cx('whitespace-nowrap px-3 py-3 text-right sm:px-4', MONEY)}>{rp(o.grand_total)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
