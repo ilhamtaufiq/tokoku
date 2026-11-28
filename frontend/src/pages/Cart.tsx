@@ -9,14 +9,9 @@ import { useToast } from '../components/Toast';
 import { CartSkeleton } from '../components/FlowSkeleton';
 import { alertError, btn, card, pageSub, pageTitle, tagDanger } from '../components/flowClasses';
 import {
-  DEMO_CART_BANNER,
   DEMO_CART_COUPON_NOTE,
-  DEMO_CART_ESCROW,
-  DEMO_COMPLIANCE_BANNER,
   DEMO_HELP_CARD,
   DEMO_RELATED,
-  DEMO_SPH,
-  DEMO_STORE_TAGS,
   demoStoreLocation,
 } from '../data/demo';
 import { rp } from '../lib/money';
@@ -129,13 +124,6 @@ export default function Cart() {
       <h1 className={pageTitle}>Keranjang belanja</h1>
       <p className={pageSub}>Centang barang yang ingin dibayar sekarang.</p>
 
-      {/* DEMO: pita kepatuhan fiskal di atas keranjang. */}
-      <p className="mb-4 flex flex-wrap items-center gap-2 rounded-field bg-success-soft px-3.5 py-2.5 text-sm text-on-success-soft">
-        <span className="material-symbols-outlined !text-[18px]" aria-hidden>verified</span>
-        <span className="font-semibold">{DEMO_COMPLIANCE_BANNER.cart}</span>
-        <span className="inline-flex h-5 items-center rounded-pill bg-surface px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-success-soft">{DEMO_COMPLIANCE_BANNER.tag}</span>
-      </p>
-
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="flex min-w-0 flex-col gap-4">
           <div className={`${card} flex flex-wrap items-center justify-between gap-3 px-4 py-2`}>
@@ -163,18 +151,6 @@ export default function Cart() {
             </div>
           </div>
 
-          {/* DEMO: banner kesiapan pengadaan BOS. */}
-          <div className={`${card} flex gap-3 p-4`}>
-            <span className="material-symbols-outlined mt-0.5 !text-[22px] text-primary" aria-hidden>assured_workload</span>
-            <div className="flex min-w-0 flex-col gap-1">
-              <p className="m-0 flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
-                {DEMO_CART_BANNER.title}
-                <span className="inline-flex h-5 items-center rounded-pill bg-accent px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-primary">{DEMO_CART_BANNER.tag}</span>
-              </p>
-              <p className="m-0 text-xs text-muted">{DEMO_CART_BANNER.body}</p>
-            </div>
-          </div>
-
           {issues.length > 0 && (
             <p className={alertError}>
               Ada barang yang tidak tersedia atau stoknya kurang: {issues.map((i) => i.name).join(', ')}. Sesuaikan jumlahnya sebelum checkout.
@@ -189,11 +165,7 @@ export default function Cart() {
                     <span className="material-symbols-outlined !text-[20px] text-primary" aria-hidden>storefront</span>
                     <span className="truncate">{group.storeName}</span>
                   </h2>
-                  {/* DEMO: badge PKP dan lokasi toko (belum ada di API). */}
-                  <span className="inline-flex h-6 items-center gap-1 rounded-pill bg-success-soft px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-success-soft">
-                    <span className="material-symbols-outlined !text-[14px]" aria-hidden>verified</span>
-                    {DEMO_STORE_TAGS.pkp} terverifikasi
-                  </span>
+                  {/* DEMO: lokasi toko (belum ada di API). */}
                   <span className="inline-flex items-center gap-1 text-xs text-muted">
                     <span className="material-symbols-outlined !text-[14px]" aria-hidden>location_on</span>
                     {demoStoreLocation(group.storeId)}
@@ -300,18 +272,6 @@ export default function Cart() {
             </div>
           ))}
 
-          {/* DEMO: kartu surat penawaran resmi (SPH). */}
-          <div className={`${card} flex flex-wrap items-center justify-between gap-3 p-4`}>
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="material-symbols-outlined !text-[22px] text-primary" aria-hidden>description</span>
-              <div className="min-w-0">
-                <p className="m-0 text-sm font-semibold text-ink">{DEMO_SPH.title}</p>
-                <p className="m-0 text-xs text-muted">{DEMO_SPH.body}</p>
-              </div>
-            </div>
-            <button type="button" className={btn('default', 'md', 'min-h-11')}>{DEMO_SPH.button}</button>
-          </div>
-
           {/* Pelengkap pengadaan dari katalog asli. */}
           {related.data && related.data.length > 0 && (
             <section className="mt-4 flex flex-col gap-4" aria-labelledby="cart-related-title">
@@ -321,7 +281,6 @@ export default function Cart() {
                     {/* DEMO: judul dan teks pengantar bagian pelengkap. */}
                     {DEMO_RELATED.title}
                   </h2>
-                  <p className="m-0 mt-1 text-sm text-muted">{DEMO_RELATED.body}</p>
                 </div>
                 <Link to="/" className="inline-flex min-h-11 items-center whitespace-nowrap text-sm font-semibold text-primary no-underline hover:underline">
                   {DEMO_RELATED.more} →
@@ -364,20 +323,6 @@ export default function Cart() {
               </div>
             </label>
             <p className="m-0 text-xs text-muted">{DEMO_CART_COUPON_NOTE}</p>
-          </div>
-
-          {/* DEMO: jaminan rekening institusi (escrow). */}
-          <div className="flex flex-col gap-2 rounded-field bg-surface-low p-3.5">
-            <p className="m-0 flex items-center gap-2 text-sm font-semibold text-ink">
-              <span className="material-symbols-outlined !text-[18px] text-success" aria-hidden>security</span>
-              {DEMO_CART_ESCROW.title}
-            </p>
-            <p className="m-0 text-xs text-muted">{DEMO_CART_ESCROW.body}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {DEMO_CART_ESCROW.tags.map((t) => (
-                <span key={t} className="inline-flex h-5 items-center rounded-pill bg-surface px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-2">{t}</span>
-              ))}
-            </div>
           </div>
 
           {checkoutButton('h-[52px] w-full text-base lg:h-12 lg:text-[15px] max-lg:hidden')}
