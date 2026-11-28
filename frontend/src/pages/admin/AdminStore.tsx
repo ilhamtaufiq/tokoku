@@ -4,9 +4,7 @@ import { api } from '../../api';
 import { PageHeader } from '../../components/PageHeader';
 import { ApiError } from '../../api/client';
 import type { StoreInfo } from '../../api/types';
-import { CARD, CHECKBOX, DEMO_TAG, FORM_CARD, HINT, INPUT, LABEL, LABEL_CHECK, MONEY, MUTED_SMALL, Notice, SKU, StatusBadge, TABLE_STACK, TBODY, TD, TD_MONEY, TH, btn, cx } from './adminUi';
-import { rp } from '../../lib/money';
-import { DEMO_ESCROW } from '../../data/demo';
+import { DEMO_TAG, FORM_CARD, HINT, INPUT, LABEL, Notice, btn } from './adminUi';
 import { DestinationSearch } from '../../components/DestinationSearch';
 import type { ShippingDestination } from '../../api/types';
 
@@ -88,82 +86,6 @@ export default function AdminStore() {
           {save.isPending ? 'Menyimpan…' : 'Simpan'}
         </button>
       </form>
-
-      <div className="flex min-w-0 flex-col gap-4">
-        {/* DEMO: saldo escrow dummy, hanya tampilan. */}
-        <div className="grid grid-cols-2 gap-3">
-          <article className={cx(CARD, 'flex flex-col gap-1 p-4')}>
-            <span className="text-xs font-semibold text-muted">Saldo siap ditarik</span>
-            <strong className={cx(MONEY, 'text-lg font-bold text-ink sm:text-xl')}>{rp(DEMO_ESCROW.available)}</strong>
-            <span className={DEMO_TAG}>Demo</span>
-          </article>
-          <article className={cx(CARD, 'flex flex-col gap-1 p-4')}>
-            <span className="text-xs font-semibold text-muted">Dana escrow tertahan</span>
-            <strong className={cx(MONEY, 'text-lg font-bold text-ink sm:text-xl')}>{rp(DEMO_ESCROW.held)}</strong>
-            <span className={MUTED_SMALL}>{DEMO_ESCROW.heldPendingCount} pesanan menunggu konfirmasi</span>
-            <span className={DEMO_TAG}>Demo</span>
-          </article>
-        </div>
-
-        {/* DEMO: pengaturan rekening escrow hanya tampilan. Tidak ada API, jadi tidak tersimpan dan tombol nonaktif. */}
-        <form className={FORM_CARD} onSubmit={(e) => e.preventDefault()} aria-label="Pengaturan rekening escrow">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="m-0 text-lg font-semibold text-ink">Rekening escrow</h2>
-            <span className={DEMO_TAG}>Demo</span>
-          </div>
-          <label className={LABEL}>
-            Bank
-            <input className={INPUT} value={DEMO_ESCROW.bankName} readOnly />
-          </label>
-          <label className={LABEL}>
-            Nama pemilik rekening
-            <input className={INPUT} value={DEMO_ESCROW.accountHolder} readOnly />
-          </label>
-          <label className={LABEL}>
-            Nomor rekening
-            <input className={cx(INPUT, MONEY)} value={DEMO_ESCROW.accountMasked} readOnly />
-          </label>
-          <label className={LABEL_CHECK}>
-            <input className={CHECKBOX} type="checkbox" checked={DEMO_ESCROW.autoDisburse} readOnly />
-            Pencairan otomatis setelah BAST ditandatangani
-          </label>
-          <p className={HINT}>Tampilan contoh. Perubahan rekening escrow belum bisa disimpan dari layar ini.</p>
-          <button type="button" className={btn('primary', 'md', 'w-full')} disabled>Simpan rekening (belum tersedia)</button>
-        </form>
-
-      </div>
-      </div>
-      <div className="mt-4">
-        {/* DEMO: riwayat mutasi dummy. */}
-        <article className={cx(CARD, 'overflow-hidden')}>
-          <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
-            <h2 className="m-0 text-lg font-semibold text-ink">Mutasi pencairan terakhir</h2>
-            <span className={DEMO_TAG}>Demo</span>
-          </div>
-          <table className={TABLE_STACK}>
-            <thead>
-              <tr>
-                <th className={TH}>Waktu</th>
-                <th className={TH}>Satuan pendidikan</th>
-                <th className={cx(TH, 'text-right')}>Nilai</th>
-                <th className={TH}>Status</th>
-              </tr>
-            </thead>
-            <tbody className={TBODY}>
-              {DEMO_ESCROW.mutations.map((m) => (
-                <tr key={m.ref}>
-                  <td data-label="Waktu" className={cx(TD, MUTED_SMALL)}>{m.at}</td>
-                  <td data-label="Satuan" className={cx(TD, 'text-left')}>
-                    <span className="block font-medium">{m.buyer}</span>
-                    <span className={cx(SKU, 'block truncate')}>{m.ref}</span>
-                  </td>
-                  <td data-label="Nilai" className={TD_MONEY}>{rp(m.amount)}</td>
-                  <td data-label="Status" className={TD}><StatusBadge tone="ok">{m.status}</StatusBadge></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </article>
       </div>
     </section>
   );

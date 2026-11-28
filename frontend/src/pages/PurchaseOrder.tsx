@@ -60,7 +60,7 @@ export default function PurchaseOrder() {
           </div>
         </div>
 
-        {/* Kepala: penerbit dan nomor SPK */}
+        {/* Kepala: penerbit dan nomor dokumen */}
         <header className="flex flex-col items-start justify-between gap-6 pb-6 md:flex-row">
           <div className="max-w-[460px] flex-1">
             <BrandMark letter="T" name="Tokoku" />
@@ -147,7 +147,7 @@ export default function PurchaseOrder() {
               <tr className="bg-[#fff7ed] align-top print:break-inside-avoid">
                 <td className="px-2 py-3 text-center font-mono font-semibold text-[#9a3412]">{String(o.items.length + 1).padStart(2, '0')}</td>
                 <td className="px-2 py-3">
-                  <p className="m-0 font-display text-sm font-bold leading-snug">Biaya pengiriman terpadu &amp; proteksi pengadaan BOS</p>
+                  <p className="m-0 font-display text-sm font-bold leading-snug">Biaya pengiriman</p>
                   <p className="m-0 mt-0.5 text-[11px] text-[#5b5e6e]">Layanan antar sampai ruang sekolah, bebas PPN</p>
                 </td>
                 <td className="px-2 py-3 text-[#5b5e6e]">-</td>
@@ -184,7 +184,7 @@ export default function PurchaseOrder() {
           </ul>
         </div>
 
-        {/* Rekap: escrow (kiri) dan rekapitulasi tagihan (kanan) */}
+        {/* Rekap tagihan */}
         <div className="mb-6 grid grid-cols-1 gap-4">
           <div className="flex flex-col justify-between rounded-card bg-[#fff7ed] p-4">
             <p className="m-0 mb-2 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">Rekapitulasi tagihan belanja</p>
@@ -199,24 +199,13 @@ export default function PurchaseOrder() {
             </dl>
             <div className="mt-4 rounded-card bg-[#ea580c] px-4 py-3 text-white">
               <div className="flex items-center justify-between gap-4">
-                <span className="font-display text-sm font-bold uppercase">Total tagihan SPK</span>
+                <span className="font-display text-sm font-bold uppercase">Total tagihan</span>
                 <span className="font-mono text-xl font-black tabular-nums">{rp(o.grand_total)}</span>
               </div>
               <p className="m-0 mt-1 text-right text-[11px] italic text-[#ffedd5]">Terbilang: {terbilang(o.grand_total)}</p>
             </div>
             <p className="m-0 pt-2 text-right text-xs text-[#5b5e6e]">Harga sudah termasuk PPN.</p>
           </div>
-        </div>
-
-        {/* Klausul hukum dan ketentuan */}
-        <div className="mb-6 rounded-card border border-[#fed7aa] p-4 text-xs leading-relaxed text-[#1a1b22]">
-          <p className="m-0 mb-2 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">Klausul hukum &amp; ketentuan komitmen belanja (SPK)</p>
-          <ul className="m-0 list-disc space-y-1 pl-4">
-            <li>
-              <strong>Batas validitas komitmen:</strong> dokumen pesanan ini berlaku {unpaid && deadline ? `sampai ${docDate(deadline.toISOString())}` : 'sesuai batas waktu yang tertera'}. Apabila dana tidak efektif diterima pada rekening penampungan escrow, surat pesanan dinyatakan batal demi hukum.
-            </li>
-            <li><strong>Kewajiban pemeriksaan fisik:</strong> pihak sekolah berhak menolak serah terima barang jika spesifikasi tidak sesuai dengan nomor seri, cacat fisik, atau segel terbuka rusak saat kirim tiba.</li>
-          </ul>
         </div>
 
         {/* Tanda tangan: pemesan dan penyelenggara pengadaan */}
@@ -240,9 +229,6 @@ export default function PurchaseOrder() {
         </div>
       </Paper>
 
-      <p className="mt-6 text-center text-sm text-[#5b5e6e] print:hidden">
-        Butuh bantuan penyesuaian RKAS? Hubungi tim pendamping Dana BOS Tokoku.
-      </p>
     </section>
   );
 }

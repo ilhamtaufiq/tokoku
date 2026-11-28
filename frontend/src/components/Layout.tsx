@@ -185,7 +185,7 @@ export function Layout() {
               </div>
               {/* DEMO */}
               <p className="m-0 max-w-sm text-sm leading-6 text-ink-2">
-                Platform belanja resmi untuk kebutuhan sekolah, guru, siswa, dan pengadaan instansi. Harga transparan termasuk PPN 11%.
+                Platform belanja untuk kebutuhan sekolah, guru, siswa, dan pengadaan instansi. Harga transparan termasuk PPN 11%.
               </p>
             </div>
 
