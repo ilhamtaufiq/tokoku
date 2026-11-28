@@ -94,7 +94,7 @@ export default function Invoice() {
               <p className="m-0 text-xs text-[#5b5e6e]">Status pesanan: {ORDER_STATUS_LABEL[o.status] ?? o.status}</p>
             </div>
             {paid && (
-              <div className="pointer-events-none mt-3 -rotate-6 md:absolute md:right-8 md:top-20 md:mt-0" aria-hidden="true">
+              <div className="pointer-events-none mt-4 -rotate-6" aria-hidden="true">
                 <Stamp color="#15803d" className="!text-base">
                   LUNAS / SAH
                 </Stamp>
