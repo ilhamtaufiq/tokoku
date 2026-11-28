@@ -1,17 +1,7 @@
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
-import { BrandMark, DocBadge, DocBanner, DocToolbar, MiniLabel, Paper, SignatureBox, Stamp, docDate, formatNpwp, terbilang } from '../components/docs/shared';
-import {
-  DEMO_BUDGET,
-  DEMO_DOC_KBLI,
-  DEMO_DOC_SP_SIGN,
-  DEMO_DOC_SPEC,
-  DEMO_DOC_VA,
-  DEMO_INSTANSI,
-  DEMO_DOC_HASH,
-  demoSpkNumber,
-} from '../data/demo';
+import { BrandMark, DocBadge, DocBanner, DocToolbar, MiniLabel, Paper, SignatureBox, docDate, formatNpwp, terbilang } from '../components/docs/shared';
 import { percent, rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
@@ -37,8 +27,7 @@ export default function PurchaseOrder() {
       <DocToolbar orderId={o.id} active="sp" />
       <DocBanner
         icon="shield_locked"
-        title="Dokumen Komitmen Pengadaan BOS / SiPLah Resmi"
-        subtitle="Format standar A4 cetak legalitas transaksi sekolah"
+        title="Surat pesanan"
         badges={
           <>
             <DocBadge className={unpaid ? 'bg-[#ffedd5] text-[#9a3412]' : 'bg-[#dcfce7] text-[#166534]'}>
@@ -60,7 +49,7 @@ export default function PurchaseOrder() {
           <span className="material-symbols-outlined !text-[22px] text-[#ea580c]" aria-hidden="true">warning</span>
           <div>
             <p className="m-0 font-display text-sm font-black uppercase tracking-wide text-[#9a3412]">
-              Perhatian: dokumen ini adalah surat pesanan / SPK sah sebelum pembayaran
+              Perhatian: dokumen ini adalah surat pesanan sebelum pembayaran
             </p>
             <p className="m-0 mt-1">
               <strong className="font-display text-[15px] font-bold uppercase tracking-wide">Ini bukan bukti pembayaran.</strong>{' '}
@@ -74,9 +63,7 @@ export default function PurchaseOrder() {
         {/* Kepala: penerbit dan nomor SPK */}
         <header className="flex flex-col items-start justify-between gap-6 pb-6 md:flex-row">
           <div className="max-w-[460px] flex-1">
-            <BrandMark letter="T" name="Tokoku Pengadaan" badge="Mitra resmi BOS" badgeClass="bg-[#ffedd5] text-[#9a3412]" />
-            {/* DEMO */}
-            <p className="m-0 mt-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-[#c2410c]">Mitra resmi pasar daring BOS / SiPLah Kemendikbudristek</p>
+            <BrandMark letter="T" name="Tokoku" />
             <div className="mt-2 space-y-0.5 text-sm">
               <p className="m-0 font-semibold">{o.store_name || 'Nama toko belum diatur'}</p>
               {o.store_npwp && <p className="m-0 text-xs text-[#5b5e6e]">NPWP: <span className="font-mono">{formatNpwp(o.store_npwp)}</span></p>}
@@ -85,25 +72,18 @@ export default function PurchaseOrder() {
             </div>
           </div>
           <div className="w-full rounded-card border border-[#fed7aa] bg-[#fff7ed] p-4 text-sm md:w-[280px]">
-            {/* DEMO */}
-            <p className="m-0 font-display text-[10px] font-bold uppercase tracking-wider text-[#c2410c]">No. Surat Perintah Kerja (SPK)</p>
-            <p className="m-0 mt-0.5 font-mono text-base font-black text-[#9a3412]">{demoSpkNumber(o.id)}</p>
             <dl className="m-0 mt-2 space-y-0.5 text-xs">
               <div className="flex justify-between gap-2"><dt className="text-[#5b5e6e]">Tanggal pesanan</dt><dd className="m-0 font-semibold">{docDate(o.created_at)}</dd></div>
               {deadline && (
                 <div className="flex justify-between gap-2"><dt className="text-[#5b5e6e]">Jatuh tempo</dt><dd className="m-0 font-semibold text-[#c2410c]">{docDate(deadline.toISOString())}</dd></div>
               )}
-              {/* DEMO */}
-              <div className="flex justify-between gap-2"><dt className="text-[#5b5e6e]">ID komitmen</dt><dd className="m-0 font-mono">{DEMO_BUDGET.id}</dd></div>
             </dl>
           </div>
         </header>
 
         {/* Judul bagian dokumen dan kode anggaran */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#ea580c] pb-2">
-          <h1 className="m-0 font-display text-lg font-black uppercase tracking-tight text-[#1a1b22]">Surat pesanan resmi pengadaan (SPK)</h1>
-          {/* DEMO */}
-          <span className="font-mono text-[11px] font-semibold uppercase text-[#9a3412]">Kode anggaran: {DEMO_BUDGET.kodeAnggaran}</span>
+          <h1 className="m-0 font-display text-lg font-black uppercase tracking-tight text-[#1a1b22]">Surat pesanan</h1>
         </div>
 
         {/* Dua kartu: data satuan pendidikan dan alamat pengiriman */}
@@ -115,12 +95,7 @@ export default function PurchaseOrder() {
             </p>
             <h2 className="m-0 font-display text-base font-bold">{o.buyer_name ?? '-'}</h2>
             <dl className="m-0 mt-2 space-y-1 text-sm">
-              {/* DEMO */}
-              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPSN</dt><dd className="m-0 font-mono">: {DEMO_INSTANSI.npsn}</dd></div>
-              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPWP sekolah</dt><dd className="m-0 font-mono">: {o.buyer_npwp ?? '-'}</dd></div>
-              {/* DEMO */}
-              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">KPA / Kepala</dt><dd className="m-0">: {DEMO_INSTANSI.pic}</dd></div>
-              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Kontak</dt><dd className="m-0 font-mono">: {DEMO_INSTANSI.phone}</dd></div>
+              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPWP</dt><dd className="m-0 font-mono">: {o.buyer_npwp ?? '-'}</dd></div>
             </dl>
           </div>
           <div className="rounded-card bg-[#fff7ed] p-4">
@@ -131,8 +106,6 @@ export default function PurchaseOrder() {
             <p className="m-0 whitespace-pre-line text-sm">{o.shipping_address}</p>
             {o.destination_label && <p className="m-0 mt-1 text-sm text-[#5b5e6e]">Kecamatan: {o.destination_label}</p>}
             <dl className="m-0 mt-2 space-y-1 text-sm">
-              {/* DEMO */}
-              <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Petugas lapangan</dt><dd className="m-0">: {DEMO_INSTANSI.pic}</dd></div>
               <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Instruksi bongkar</dt><dd className="m-0 font-semibold text-[#c2410c]">: Wajib jam kerja (08:00 - 15:00 WIB)</dd></div>
             </dl>
           </div>
@@ -158,10 +131,7 @@ export default function PurchaseOrder() {
                   <td className="px-2 py-3 text-center font-mono font-semibold text-[#9a3412]">{String(idx + 1).padStart(2, '0')}</td>
                   <td className="px-2 py-3">
                     <p className="m-0 font-display text-sm font-bold leading-snug">{i.product_name}</p>
-                    {/* DEMO */}
-                    <p className="m-0 mt-0.5 text-[11px] text-[#5b5e6e]">{DEMO_DOC_SPEC}</p>
-                    {/* DEMO */}
-                    <p className="m-0 mt-0.5 font-mono text-[10px] font-bold text-[#c2410c]">{DEMO_DOC_KBLI} • #{i.product_id}</p>
+                    <p className="m-0 mt-0.5 font-mono text-[10px] font-bold text-[#c2410c]">#{i.product_id}</p>
                   </td>
                   <td className="px-2 py-3 text-[#5b5e6e]">{o.store_name ?? 'Penjual'}</td>
                   <td className="px-2 py-3 text-center font-mono font-bold">{i.qty} unit</td>
@@ -215,36 +185,17 @@ export default function PurchaseOrder() {
         </div>
 
         {/* Rekap: escrow (kiri) dan rekapitulasi tagihan (kanan) */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-card bg-[#fff7ed] p-4">
-            <p className="m-0 mb-2 flex items-center gap-1.5 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance</span>
-              Instruksi rekening escrow BOS
-            </p>
-            <p className="m-0 text-xs text-[#5b5e6e]">Pembayaran wajib disetor melalui Virtual Account resmi yang terikat langsung dengan verifikasi otomatis sistem belanja BOS.</p>
-            {/* DEMO */}
-            <dl className="m-0 mt-3 space-y-1.5 rounded-field bg-white p-3 text-sm">
-              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Bank penampungan</dt><dd className="m-0 text-right font-semibold">{DEMO_DOC_VA.bank}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Nomor VA escrow</dt><dd className="m-0 font-mono text-base font-black text-[#9a3412]">{DEMO_DOC_VA.number}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Atas nama rekening</dt><dd className="m-0 text-right">{DEMO_DOC_VA.holder}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Metode penyetoran</dt><dd className="m-0 text-right">{DEMO_DOC_VA.method}</dd></div>
-            </dl>
-            {/* DEMO */}
-            <p className="m-0 mt-2 text-xs text-[#5b5e6e]">Verifikasi pelunasan diterbitkan instan (&lt; 3 menit) setelah transfer berhasil masuk.</p>
-          </div>
-
+        <div className="mb-6 grid grid-cols-1 gap-4">
           <div className="flex flex-col justify-between rounded-card bg-[#fff7ed] p-4">
             <p className="m-0 mb-2 font-display text-[11px] font-bold uppercase tracking-wider text-[#c2410c]">Rekapitulasi tagihan belanja</p>
             <dl className="m-0 space-y-1.5 text-sm">
               <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Dasar pengenaan pajak (DPP)</dt><dd className="m-0 font-mono tabular-nums">{rp(o.dpp)}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">PPN terutang {percent(o.ppn_rate)} (ditanggung PKP)</dt><dd className="m-0 font-mono tabular-nums">{rp(o.ppn_total)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">PPN terutang {percent(o.ppn_rate)}</dt><dd className="m-0 font-mono tabular-nums">{rp(o.ppn_total)}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Total barang ({totalQty} item)</dt><dd className="m-0 font-mono tabular-nums">{rp(o.subtotal)}</dd></div>
               {Number(o.discount_total) > 0 && (
                 <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Diskon{o.promo_code ? ` (${o.promo_code})` : ''}</dt><dd className="m-0 font-mono tabular-nums">−{rp(o.discount_total)}</dd></div>
               )}
               <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Ongkos angkut &amp; perlindungan</dt><dd className="m-0 font-mono tabular-nums">{rp(o.shipping_fee)}</dd></div>
-              {/* DEMO */}
-              <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Biaya administrasi escrow</dt><dd className="m-0 font-mono font-semibold text-[#15803d]">GRATIS (Rp 0)</dd></div>
             </dl>
             <div className="mt-4 rounded-card bg-[#ea580c] px-4 py-3 text-white">
               <div className="flex items-center justify-between gap-4">
@@ -265,8 +216,6 @@ export default function PurchaseOrder() {
               <strong>Batas validitas komitmen:</strong> dokumen pesanan ini berlaku {unpaid && deadline ? `sampai ${docDate(deadline.toISOString())}` : 'sesuai batas waktu yang tertera'}. Apabila dana tidak efektif diterima pada rekening penampungan escrow, surat pesanan dinyatakan batal demi hukum.
             </li>
             <li><strong>Kewajiban pemeriksaan fisik:</strong> pihak sekolah berhak menolak serah terima barang jika spesifikasi tidak sesuai dengan nomor seri, cacat fisik, atau segel terbuka rusak saat kirim tiba.</li>
-            {/* DEMO */}
-            <li><strong>Dokumen lanjutan:</strong> setelah pembayaran terkonfirmasi, sistem akan otomatis merilis kuitansi, faktur pajak elektronik (e-Faktur PPN 11%), dan berita acara serah terima (BAST) untuk pelaporan LPJ.</li>
           </ul>
         </div>
 
@@ -274,29 +223,13 @@ export default function PurchaseOrder() {
         <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 print:break-inside-avoid">
           <SignatureBox
             title="Pihak pemesan (satuan pendidikan)"
-            name={DEMO_DOC_SP_SIGN.kpaName}
-            sub={DEMO_DOC_SP_SIGN.kpaRole}
+            name={o.buyer_name ?? 'Pemesan'}
             tone="orange"
-            signature={
-              /* DEMO */
-              <span className="flex flex-col items-center gap-0.5 rounded-field bg-[#eff4ff] px-3 py-1.5 text-center text-[#00288e]">
-                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">workspace_premium</span>
-                <span className="font-mono text-[9px] font-bold uppercase">Meterai elektronik • disetujui digital</span>
-              </span>
-            }
           />
           <SignatureBox
-            title="Pihak penyelenggara pengadaan"
+            title="Pihak penjual"
             name={o.store_name || 'Penjual'}
-            sub={DEMO_DOC_SP_SIGN.penyelenggaraRole}
             tone="orange"
-            signature={
-              /* DEMO */
-              <span className="flex flex-col items-center gap-0.5 text-center">
-                <Stamp color="#15803d" className="!text-[11px] !tracking-wider">Sistem tervalidasi</Stamp>
-                <span className="font-mono text-[9px] text-[#5b5e6e]">Token: {DEMO_DOC_SP_SIGN.token}</span>
-              </span>
-            }
           />
         </div>
 
@@ -304,8 +237,6 @@ export default function PurchaseOrder() {
           <span>
             Surat pesanan ini dibuat otomatis dari data pesanan dan tidak memerlukan tanda tangan basah.
           </span>
-          {/* DEMO */}
-          <span className="font-mono">DOC-HASH {DEMO_DOC_HASH.slice(0, 16)}… • Halaman 1 dari 1</span>
         </div>
       </Paper>
 

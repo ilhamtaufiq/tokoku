@@ -6,7 +6,6 @@ import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { formatDate } from '../lib/money';
 import { useToast } from './Toast';
-import { DEMO_REVIEW_TAG } from '../data/demo';
 import { btnBase, btnPrimary, card, chipBase, chipIdle, chipOn, errorBox, fieldInput, label } from './ui/storefront';
 
 export function Stars({ value }: { value: number }) {
@@ -134,8 +133,6 @@ export function ProductReviews({ productId }: { productId: number }) {
             <li key={r.id} className="border-t border-outline-soft pt-3">
               <div className="flex flex-wrap items-center gap-2.5">
                 <strong className="font-semibold text-ink">{r.buyer_name}</strong>
-                {/* DEMO */}
-                <span className="inline-flex h-5 items-center rounded-pill bg-success-soft px-2 font-mono text-[10px] font-semibold uppercase tracking-[0.04em] text-on-success-soft">{DEMO_REVIEW_TAG}</span>
                 <span className="text-xs text-muted">{formatDate(r.created_at)}</span>
                 <span className="ml-auto"><Stars value={r.rating} /></span>
               </div>

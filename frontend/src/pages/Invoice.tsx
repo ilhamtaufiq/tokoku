@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 import {
   BrandMark,
-  DemoQr,
   DocBadge,
   DocBanner,
   DocToolbar,
@@ -11,24 +10,11 @@ import {
   Paper,
   SectionBar,
   SignatureBox,
-  Stamp,
   docDate,
   formatNpwp,
   terbilang,
 } from '../components/docs/shared';
-import {
-  DEMO_BUDGET,
-  DEMO_CHECKOUT_INSURANCE,
-  DEMO_DOC_HASH,
-  DEMO_DOC_KPP,
-  DEMO_DOC_METERAI,
-  DEMO_DOC_SIGN,
-  DEMO_DOC_TAX_SCHEME,
-  DEMO_DOC_UNIT,
-  DEMO_INSTANSI,
-  DEMO_QR_CODE,
-  DEMO_TAX_SERIES,
-} from '../data/demo';
+import { DEMO_CHECKOUT_INSURANCE, DEMO_DOC_UNIT } from '../data/demo';
 import { ORDER_STATUS_LABEL, percent, rp } from '../lib/money';
 import { useSeo } from '../lib/seo';
 
@@ -53,9 +39,7 @@ export default function Invoice() {
       <DocToolbar orderId={o.id} active="invoice" />
       <DocBanner
         icon="verified"
-        title="Validasi Dokumen Pajak Sah"
-        badges={<DocBadge className="bg-tertiary-fixed text-on-tertiary-fixed">Terhubung DJP</DocBadge>}
-        subtitle="Sesuai Peraturan Dirjen Pajak PER-03/PJ/2022 & Tarif PPN 11% UU HPP"
+        title="Invoice"
         actions={
           <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-pill bg-primary px-4 text-sm font-semibold text-on-primary" onClick={() => window.print()}>
             <span className="material-symbols-outlined text-[16px]" aria-hidden="true">print</span>
@@ -68,40 +52,23 @@ export default function Invoice() {
         {/* Kepala dokumen: penerbit (kiri) dan klasifikasi dokumen (kanan) */}
         <header className="flex flex-col items-start justify-between gap-6 pb-6 md:flex-row">
           <div className="max-w-[480px] flex-1">
-            <BrandMark name="Tokoku" badge="Mitra Edukasi" />
+            <BrandMark name="Tokoku" />
             <p className="m-0 mt-1 text-sm font-semibold">{o.store_name || 'Nama toko belum diatur'}</p>
             <div className="mt-2 space-y-0.5 text-xs text-[#5b5e6e]">
-              {o.store_npwp && <p className="m-0"><span className="font-semibold text-[#1a1b22]">NPWP PKP:</span> <span className="font-mono">{formatNpwp(o.store_npwp)}</span></p>}
+              {o.store_npwp && <p className="m-0"><span className="font-semibold text-[#1a1b22]">NPWP:</span> <span className="font-mono">{formatNpwp(o.store_npwp)}</span></p>}
               {o.store_address && <p className="m-0 whitespace-pre-line">{o.store_address}</p>}
-              {/* DEMO */}
-              <p className="m-0">{DEMO_DOC_KPP}</p>
             </div>
           </div>
           <div className="relative flex min-w-0 flex-col items-start text-left md:items-end md:text-right">
-            <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#eff4ff] px-3 py-1 text-[#00288e]">
-              <span className="material-symbols-outlined text-[16px]" aria-hidden="true">receipt_long</span>
-              <span className="font-display text-[11px] font-bold uppercase tracking-wider">Dokumen Resmi Pajak</span>
-            </span>
             <h1 className="m-0 font-display text-[22px] font-black uppercase leading-tight tracking-tight text-[#1a1b22] sm:text-[26px]">
               Faktur Penjualan & Invoice Pajak
             </h1>
             <div className="mt-2 space-y-0.5 text-sm">
               <p className="m-0"><span className="text-[#5b5e6e]">No. Invoice:</span> <span className="font-mono font-bold text-[#00288e]">{o.invoice_no}</span></p>
               <p className="m-0"><span className="text-[#5b5e6e]">Tanggal Faktur:</span> <span className="font-semibold">{docDate(o.created_at)}</span></p>
-              {/* DEMO */}
-              <p className="m-0"><span className="text-[#5b5e6e]">No. Seri e-Faktur:</span> <span className="font-mono font-bold">{DEMO_TAX_SERIES}</span></p>
               <p className="m-0"><span className="text-[#5b5e6e]">Kode Pesanan:</span> <span className="font-mono">ORD-{String(o.id).padStart(5, '0')}</span></p>
               <p className="m-0 text-xs text-[#5b5e6e]">Status pesanan: {ORDER_STATUS_LABEL[o.status] ?? o.status}</p>
             </div>
-            {paid && (
-              <div className="pointer-events-none mt-4 -rotate-6" aria-hidden="true">
-                <Stamp color="#15803d" className="!text-base">
-                  LUNAS / SAH
-                </Stamp>
-                {/* DEMO */}
-                <p className="m-0 mt-0.5 text-center font-mono text-[9px] font-semibold uppercase tracking-wider text-[#15803d]">Verified DJP Electronic</p>
-              </div>
-            )}
           </div>
         </header>
 
@@ -114,20 +81,12 @@ export default function Invoice() {
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance</span>
                   <span className="font-display text-[11px] font-bold uppercase tracking-wider">Identitas Instansi Pembeli</span>
                 </span>
-                {o.buyer_npwp && <DocBadge className="bg-white text-[#5b5e6e]">NPWP valid</DocBadge>}
               </div>
               <h2 className="m-0 font-display text-lg font-bold">{o.buyer_name ?? '-'}</h2>
               <dl className="m-0 mt-2 space-y-1 text-sm">
-                {/* DEMO */}
-                <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Penanggung jawab</dt><dd className="m-0 font-semibold">: {DEMO_INSTANSI.pic} ({DEMO_INSTANSI.picRole})</dd></div>
                 <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">NPWP instansi</dt><dd className="m-0 font-mono font-semibold">: {o.buyer_npwp ?? '-'}</dd></div>
                 <div className="flex gap-2"><dt className="w-[120px] flex-none text-[#5b5e6e]">Alamat pengiriman</dt><dd className="m-0 whitespace-pre-line leading-snug">: {o.shipping_address}</dd></div>
               </dl>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-2 rounded-field bg-white px-3 py-2 text-sm">
-              <span className="text-[#5b5e6e]">ID pelanggan Kemdikbudristek</span>
-              {/* DEMO */}
-              <span className="font-mono text-xs font-bold text-[#00288e]">NPSN: {DEMO_INSTANSI.npsn}</span>
             </div>
           </div>
 
@@ -138,12 +97,8 @@ export default function Invoice() {
                   <span className="material-symbols-outlined text-[18px]" aria-hidden="true">payments</span>
                   <span className="font-display text-[11px] font-bold uppercase tracking-wider">Informasi Anggaran & Transaksi</span>
                 </span>
-                {/* DEMO */}
-                <DocBadge className="bg-white text-[#c2410c]">BOS Reguler</DocBadge>
               </div>
               <dl className="m-0 space-y-1.5 text-sm">
-                <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Sumber pendanaan</dt><dd className="m-0 text-right font-semibold">{DEMO_BUDGET.source}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Mata anggaran kegiatan (MAK)</dt><dd className="m-0 font-mono text-right">{DEMO_BUDGET.mak}</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Metode pembayaran</dt><dd className="m-0 text-right font-semibold">Midtrans</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Status pelunasan</dt><dd className="m-0"><DocBadge className={paid ? 'bg-[#15803d] text-white' : 'bg-white text-[#5b5e6e]'}>{statusLabel}</DocBadge></dd></div>
               </dl>
@@ -184,7 +139,6 @@ export default function Invoice() {
                     <p className="m-0 font-display text-sm font-bold leading-snug">{i.product_name}</p>
                     <p className="m-0 mt-1 flex flex-wrap items-center gap-1 text-[11px] text-[#5b5e6e]">
                       <span>{o.store_name ?? 'Penjual'}</span>
-                      {o.store_npwp && <DocBadge className="bg-[#eff4ff] text-[#00288e]">PKP</DocBadge>}
                     </p>
                     {!i.is_taxable && <span className="text-[11px] text-[#5b5e6e]">(tidak kena PPN)</span>}
                   </td>
@@ -237,8 +191,6 @@ export default function Invoice() {
               <span className="material-symbols-outlined text-[18px]" aria-hidden="true">local_shipping</span>
               <span className="font-display text-[11px] font-bold uppercase tracking-wider">Rincian Jasa Ekspedisi Logistik Terintegrasi</span>
             </span>
-            {/* DEMO */}
-            <DocBadge className="bg-[#dce9ff] text-[#5b5e6e]">{DEMO_DOC_TAX_SCHEME}</DocBadge>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between gap-3 rounded-field bg-white p-2.5">
@@ -291,7 +243,7 @@ export default function Invoice() {
                 <>
                   <div className="flex justify-between gap-3"><dt className="text-[#5b5e6e]">Dasar pengenaan pajak (DPP barang)</dt><dd className="m-0 font-mono font-semibold tabular-nums">{rp(o.dpp)}</dd></div>
                   <div className="flex justify-between gap-3">
-                    <dt className="flex items-center gap-1.5 text-[#5b5e6e]">PPN {percent(o.ppn_rate)} (faktur pajak terpadu) <DocBadge className="bg-white text-[#00288e]">DJP</DocBadge></dt>
+                    <dt className="text-[#5b5e6e]">PPN {percent(o.ppn_rate)} (faktur pajak terpadu)</dt>
                     <dd className="m-0 font-mono font-semibold tabular-nums">{rp(o.ppn_total)}</dd>
                   </div>
                 </>
@@ -312,35 +264,12 @@ export default function Invoice() {
 
         {/* Footer dokumen: validasi QR, tanda tangan penerbit dan penerima */}
         <div className="rounded-card bg-[#eff4ff] p-4">
-          <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-3">
-            <div className="flex items-center gap-3 rounded-card bg-white p-3">
-              {/* DEMO */}
-              <DemoQr value={DEMO_QR_CODE} label="QR validasi DJP (dummy)" size={96} />
-              <div className="min-w-0">
-                <p className="m-0 flex items-center gap-1 font-display text-[11px] font-bold uppercase text-[#00288e]">
-                  <span className="material-symbols-outlined text-[16px]" aria-hidden="true">qr_code_scanner</span>
-                  QR Validasi DJP
-                </p>
-                <p className="m-0 mt-0.5 truncate font-mono text-[11px] text-[#5b5e6e]">NSFP: {DEMO_TAX_SERIES}</p>
-                <p className="m-0 mt-1 text-[11px] leading-snug text-[#5b5e6e]">Pindai QR untuk verifikasi keabsahan faktur di portal resmi Ditjen Pajak RI.</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2">
             <div className="rounded-card bg-white p-3">
               <SignatureBox
-                title="Diterbitkan oleh & sah"
+                title="Diterbitkan oleh"
                 name={o.store_name || 'Penjual'}
                 tone="navy"
-                sub={DEMO_DOC_SIGN.role}
-                signature={
-                  /* DEMO */
-                  <span className="flex items-center gap-1.5 text-left leading-tight text-[#00288e]">
-                    <span className="material-symbols-outlined text-[26px]" aria-hidden="true">verified_user</span>
-                    <span>
-                      <span className="block font-display text-[11px] font-black uppercase">Digitally signed</span>
-                      <span className="block font-mono text-[9px] text-[#5b5e6e]">{DEMO_DOC_SIGN.ca}</span>
-                    </span>
-                  </span>
-                }
               />
             </div>
             <div className="rounded-card bg-white p-3">
@@ -348,22 +277,10 @@ export default function Invoice() {
                 title="Penerima kuasa anggaran"
                 name={o.buyer_name ?? 'Penerima'}
                 tone="slate"
-                signature={
-                  /* DEMO */
-                  <span className="flex items-center gap-1.5 rounded-field bg-[#dce9ff] px-2 py-1 text-left text-[#00288e]">
-                    <span className="material-symbols-outlined text-[18px] text-[#ea580c]" aria-hidden="true">workspace_premium</span>
-                    <span className="leading-none">
-                      <span className="block font-display text-base font-black text-[#ea580c]">{DEMO_DOC_METERAI}</span>
-                      <span className="block font-mono text-[9px] font-bold text-[#5b5e6e]">Meterai elektronik</span>
-                    </span>
-                  </span>
-                }
               />
             </div>
           </div>
           <div className="mt-4 flex flex-col gap-1 border-t border-[#c5c5d4] pt-2 font-mono text-[10px] text-[#5b5e6e] md:flex-row md:justify-between">
-            {/* DEMO */}
-            <span className="truncate">DOC-HASH: {DEMO_DOC_HASH}</span>
             <span>Dicetak secara otomatis melalui Sistem Tokoku pada {docDate(new Date().toISOString())}</span>
           </div>
         </div>

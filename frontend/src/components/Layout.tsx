@@ -4,13 +4,7 @@ import { SearchBox } from './SearchBox';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api';
 import { btnBase, btnPrimary } from './ui/storefront';
-import {
-  DEMO_APP_STORES,
-  DEMO_LOGISTICS_CHIPS,
-  DEMO_NAV_CATEGORIES,
-  DEMO_NPWP,
-  DEMO_PAYMENT_METHODS,
-} from '../data/demo';
+import { DEMO_APP_STORES, DEMO_NAV_CATEGORIES } from '../data/demo';
 
 const YEAR = new Date().getFullYear();
 
@@ -45,11 +39,6 @@ export function Layout() {
             <Link to="/jual" className="inline-flex min-h-11 items-center text-on-primary/90 no-underline hover:text-on-primary">Jual di Tokoku</Link>
             <span className="text-on-primary/40" aria-hidden>|</span>
             <Link to="/bantuan" className="inline-flex min-h-11 items-center text-on-primary/90 no-underline hover:text-on-primary">Bantuan</Link>
-            {/* DEMO */}
-            <span className="inline-flex items-center gap-1 rounded-pill bg-on-primary/10 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.05em]">
-              <span className="material-symbols-outlined !text-[14px]" aria-hidden>verified</span>
-              PPN 11% otomatis
-            </span>
           </div>
         </div>
       </div>
@@ -69,8 +58,6 @@ export function Layout() {
             </span>
             <span className="flex flex-col leading-none">
               <span>Tokoku</span>
-              {/* DEMO */}
-              <span className="mt-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted max-[760px]:hidden">Mitra Resmi Edukasi</span>
             </span>
           </Link>
 
@@ -136,11 +123,6 @@ export function Layout() {
                 </Link>
               ))}
             </nav>
-            {/* DEMO */}
-            <span className="hidden flex-none items-center gap-1.5 text-xs font-semibold text-ink-2 min-[1101px]:flex">
-              <span className="material-symbols-outlined text-base text-success" aria-hidden>verified_user</span>
-              Transaksi dijamin aman · DJP e-Faktur
-            </span>
           </div>
         </div>
       </header>
@@ -195,7 +177,7 @@ export function Layout() {
       <footer className="mt-16 border-t border-outline-soft bg-surface pb-8 pt-10 max-[760px]:pb-20 print:hidden">
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-4 min-[761px]:px-6">
           <div className="grid grid-cols-1 gap-8 min-[761px]:grid-cols-2 min-[1101px]:grid-cols-5">
-            {/* Identitas dan kepatuhan PKP */}
+            {/* Identitas platform */}
             <div className="flex flex-col gap-4 min-[761px]:col-span-2">
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined flex h-9 w-9 items-center justify-center rounded-field bg-primary text-lg text-on-primary" aria-hidden>storefront</span>
@@ -205,14 +187,6 @@ export function Layout() {
               <p className="m-0 max-w-sm text-sm leading-6 text-ink-2">
                 Platform belanja resmi untuk kebutuhan sekolah, guru, siswa, dan pengadaan instansi. Harga transparan termasuk PPN 11%.
               </p>
-              {/* DEMO */}
-              <div className="flex flex-col gap-2 rounded-card border border-outline-soft bg-surface-low p-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-success">
-                  <span className="material-symbols-outlined text-lg" aria-hidden>verified</span>
-                  Kepatuhan Fiskal &amp; Perpajakan Resmi (PKP)
-                </div>
-                <p className="m-0 text-xs leading-5 text-muted">NPWP: {DEMO_NPWP} (contoh) · Terhubung dengan e-Faktur DJP.</p>
-              </div>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -253,22 +227,6 @@ export function Layout() {
                   </span>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* DEMO: metode pembayaran dan logistik */}
-          <div className="flex flex-col gap-5 border-t border-outline-soft pt-6 min-[1101px]:flex-row min-[1101px]:items-center min-[1101px]:justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-2 text-[11px] font-bold uppercase tracking-wider text-muted">Metode pembayaran resmi:</span>
-              {DEMO_PAYMENT_METHODS.map((m) => (
-                <span key={m} className="rounded-field border border-outline-soft bg-surface px-2.5 py-1 font-mono text-[11px] font-semibold text-ink-2">{m}</span>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-2 text-[11px] font-bold uppercase tracking-wider text-muted">Logistik terverifikasi:</span>
-              {DEMO_LOGISTICS_CHIPS.map((m) => (
-                <span key={m} className="rounded-field border border-outline-soft bg-surface px-2.5 py-1 font-mono text-[11px] font-semibold text-ink-2">{m}</span>
-              ))}
             </div>
           </div>
 

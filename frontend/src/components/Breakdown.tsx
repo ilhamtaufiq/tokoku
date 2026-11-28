@@ -21,10 +21,7 @@ export function Breakdown({ data }: { data: BreakdownSummary }) {
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
               <span className="material-symbols-outlined !text-[18px] text-primary" aria-hidden>account_balance</span>
-              Rincian pajak (PKP)
-            </span>
-            <span className="inline-flex h-6 items-center rounded-pill bg-success-soft px-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.05em] text-on-success-soft">
-              Resmi DJP
+              Rincian pajak
             </span>
           </div>
           <div className="grid grid-cols-2 gap-3">

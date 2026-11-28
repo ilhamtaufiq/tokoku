@@ -58,8 +58,6 @@ export function ProductCard({ product: p }: { product: Product }) {
         {p.stock === 0 && <span className={`${tagBase} ${tagDanger} absolute left-2 top-2 shadow-sm`}>Habis</span>}
         {p.stock > 0 && p.stock <= 5 && <span className={`${tagBase} ${tagWarn} absolute left-2 top-2 shadow-sm`}>Sisa {p.stock}</span>}
         {/* DEMO */}
-        <span className="absolute right-2 top-2 rounded-pill bg-surface/95 px-2 py-0.5 font-mono text-[10px] font-bold text-success shadow-sm">PKP</span>
-        {/* DEMO */}
         <span className="absolute bottom-2 left-2 inline-flex items-center gap-0.5 rounded-pill bg-surface/95 px-2 py-0.5 text-[11px] font-medium text-ink-2">
           <span className="material-symbols-outlined !text-[13px]" aria-hidden>location_on</span>
           {city}
